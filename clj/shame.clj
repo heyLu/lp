@@ -1,5 +1,12 @@
 (ns shame
-  (:use [clojure.data.json :as json :only []]))
+  (:use [clojure.data.json :as json :only []])
+  (:use compojure.core)
+  (:require [compojure.handler :as handler]
+            [compojure.route :as route])
+  (:use ring.util.response)
+  (:use ring.middleware.reload)
+  (:use ring.middleware.stacktrace)
+  (:use [ring.middleware.format-response :only [wrap-restful-response]]))
 
 ; roadmap:
 ;  1. implement add-item, resurrect-item, close-item
@@ -43,8 +50,26 @@
 (def ^:dynamic *shaming*
   (ref nil))
 
+;; "backend"
+
 (defn read-shame [filename]
   (json/read-str (slurp filename) :key-fn keyword))
 
 (defn write-shame [filename shaming]
   (spit filename (json/write-str shaming)))
+
+;; web service
+
+(dosync
+  (ref-set *shaming* (read-shame "self.todo.json")))
+
+(defroutes shame-routes
+  (GET "/" [] (response @*shaming*))
+  (GET "/current" [] (response (:current @*shaming*)))
+  (route/not-found "404 - Alternate Reality Monsters"))
+
+(def serve
+  (-> (handler/site shame-routes)
+    (wrap-reload {:dirs ["."]})
+    (wrap-stacktrace)
+    (wrap-restful-response)))
