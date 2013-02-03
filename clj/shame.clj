@@ -18,6 +18,22 @@
 
 ;; todo manipulation
 
+(defn get-by [map-coll k v]
+  (first (drop-while #(not= (k %) v) map-coll)))
+
+(defn eq-by-key [key m1 m2]
+  (= (key m1) (key m2)))
+
+(defn same-name [m1 m2]
+  (eq-by-key :name m1 m2))
+
+(defn transplant [item association from to & [eql-rel]]
+  "Transplants an item in a map of vectors from one key to another."
+  (let [eql-rel (or eql-rel =)])
+  (assoc association
+         from (vec (filter #(not ((or eql-rel =) item %)) (from association)))
+         to   (conj (to association) item)))
+
 (defn add-item [item shaming]
   "Try adding an item to the shaming. If the maximum number of items is
    exceeeded, return the original shaming."
@@ -26,24 +42,16 @@
       (assoc-in shaming [:current c] item)
       shaming))) ; FIXME: is that the clojure way of doing it?
 
-(defn get-by [map-coll k v]
-  (first (drop-while #(not= (k %) v) map-coll)))
-
-(defn transplant [item association from to]
-  "Transplants an item in a map of vectors from one key to another."
-  (assoc association
-         from (vec (filter #(not= item %) (from association)))
-         to   (conj (to association) item)))
 
 (defn close-item [item-name status shaming]
   (let [item (get-by (:current shaming) :name item-name)
         item (assoc item :closed-at (java.util.Date.))]
-    (transplant item shaming :current :past)))
+    (transplant item shaming :current :past same-name)))
 
 (defn resurrect-item [item-name shaming]
   (let [item (get-by (:past shaming) :name item-name)
         item (assoc item :started-at (java.util.Date.))]
-    (transplant item shaming :past :current)))
+    (transplant item shaming :past :current same-name)))
 
 ;; references (for "mutating" the todo-list)
 
