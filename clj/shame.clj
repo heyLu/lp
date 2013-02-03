@@ -42,6 +42,12 @@
       (assoc-in shaming [:current c] item)
       shaming))) ; FIXME: is that the clojure way of doing it?
 
+(defn change-item [item-name changes shaming]
+  (assoc shaming
+         :current (mapv #(if (= item-name (:name %))
+                           (into % changes)
+                           %)
+                        (:current shaming))))
 
 (defn close-item [item-name status shaming]
   (let [item (get-by (:current shaming) :name item-name)
