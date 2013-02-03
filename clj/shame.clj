@@ -1,5 +1,4 @@
 (ns shame
-  (:use [clojure.data.json :as json :only []])
   (:use compojure.core)
   (:require [compojure.handler :as handler]
             [compojure.route :as route])
@@ -8,6 +7,7 @@
   (:use ring.middleware.stacktrace)
   (:use [ring.middleware.format-response :only [wrap-restful-response]])
   (:use [ring.middleware.format-params :only [wrap-restful-params]])
+  (:require [cheshire.core :as json])
   (:use hiccup.core))
 
 
@@ -70,10 +70,10 @@
 ;; "backend"
 
 (defn read-shame [filename]
-  (json/read-str (slurp filename) :key-fn keyword))
+  (json/decode (slurp filename) keyword))
 
 (defn write-shame [filename shaming]
-  (spit filename (json/write-str shaming)))
+  (spit filename (json/encode shaming)))
 
 ;; web service
 
