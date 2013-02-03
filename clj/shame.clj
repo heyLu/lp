@@ -7,7 +7,8 @@
   (:use ring.middleware.reload)
   (:use ring.middleware.stacktrace)
   (:use [ring.middleware.format-response :only [wrap-restful-response]])
-  (:use [ring.middleware.format-params :only [wrap-restful-params]]))
+  (:use [ring.middleware.format-params :only [wrap-restful-params]])
+  (:use hiccup.core))
 
 
 ; roadmap:
@@ -93,7 +94,7 @@
                 %1)
              {} map))
 
-(defroutes shame-routes
+(defroutes shame-api
   (GET "/" [] (response @*shaming*))
   (POST "/" [item] (dosync (ref-set *shaming*
                                       (add-item item @*shaming*))))
@@ -112,6 +113,35 @@
           (dosync (ref-set *shaming*
                            (close-item item-name (or status "failed") @*shaming*))))
   (route/not-found "404 - Alternate Reality Monsters"))
+
+(defn render-item [item]
+  [:div.shame.current
+   [:h2 (:name item)]
+   (when (count (:notes item))
+     [:ul (for [note (:notes item)]
+            [:li (if (string? note)
+                   note
+                   (:content note))])])])
+
+(defn shame-index []
+  (html
+    (let [title (str "shame on me, I'm " (count (:current @*shaming*)) " things behind!")]
+      [:html
+       [:head
+        [:title title]
+        [:style {:rel "stylesheet", :href "todo.css"}]]
+       [:body
+        [:h1 title]
+        (for [item (:current @*shaming*)]
+          (render-item item))]])))
+
+(defroutes shame-routes
+  (context "/todos" [] shame-api)
+  (GET "/" []
+       (content-type
+         (response (shame-index))
+         "text/html"))
+  (route/not-found "404 - Alternate Reality Monsters (in App)"))
 
 (def serve
   (-> (handler/site shame-routes)
