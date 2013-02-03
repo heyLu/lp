@@ -67,6 +67,9 @@
 (def ^:dynamic *shaming*
   (ref nil))
 
+(def ^:dynamic *shaming-file*
+  "self.todo.json")
+
 ;; "backend"
 
 (defn read-shame [filename]
@@ -78,7 +81,7 @@
 ;; web service
 
 (dosync
-  (ref-set *shaming* (read-shame "self.todo.json")))
+  (ref-set *shaming* (read-shame *shaming-file*)))
 
 (defn take-n [start amount coll]
   (take amount (drop start coll)))
@@ -97,7 +100,8 @@
 (defroutes shame-api
   (GET "/" [] (response @*shaming*))
   (POST "/" [item] (dosync (ref-set *shaming*
-                                      (add-item item @*shaming*))))
+                                      (add-item item @*shaming*)))
+        (write-shame *shaming-file* @*shaming*))
   (GET "/current" [start limit]
        (response
          (take-n (int-param start) (int-param limit 10) (:current @*shaming*))))
@@ -108,10 +112,12 @@
                                          :name item-name)))
   (PUT "/:item-name" [item-name :as {params :params}] ; changes should be in the body?
        (dosync (ref-set *shaming*
-                        (change-item item-name (filter-keys params [:name])  @*shaming*))))
+                        (change-item item-name (filter-keys params [:name])  @*shaming*)))
+       (write-shame *shaming-file* @*shaming*))
   (DELETE "/:item-name" [item-name status]
           (dosync (ref-set *shaming*
-                           (close-item item-name (or status "failed") @*shaming*))))
+                           (close-item item-name (or status "failed") @*shaming*)))
+          (write-shame *shaming-file* @*shaming*))
   (route/not-found "404 - Alternate Reality Monsters"))
 
 (defn render-item [item]
