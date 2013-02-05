@@ -15,3 +15,6 @@ programming languages. So here I am, enjoy yourself!
 * current:
     - [clojure](http://clojure.org): A modern Lisp on the JVM.
     - [haskell](http://haskell.org)
+* seen: Bash, C, C++, Ruby, Python, Java, Erlang, J, Haskell, Clojure,
+  Scala, Perl, Forth, ASM, Scheme
+* written: Bash, C, Ruby, Python, Scheme, Haskell, Java, Erlang, Clojure
