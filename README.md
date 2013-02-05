@@ -14,3 +14,4 @@ programming languages. So here I am, enjoy yourself!
 
 * current:
     - [clojure](http://clojure.org): A modern Lisp on the JVM.
+    - [haskell](http://haskell.org)
