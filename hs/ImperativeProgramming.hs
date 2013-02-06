@@ -7,13 +7,16 @@ module ImperativeProgramming where
 
 import Data.Maybe (fromJust)
 import qualified Data.Map as M
-import Control.Monad (liftM)
+import Control.Monad (liftM, forM_)
 import Control.Applicative ((<$>), (<*>))
 
 example = do
     "x" .= 3
     "x" .+= 4
     "y" .= (-1)
+    "z" .= 0
+    forM_ [1..10] $ \n ->
+        "z" .-= n
     "x" .+ "y"
 
 data Imperative a b = Imperative (M.Map String a -> (M.Map String a, b))
