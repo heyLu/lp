@@ -29,8 +29,13 @@ instance Monad (Imperative a) where
     return x = Imperative $ \env -> (env, x)
 
 name .= value = Imperative $ \env -> (M.insert name value env, value)
-name .+= value = Imperative $ \env ->
-    (M.insertWith (+) name value env, value + (fromJust $M.lookup name env))
+augmentedAssignment op = \name value -> Imperative $ \env ->
+    (M.insertWith (flip op) name value env, (fromJust $ M.lookup name env) `op` value)
+(.+=) = augmentedAssignment (+)
+(.-=) = augmentedAssignment (-)
+(.*=) = augmentedAssignment (*)
+(./=) = augmentedAssignment (/)
+
 binaryOp op = \var1 var2 -> Imperative $ \env ->
     (env, fromJust $ op <$> M.lookup var1 env <*> M.lookup var2 env)
 
