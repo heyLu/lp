@@ -16,3 +16,19 @@
   like LT has more potential to be extensible and has a much saner
   extension language)
 - the `clj` repl
+
+## Giggles & quibbles
+
++ the giggles
+    * homoiconic
+    * has macros
+    * good feature inheritance (supposedly, not as in OO)
+    * lots of cool projects (datomic, matchure, ring, lighttable)
+- the quibbles
+    * the dynamic type-system continues to bite me
+        could be my fault, but I often jump right in without reading the
+        whole documentation and have spend too much time tracking weird
+        errors down that were all fixed by changing one place in the
+        code
+    * the jvm overhead is bad for my little computer (too slow, too much
+      memory consumed)
