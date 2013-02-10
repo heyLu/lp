@@ -23,7 +23,8 @@
     * homoiconic
     * has macros
     * good feature inheritance (supposedly, not as in OO)
-    * lots of cool projects (datomic, matchure, ring, lighttable)
+    * lots of cool projects (datomic, matchure, ring, lighttable,
+      typed-clojure)
 - the quibbles
     * the dynamic type-system continues to bite me
         could be my fault, but I often jump right in without reading the
