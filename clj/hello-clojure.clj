@@ -45,6 +45,38 @@
 (print (filter-ns #(.endsWith % "?") 'clojure.core))
 (= (complete "take" 'clojure.core) (complete' "take" 'clojure.core))
 
+(defn str-with-limit [args max-width]
+  (apply str
+   	(interpose "\n" (reduce (fn [[text line] word]
+              #_(prn [line text])
+    	        (if (> (count (str line word)) max-width)
+      	        [(str text "\n" line) word]
+        	      [text (str line word)]))
+          	["" ""]
+          	args))))
+
+(defn ls-ns [ns]
+  "List all public vars in the given namespace."
+  (print (str-with-limit (interpose " " (sort (keys (ns-publics ns)))) 80)))
+(ls-ns 'clojure.repl)
+
+(nth (first (re-seq (re-pattern "(.*)\n") "hey\nyou\nthere!")) 1)
+
+(defn short-doc [sym]
+  "Returns a one-line description of the symbol."
+  (let [sym-meta (meta sym)
+        first-doc-line (nth (first (re-seq (re-pattern "(.*)\n?") (or (-> sym-meta :doc) "No documentation availlable."))) 1)]
+  	(str (:ns sym-meta) "/" (:name sym-meta) " - " first-doc-line)))
+
+(defn doc-ns [ns]
+  "Print short-doc for all vars in the given namespace."
+  (print (->> (ns-publics ns)
+             	vals
+             	(map short-doc)
+              sort
+              (interpose "\n"))))
+(doc-ns 'clojure.repl)
+
 (def letsample
   '(let [x 10]
      (+ x 3)))
