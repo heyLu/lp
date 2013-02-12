@@ -163,8 +163,8 @@ hello-forms
   ([string]
    (apropos+ string 'clojure.core))
   ([string namespace]
-   (let [symbols (keys (ns-publics namespace))
-         docs (map #(-> `#'~% eval meta :doc) symbols)]
+   (let [symbols (vals (ns-publics namespace))
+         docs (map #(-> % meta :doc) symbols)]
      (filter #(and (not= nil %) (.contains % string)) docs))))
 
 (apropos+ "containing" 'clojure.core)
