@@ -179,7 +179,7 @@
           (repeatedly #(read file false nil)))))))
 
 (def hello-forms
-  (let [forms (read-file "/home/lu/k/lp/clj/hello-clojure.clj")]
+  (let [forms (read-file "/home/lu/k/lp/clj/hello_clojure.clj")]
   { :number-of-forms (count forms)
     :forms forms }))
 hello-forms
