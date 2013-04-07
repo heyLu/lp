@@ -1,5 +1,5 @@
 (ns shopping-list.server
-  (:require [shopping-list :as sl])
+  (:require [shopping-list.core :as sl])
   (:use ring.util.response)
   (:use compojure.core)
   (:require [compojure.route :as route])
@@ -13,7 +13,7 @@
      [:ul
       (for [item group-items]
         (let [{:keys [name price weight category]} item]
-          [:li (str name)]))]]))
+          [:li (str name " (" (sl/pretty-price price) ", " (sl/pretty-weight weight) ", " category ")")]))]]))
 
 (defn index []
   (html
@@ -23,7 +23,7 @@
      [:div {:id "main"}
       [:h1 "Hi there"]
       [:p "Mhh yeah, what's up?"]
-      (render-groups (sl/sort-map (comp identity compare) (sl/regroup-by-name sl/example-articles)))]]]))
+      (render-groups (sl/regroup (sl/combine sl/category sl/weight) sl/example-articles))]]]))
 
 (defroutes shopping-list
   (GET "/" [] (index))
