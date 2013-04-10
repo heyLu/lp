@@ -1,4 +1,4 @@
-package understanding;
+package lp.java.understanding;
 
 import org.junit.Test;
 
@@ -20,7 +20,7 @@ public class TestOutputParameters {
 		this.tryAssigningAStringArgument(input, "will not be assigned");
 		assertEquals(input, "the thing");
 	}
-	
+
 	public void tryAssigningAStringArgument(String s, String assignment) {
 		s = assignment;
 	}
