@@ -61,6 +61,11 @@ public class SlidingWindow<T> {
 
     public void slide(long slideBy) {
         windowStart += slideBy;
+        removeOldValues();
+        addNewValues();
+    }
+
+    private void removeOldValues() {
         for (int i = 0; i < currentValues.size(); i++) {
             long timestamp = currentTimestamps.get(i);
             if (!isInWindow(timestamp)) {
@@ -69,7 +74,9 @@ public class SlidingWindow<T> {
                 i -= 1;
             }
         }
+    }
 
+    private void addNewValues() {
         for (int i = 0; i < newValues.size(); i++) {
             long timestamp = newTimestamps.get(i);
             if (isInWindow(timestamp)) {
