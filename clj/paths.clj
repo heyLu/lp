@@ -23,12 +23,13 @@
 
 (tags-as-map {:content [{:tag :tag, :attrs {:k :hey, :v 1}}, {:tag :tag, :attrs {:k :there, :v 2}}]})
 
-(defn dev-prepare []
-  (println "; reading in data/Leipzig_highways.osm...")
-  (def leipzig
-    (xml/parse "data/Leipzig_highways.osm"))
-  (println ";=> availlable in `leipzig`")
-  (println "; extracting nodes...")
-  (def leipzig-nodes
-    (extract-nodes {:content leipzig}))
-  (println "; => availlable in `leipzig-nodes`"))
+(defn dev-prepare [& [path]]
+  (let [path (or path "data/leipzig_highways.osm")]
+    (println "; reading in" path "...")
+    (def leipzig
+      (xml/parse path))
+    (println ";=> availlable in `leipzig`")
+    (println "; extracting nodes...")
+    (def leipzig-nodes
+      (extract-nodes {:content leipzig}))
+    (println "; => availlable in `leipzig-nodes`")))
