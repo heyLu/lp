@@ -18,10 +18,10 @@
   (let [tags (filter #(= (:tag %) :tag) (:content osm-element))]
     (into {} (map #(-> (get+ (:attrs %) [:k :v])
                        ((fn [[k v]]
-                          [(keyword k) v])))
+                          [(or (keyword k) k) v])))
                   tags))))
 
-(tags-as-map {:content [{:tag :tag, :attrs {:k :hey, :v 1}}, {:tag :tag, :attrs {:k :there, :v 2}}]})
+(tags-as-map {:content [{:tag :tag, :attrs {:k "hey", :v 1}}, {:tag :tag, :attrs {:k :there, :v 2}}]})
 
 (defn dev-prepare [& [path]]
   (let [path (or path "data/leipzig_highways.osm")]
