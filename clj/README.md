@@ -31,5 +31,15 @@
         whole documentation and have spend too much time tracking weird
         errors down that were all fixed by changing one place in the
         code
+    * learning new libraries without sufficient docs/tutorials (e.g.
+        what are the arguments to this function, what does this map mean;
+        maybe clojure wants me to think differently)
     * the jvm overhead is bad for my little computer (too slow, too much
       memory consumed)
+
+## Hickups
+
+Some examples for the quibbles.
+
+* `(if (= something something-undefined) true-expr false-expr)` not
+    throwing an exeption for `something-undefined` being not defined
