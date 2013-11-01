@@ -2,6 +2,13 @@
 
 Pick a name and babble on to your hearts content.
 
+    $ meteor
+    [[[[[ ~/k/lp/js/helo ]]]]]
+
+    => Meteor server running on: http://localhost:3000/
+
+And [have fun](http://localhost:3000).
+
 ## Meteor
 
 - quite fun to start
