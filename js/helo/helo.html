@@ -1,0 +1,29 @@
+<head>
+  <title>helo</title>
+</head>
+
+<body>
+  {{#if user_name}}
+    {{> chat}}
+  {{/if}}
+  
+  {{#unless user_name}}
+    {{> login}}
+  {{/unless}}
+</body>
+
+<template name="chat">
+  <div id="chat">
+    {{#each messages}}
+      <div class="message">
+        <time>{{time timestamp}}</time>
+        <strong>{{name}}</strong>: {{text}}
+      </div>
+    {{/each}}
+  </div>
+  <input type="text" id="message" placeholder="say something" />
+</template>
+
+<template name="login">
+  <input type="text" id="user_name" placeholder="your name" />
+</template>
