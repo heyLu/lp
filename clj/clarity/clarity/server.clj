@@ -23,7 +23,10 @@
         :headers {"Content-Type" "text/html"}
         :body (html [:form#query {:action "/facts" :accept-charset "utf-8"}
                      [:textarea {:name "q" :cols 80 :rows 20}]
-                     [:input {:type "submit"}]])})
+                     [:input {:type "submit" :value "query"}]]
+                    [:form#facts {:action "/facts" :method "post"}
+                     [:textarea {:name "facts" :cols 80 :rows 20}]
+                     [:input {:type "submit" :value "transact!"}]])})
   (GET "/facts" {{query :q} :params}
        (pr-str (d/q (edn/read-string query) (d/db conn))))
   (POST "/facts" [facts]
