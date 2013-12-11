@@ -37,7 +37,9 @@
          (pr-str (d/q (edn/read-string query) (d/db conn)))
          (http-error 400 (pr-str {:error "Missing required `q` parameter"}))))
   (POST "/facts" [facts]
-        (pr-str (d/transact conn (read-tx-data facts)))))
+        (pr-str (d/transact conn (read-tx-data facts))))
+  (GET "/entity/:id" [id]
+       (pr-str (into {} (d/entity (d/db conn) (edn/read-string id))))))
 
 (def app
   (-> app-routes
