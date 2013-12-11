@@ -17,6 +17,11 @@
 (defn read-tx-data [str]
   (edn/read-string {:readers {'db/id (partial apply d/tempid)}} str))
 
+(defn http-error [status body & {:as attrs}]
+  (into {:status status
+         :body body}
+        attrs))
+
 (defroutes app-routes
   (GET "/" []
        {:status 200
@@ -28,7 +33,9 @@
                      [:textarea {:name "facts" :cols 80 :rows 20}]
                      [:input {:type "submit" :value "transact!"}]])})
   (GET "/facts" {{query :q} :params}
-       (pr-str (d/q (edn/read-string query) (d/db conn))))
+       (if query
+         (pr-str (d/q (edn/read-string query) (d/db conn)))
+         (http-error 400 (pr-str {:error "Missing required `q` parameter"}))))
   (POST "/facts" [facts]
         (pr-str (d/transact conn (read-tx-data facts)))))
 
