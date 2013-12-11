@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+	<title>editing a map (clarity)</title>
+	<meta charset="utf-8" />
+	<style type="text/css">
+	.field {
+		display: block;
+		margin: 0.5em 1em;
+	}
+	</style>
+</head>
+
+<body>
+	<form id="sample">
+		{
+		<span class="field">
+			<label>:db/id</label>
+			<input type="text" readonly value="#db/id[db.part/db]" />
+		</span>
+
+		<span class="field">
+			<label>:db/ident</label>
+			<input type="text" required pattern="^:\w+$|^:\w+(\.\w+)?\/\w+$" placeholder=":my.ns/identifier" />
+		</span>
+
+		<span class="field">
+			<label>:db/valueType</label>
+			<!--<input type="text" list="db-valueType" required>-->
+			<!--<datalist id="db-valueType">-->
+			<select required>
+				<option>:db.type/keyword</option>
+				<option>:db.type/string</option>
+				<option>:db.type/boolean</option>
+				<option>:db.type/long</option>
+				<option>:db.type/bigint</option>
+				<option>:db.type/float</option>
+				<option>:db.type/double</option>
+				<option>:db.type/bigdec</option>
+				<option>:db.type/ref</option>
+				<option>:db.type/instant</option>
+				<option>:db.type/uuid</option>
+				<option>:db.type/uri</option>
+				<option>:db.type/bytes</option>
+			<!--</datalist>-->
+			</select>
+		</span>
+
+		<span class="field">
+			<label>:db/cardinality</label>
+			<select required>
+				<option>:db.cardinality/one</option>
+				<option>:db.cardinality/many</option>
+			</select>
+		</span>
+
+		<span class="field">
+			<label>:ext/multiField</label>
+			[
+			<span class="field">
+				<input type="text" placeholder=":my.ns/identifier" />
+				<input type="button" value="Delete" />
+			</span>
+
+			<span class="field">
+				<input type="text" placeholder=":my.ns/identifier" />
+				<input type="button" value="Delete" />
+			</span>
+			]
+			<input type="button" value="Delete" />
+		</span>
+
+		<span class="field">
+			<label>:db.install/_attribute</label>
+			<input type="text" readonly value=":db.part/db" />
+		</span>
+
+		<span class="field">
+			<select>
+				<option>:db/doc</option>
+				<option>:db/unique</option>
+				<option>:db/index</option>
+				<option>:db/fulltext</option>
+				<option>:db/isComponent</option>
+				<option>:db/noHistory</option>
+			</select>
+			<input type="text" disabled />
+
+			<input type="button" value="Add" />
+		</span>
+		}
+	</form>
+</body>
+</html>
