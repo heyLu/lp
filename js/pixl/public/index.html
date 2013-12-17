@@ -11,11 +11,18 @@
 			top: 0;
 			left: 0;
 		}
+
+		#status {
+			position: absolute;
+			bottom: 0;
+			right: 0;
+		}
 	</style>
 </head>
 
 <body>
 	<canvas id="stage"></canvas>
+	<span id="status"></span>
 	<script>
 		window.polyfill = {};
 
@@ -29,6 +36,7 @@
 		window.pixl = {};
 		pixl.stage = document.querySelector("#stage");
 		pixl.ctx = stage.getContext("2d");
+		pixl.status = document.querySelector("#status");
 		pixl.window = {w: window.innerWidth, h: window.innerHeight};
 		pixl.world = {};
 		pixl.pos = {x: 0, y: 0};
@@ -118,6 +126,9 @@
 			if (pixl.drag.start !== undefined) {
 				pixl.drag.current = {x: ev.clientX, y: ev.clientY};
 			}
+
+			var hovered = pixl.to_world({x: ev.clientX, y: ev.clientY});
+			pixl.status.textContent = hovered.x + "," + hovered.y;
 		});
 
 		pixl.stage.addEventListener("mouseup", function(ev) {
