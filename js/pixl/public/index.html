@@ -72,8 +72,8 @@
 			var h2 = Math.round(pixl.window.h / pixl.size / 2);
 
 			pixl.ctx.fillStyle = "black";
-			for (var x = -w2; x < w2; x++) {
-				for (var y = -h2; y < h2; y++) {
+			for (var x = pixl.pos.x - w2; x < pixl.pos.x + w2; x++) {
+				for (var y = pixl.pos.y - h2; y < pixl.pos.y + h2; y++) {
 					var pt = pixl.world[[x, y]];
 					if (pt !== undefined) {
 						pixl.draw_pixl({x: x, y: y}, pt.color, {send: false});
