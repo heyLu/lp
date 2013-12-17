@@ -48,12 +48,13 @@
 		}
 
 		pixl.draw_pixl = function(pos, color) {
-			pixl.ctx.fillStyle = color || "black";
+			var color = color || "black";
+			pixl.ctx.fillStyle = color;
 			var screen_pos = pixl.to_screen(pos);
 			pixl.ctx.fillRect(screen_pos.x, screen_pos.y, pixl.size, pixl.size);
-			pixl.world[pos.x + "," + pos.y] = {};
+			pixl.world[pos.x + "," + pos.y] = {color: color};
 			if (pixl.online && !pos.remote) {
-				pixl.ws.send(JSON.stringify([{x: pos.x, y: pos.y, color: color || "black"}]));
+				pixl.ws.send(JSON.stringify([{x: pos.x, y: pos.y, color: color}]));
 			}
 		}
 
