@@ -5,6 +5,29 @@ var express = require('express');
 var app = express();
 app.use(express.static(__dirname + "/public"));
 
+app.get('/stats', function(req, res) {
+	var stats = {
+		users: wss.clients.length,
+		pixls: Object.keys(world).length
+	};
+	res.setHeader('Content-Type', 'text/plain');
+	res.send(JSON.stringify(stats, null, "  "));
+});
+
+app.get('/world', function(req, res) {
+	res.setHeader('Content-Type', 'text/plain');
+	res.send(JSON.stringify(world));
+});
+
+app.get('/reset', function(req, res) {
+	world = {};
+	wss.clients.forEach(function(client) {
+		client.send("{}");
+	});
+	res.setHeader('Content-Type', 'text/plain');
+	res.send(JSON.stringify({status: "ok"}));
+});
+
 var server = http.createServer(app);
 server.listen(8001);
 
