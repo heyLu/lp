@@ -47,6 +47,11 @@
 					y: pixl.window.h / 2 + (world_pos.y - pixl.pos.y) * pixl.size};
 		}
 
+		pixl.at = function(pos) {
+			var p = pixl.world[pos.x + "," + pos.y];
+			return p !== undefined && p.color !== "white";
+		}
+
 		pixl.draw_pixl = function(pos, color) {
 			var color = color || "black";
 			pixl.ctx.fillStyle = color;
@@ -116,7 +121,8 @@
 		pixl.stage.addEventListener("mouseup", function(ev) {
 			if (pixl.drag.current === undefined) {
 				var ev = polyfill.movement(ev);
-				pixl.draw_pixl(pixl.to_world({x: ev.clientX, y: ev.clientY}));
+				var world_pos = pixl.to_world({x: ev.clientX, y: ev.clientY});
+				pixl.draw_pixl(world_pos, pixl.at(world_pos) ? "white" : "black");
 			} else {
 				console.error("drag not implemented");
 			}
