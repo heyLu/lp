@@ -1,6 +1,8 @@
 var ws = require('ws');
 var http = require('http');
 var express = require('express');
+var fs = require('fs');
+var path = require('path');
 
 var app = express();
 app.use(express.static(__dirname + "/public"));
@@ -26,6 +28,34 @@ app.get('/reset', function(req, res) {
 	});
 	res.setHeader('Content-Type', 'text/plain');
 	res.send(JSON.stringify({status: "ok"}));
+});
+
+app.get('/save/:name', function(req, res) {
+	fs.writeFile(path.join('./data/', req.params.name + '.json'), JSON.stringify(world), function(err) {
+		res.setHeader('Content-Type', 'text/plain');
+		if (err) {
+			res.statusCode = 404;
+			res.send(JSON.stringify({error: err}));
+		} else {
+			res.send(JSON.stringify({name: req.params.name}));
+		}
+	});
+});
+
+app.get('/load/:name', function(req, res) {
+	fs.readFile(path.join('./data', req.params.name + '.json'), function(err, data) {
+		res.setHeader('Content-Type', 'text/plain');
+		if (err) {
+			res.statusCode = 404;
+			res.send(JSON.stringify({error: err}));
+		} else {
+			world = JSON.parse(data);
+			wss.clients.forEach(function(client) {
+				client.send(JSON.stringify(world));
+			});
+			res.send(JSON.stringify({pixls: Object.keys(world).length}));
+		}
+	})
 });
 
 var server = http.createServer(app);
