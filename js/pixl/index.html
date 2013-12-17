@@ -53,7 +53,7 @@
 			pixl.ctx.fillRect(screen_pos.x, screen_pos.y, pixl.size, pixl.size);
 			pixl.world[pos.x + "," + pos.y] = {};
 			if (pixl.online) {
-				pixl.ws.send(JSON.stringify({x: pos.x, y: pos.y, color: color || "black"}));
+				pixl.ws.send(JSON.stringify([{x: pos.x, y: pos.y, color: color || "black"}]));
 			}
 		}
 
