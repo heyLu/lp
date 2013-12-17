@@ -30,7 +30,7 @@
 		pixl.stage = document.querySelector("#stage");
 		pixl.ctx = stage.getContext("2d");
 		pixl.window = {w: window.innerWidth, h: window.innerHeight};
-		pixl.world = {"0,0": {}, "-1,0": {}};
+		pixl.world = {};
 		pixl.pos = {x: 0, y: 0};
 		pixl.size = 20;
 
@@ -52,6 +52,9 @@
 			var screen_pos = pixl.to_screen(pos);
 			pixl.ctx.fillRect(screen_pos.x, screen_pos.y, pixl.size, pixl.size);
 			pixl.world[pos.x + "," + pos.y] = {};
+			if (pixl.online) {
+				pixl.ws.send(JSON.stringify({x: pos.x, y: pos.y, color: color || "black"}));
+			}
 		}
 
 		pixl.redraw = function() {
@@ -138,6 +141,30 @@
 				pixl.redraw();
 			}
 		});
+
+		pixl.online = false;
+		pixl.connect = function() {
+			pixl.ws = new WebSocket('ws://localhost:8001');
+			pixl.ws.onopen = function() { pixl.online = true; };
+			pixl.ws.onclose = function() { pixl.online = false; };
+			pixl.ws.onmessage = function(msg) {
+				var obj = JSON.parse(msg.data);
+				if (obj.length !== undefined) {
+					obj.forEach(function(p) {
+						pixl.world[p.x + "," + p.y] = {color: p.color};
+						pixl.draw_pixl(p, p.color);
+					});
+				} else {
+					pixl.world = obj;
+					pixl.redraw();
+				}
+			};
+		};
+		pixl.disconnect = function () {
+			pixl.ws.close();
+		};
+
+		pixl.connect();
 	</script>
 </body>
 </html>

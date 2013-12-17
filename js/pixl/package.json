@@ -1,0 +1,8 @@
+{
+	"name": "pixl-server",
+	"description": "server for a collaborative, programmable, pixel-placing game.",
+	"version": "0.0.0-alpha",
+	"dependencies": {
+		"ws": "0.4.31"
+	}
+}

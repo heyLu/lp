@@ -1,0 +1,23 @@
+var ws = require('ws');
+
+var server = new ws.Server({port: 8001});
+
+var world = {};
+
+server.on('connection', function(socket) {
+	socket.send(JSON.stringify(world));
+
+	socket.on('message', function(msg) {
+		var pixl = JSON.parse(msg);
+		world[pixl.x + "," + pixl.y] = {color: pixl.color};
+
+		console.log(pixl);
+
+		server.clients.forEach(function(client) {
+			if (socket != client) {
+				console.log('broadcasting to ', client);
+				client.send(msg);
+			}
+		});
+	});
+});
