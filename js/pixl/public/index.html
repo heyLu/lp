@@ -40,6 +40,7 @@
 		pixl.window = {w: window.innerWidth, h: window.innerHeight};
 		pixl.world = {};
 		pixl.pos = {x: 0, y: 0};
+		pixl.color = "black";
 		pixl.size = 20;
 
 		pixl.stage.width = pixl.window.w;
@@ -61,7 +62,7 @@
 		}
 
 		pixl.draw_pixl = function(pos, color, options) {
-			var color = color || "black";
+			var color = color || pixl.color;
 			pixl.ctx.fillStyle = color;
 			var screen_pos = pixl.to_screen(pos);
 			pixl.ctx.fillRect(screen_pos.x, screen_pos.y, pixl.size, pixl.size);
@@ -79,7 +80,6 @@
 			var w2 = Math.round(pixl.window.w / pixl.size / 2);
 			var h2 = Math.round(pixl.window.h / pixl.size / 2);
 
-			pixl.ctx.fillStyle = "black";
 			for (var x = pixl.pos.x - w2; x < pixl.pos.x + w2; x++) {
 				for (var y = pixl.pos.y - h2; y < pixl.pos.y + h2; y++) {
 					var pt = pixl.world[[x, y]];
@@ -135,7 +135,7 @@
 			if (pixl.drag.current === undefined) {
 				var ev = polyfill.movement(ev);
 				var world_pos = pixl.to_world({x: ev.clientX, y: ev.clientY});
-				pixl.draw_pixl(world_pos, pixl.at(world_pos) ? "white" : "black");
+				pixl.draw_pixl(world_pos, pixl.at(world_pos) ? "white" : pixl.color);
 			} else {
 				console.error("drag not implemented");
 			}
