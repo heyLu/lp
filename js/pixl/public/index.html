@@ -17,12 +17,23 @@
 			bottom: 0;
 			right: 0;
 		}
+
+		#pos, #online { display: inline-block; vertical-align: bottom; }
+
+		#online {
+			width: 20px;
+			height: 20px;
+			background-color: green;
+		}
 	</style>
 </head>
 
 <body>
 	<canvas id="stage"></canvas>
-	<span id="status"></span>
+	<span id="status">
+		<span id="pos"></span>
+		<span id="online"></span>
+	</span>
 	<script>
 		window.polyfill = {};
 
@@ -36,7 +47,8 @@
 		window.pixl = {};
 		pixl.stage = document.querySelector("#stage");
 		pixl.ctx = stage.getContext("2d");
-		pixl.status = document.querySelector("#status");
+		pixl.status = { pos: document.querySelector("#pos"),
+		                online: document.querySelector("#online") };
 		pixl.window = {w: window.innerWidth, h: window.innerHeight};
 		pixl.world = {};
 		pixl.pos = {x: 0, y: 0};
@@ -111,6 +123,14 @@
 			pixl.redraw();
 		});
 
+		pixl.status.online.addEventListener("click", function(ev) {
+			if (pixl.online) {
+				pixl.disconnect();
+			} else {
+				pixl.connect();
+			}
+		});
+
 		pixl.drag = {start: undefined, current: undefined};
 		pixl.stage.addEventListener("mousedown", function(ev) {
 			/*if (document.mozPointerLockElement === null) {
@@ -128,7 +148,7 @@
 			}
 
 			var hovered = pixl.to_world({x: ev.clientX, y: ev.clientY});
-			pixl.status.textContent = hovered.x + "," + hovered.y;
+			pixl.status.pos.textContent = hovered.x + "," + hovered.y;
 		});
 
 		pixl.stage.addEventListener("mouseup", function(ev) {
@@ -165,8 +185,14 @@
 		pixl.online = false;
 		pixl.connect = function() {
 			pixl.ws = new WebSocket('ws://' + (location.host || 'localhost:8001'));
-			pixl.ws.onopen = function() { pixl.online = true; };
-			pixl.ws.onclose = function() { pixl.online = false; };
+			pixl.ws.onopen = function() {
+				pixl.online = true;
+				pixl.status.online.style.backgroundColor = "green";
+			};
+			pixl.ws.onclose = function() {
+				pixl.online = false;
+				pixl.status.online.style.backgroundColor = "red";
+			};
 			pixl.ws.onmessage = function(msg) {
 				var obj = JSON.parse(msg.data);
 				if (obj.length !== undefined) {
