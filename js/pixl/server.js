@@ -16,7 +16,6 @@ server.on('connection', function(socket) {
 
 		server.clients.forEach(function(client) {
 			if (socket != client) {
-				console.log('broadcasting to ', client);
 				client.send(msg);
 			}
 		});
