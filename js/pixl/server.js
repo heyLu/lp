@@ -1,10 +1,18 @@
 var ws = require('ws');
+var http = require('http');
+var express = require('express');
 
-var server = new ws.Server({port: 8001});
+var app = express();
+app.use(express.static(__dirname + "/public"));
+
+var server = http.createServer(app);
+server.listen(8001);
+
+var wss = new ws.Server({server: server});
 
 var world = {};
 
-server.on('connection', function(socket) {
+wss.on('connection', function(socket) {
 	socket.send(JSON.stringify(world));
 
 	socket.on('message', function(msg) {
@@ -14,7 +22,7 @@ server.on('connection', function(socket) {
 			console.log(pixl);
 		});
 
-		server.clients.forEach(function(client) {
+		wss.clients.forEach(function(client) {
 			if (socket != client) {
 				client.send(msg);
 			}
