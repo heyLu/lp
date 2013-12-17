@@ -52,7 +52,7 @@
 			var screen_pos = pixl.to_screen(pos);
 			pixl.ctx.fillRect(screen_pos.x, screen_pos.y, pixl.size, pixl.size);
 			pixl.world[pos.x + "," + pos.y] = {};
-			if (pixl.online) {
+			if (pixl.online && !pos.remote) {
 				pixl.ws.send(JSON.stringify([{x: pos.x, y: pos.y, color: color || "black"}]));
 			}
 		}
@@ -151,6 +151,7 @@
 				var obj = JSON.parse(msg.data);
 				if (obj.length !== undefined) {
 					obj.forEach(function(p) {
+						p.remote = true;
 						pixl.world[p.x + "," + p.y] = {color: p.color};
 						pixl.draw_pixl(p, p.color);
 					});
