@@ -52,13 +52,15 @@
 			return p !== undefined && p.color !== "white";
 		}
 
-		pixl.draw_pixl = function(pos, color) {
+		pixl.draw_pixl = function(pos, color, options) {
 			var color = color || "black";
 			pixl.ctx.fillStyle = color;
 			var screen_pos = pixl.to_screen(pos);
 			pixl.ctx.fillRect(screen_pos.x, screen_pos.y, pixl.size, pixl.size);
 			pixl.world[pos.x + "," + pos.y] = {color: color};
-			if (pixl.online && !pos.remote) {
+
+			var options = options || {send: true};
+			if (pixl.online && options.send) {
 				pixl.ws.send(JSON.stringify([{x: pos.x, y: pos.y, color: color}]));
 			}
 		}
@@ -74,7 +76,7 @@
 				for (var y = -h2; y < h2; y++) {
 					var pt = pixl.world[[x, y]];
 					if (pt !== undefined) {
-						pixl.draw_pixl({x: x, y: y}, pt.color);
+						pixl.draw_pixl({x: x, y: y}, pt.color, {send: false});
 					}
 				}
 			}
@@ -158,9 +160,7 @@
 				var obj = JSON.parse(msg.data);
 				if (obj.length !== undefined) {
 					obj.forEach(function(p) {
-						p.remote = true;
-						pixl.world[p.x + "," + p.y] = {color: p.color};
-						pixl.draw_pixl(p, p.color);
+						pixl.draw_pixl(p, p.color, {send: false});
 					});
 				} else {
 					pixl.world = obj;
