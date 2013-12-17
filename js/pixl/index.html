@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+<head>
+	<title>.pixl</title>
+	<meta charset="utf-8" />
+	<style type="text/css">
+		body { overflow: hidden; }
+
+		canvas {
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
+	</style>
+</head>
+
+<body>
+	<canvas id="stage"></canvas>
+	<script>
+		window.polyfill = {};
+
+		polyfill.movement = function(ev) {
+			ev.movementX = ev.movementX || ev.mozMovementX || ev.webkitMovementX;
+			ev.movementY = ev.movementY || ev.mozMovementY || ev.webkitMovementY;
+			return ev;
+		};
+	</script>
+	<script>
+		window.pixl = {};
+		pixl.stage = document.querySelector("#stage");
+		pixl.ctx = stage.getContext("2d");
+		pixl.window = {w: window.innerWidth, h: window.innerHeight};
+		pixl.world = {"0,0": {}, "-1,0": {}};
+		pixl.pos = {x: 0, y: 0};
+		pixl.size = 20;
+
+		pixl.stage.width = pixl.window.w;
+		pixl.stage.height = pixl.window.h;
+
+		pixl.to_world = function(screen_pos) {
+			return {x: Math.floor((screen_pos.x - pixl.window.w / 2 + pixl.pos.x * pixl.size) / pixl.size),
+					y: Math.floor((screen_pos.y - pixl.window.h / 2 + pixl.pos.y * pixl.size) / pixl.size)};
+		}
+
+		pixl.to_screen = function(world_pos) {
+			return {x: pixl.window.w / 2 + (world_pos.x - pixl.pos.x) * pixl.size,
+					y: pixl.window.h / 2 + (world_pos.y - pixl.pos.y) * pixl.size};
+		}
+
+		pixl.draw_pixl = function(pos, color) {
+			pixl.ctx.fillStyle = color || "black";
+			var screen_pos = pixl.to_screen(pos);
+			pixl.ctx.fillRect(screen_pos.x, screen_pos.y, pixl.size, pixl.size);
+			pixl.world[pos.x + "," + pos.y] = {};
+		}
+
+		pixl.redraw = function() {
+			pixl.ctx.clearRect(0, 0, pixl.window.w, pixl.window.h);
+
+			var w2 = Math.round(pixl.window.w / pixl.size / 2);
+			var h2 = Math.round(pixl.window.h / pixl.size / 2);
+
+			pixl.ctx.fillStyle = "black";
+			for (var x = -w2; x < w2; x++) {
+				for (var y = -h2; y < h2; y++) {
+					var pt = pixl.world[[x, y]];
+					if (pt !== undefined) {
+						pixl.draw_pixl({x: x, y: y}, pt.color);
+					}
+				}
+			}
+		}
+
+		pixl.redraw();
+
+		pixl.stage.addEventListener("wheel", function(ev) {
+			ev.preventDefault();
+			pixl.size += (pixl.size / 10) * Math.sign(ev.deltaY);
+			if (pixl.size < 5) {
+				pixl.size = 5;
+			} else if (pixl.size > pixl.window.w / 2) {
+				pixl.size = Math.round(pixl.window.w / 2);
+			}
+			pixl.redraw();
+		});
+
+		window.addEventListener("resize", function(ev) {
+			pixl.window.w = window.innerWidth;
+			pixl.window.h = window.innerHeight;
+			pixl.stage.width = pixl.window.w;
+			pixl.stage.height = pixl.window.h;
+			pixl.redraw();
+		});
+
+		pixl.drag = {start: undefined, current: undefined};
+		pixl.stage.addEventListener("mousedown", function(ev) {
+			/*if (document.mozPointerLockElement === null) {
+				document.addEventListener("mozpointerlockerror", console.log.bind(console));
+				pixl.stage.mozRequestPointerLock();
+			}*/
+
+			pixl.drag.start = {x: ev.clientX, y: ev.clientY};
+			pixl.drag.pos = pixl.pos;
+		});
+
+		pixl.stage.addEventListener("mousemove", function(ev) {
+			if (pixl.drag.start !== undefined) {
+				pixl.drag.current = {x: ev.clientX, y: ev.clientY};
+			}
+		});
+
+		pixl.stage.addEventListener("mouseup", function(ev) {
+			if (pixl.drag.current === undefined) {
+				var ev = polyfill.movement(ev);
+				pixl.draw_pixl(pixl.to_world({x: ev.clientX, y: ev.clientY}));
+			} else {
+				console.error("drag not implemented");
+			}
+			pixl.drag = {};
+		});
+
+		document.addEventListener("keydown", function(ev) {
+			if (ev.keyCode >= 37 && ev.keyCode <= 40) {
+				switch (ev.keyCode) {
+					case 37: // left
+						pixl.pos.x -= 1;
+						break;
+					case 38: // up
+						pixl.pos.y -= 1;
+						break;
+					case 39: // right
+						pixl.pos.x += 1;
+						break;
+					case 40: // down
+						pixl.pos.y += 1;
+						break;
+				}
+				pixl.redraw();
+			}
+		});
+	</script>
+</body>
+</html>
