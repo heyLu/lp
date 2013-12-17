@@ -151,7 +151,8 @@
 
 		pixl.online = false;
 		pixl.connect = function() {
-			pixl.ws = new WebSocket('ws://localhost:8001');
+			var conn = location.protocol == 'http:' ? 'ws://pixl.papill0n.org:8001' : 'ws://localhost:8001';
+			pixl.ws = new WebSocket(conn);
 			pixl.ws.onopen = function() { pixl.online = true; };
 			pixl.ws.onclose = function() { pixl.online = false; };
 			pixl.ws.onmessage = function(msg) {
