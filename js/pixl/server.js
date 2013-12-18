@@ -10,7 +10,8 @@ app.use(express.static(__dirname + "/public"));
 app.get('/stats', function(req, res) {
 	var stats = {
 		users: wss.clients.length,
-		pixls: Object.keys(world).length
+		pixls: Object.keys(world).length,
+		last_active: new Date(last_active).toISOString()
 	};
 	res.setHeader('Content-Type', 'text/plain');
 	res.send(JSON.stringify(stats, null, "  "));
@@ -63,6 +64,7 @@ server.listen(8001);
 
 var wss = new ws.Server({server: server});
 
+var last_active = 0;
 var world = {};
 
 wss.on('connection', function(socket) {
@@ -80,5 +82,7 @@ wss.on('connection', function(socket) {
 				client.send(msg);
 			}
 		});
+
+		last_active = Date.now();
 	});
 });
