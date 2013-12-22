@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+	<title>.trixl</title>
+	<meta charset="utf-8" />
+	<style>
+		#stage {
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
+	</style>
+</head>
+
+<body>
+	<canvas id="stage">
+		sorry. your browser is from the dark ages. please initiate
+		temporal leap to a minimally brighter future where browsers can
+		investigate the third dimension.
+	</canvas>
+	<script type="gl/vertex-shader">
+		attribute vec2 pos;
+
+		void main() {
+			gl_Position = vec4(pos, 0, 1);
+		}
+	</script>
+	<script type="gl/fragment-shader">
+		precision mediump float;
+
+		void main() {
+			gl_FragColor = vec4(0.2, 0.2, 0.2, 1);
+		}
+	</script>
+	<script>
+		window.trixl = {};
+		trixl.stage = document.querySelector("#stage");
+		trixl.window = {w: window.innerWidth, h: window.innerHeight};
+		trixl.stage.width = trixl.window.w;
+		trixl.stage.height = trixl.window.h;
+		var gl = trixl.gl = trixl.stage.getContext("webgl");
+
+		var vertexPosBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer);
+		var vertices = [-0.5, -0.5, 0.5, -0.5, 0.0, 0.5];
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+		var createShader = function(src, type) {
+			var shader = gl.createShader(type);
+			gl.shaderSource(shader, src);
+			gl.compileShader(shader);
+			if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+				throw gl.getShaderInfoLog(shader);
+			}
+			return shader;
+		}
+
+		var createProgram = function(vs, fs) {
+			var program = gl.createProgram();
+			var vs = createShader(vs, gl.VERTEX_SHADER);
+			var fs = createShader(fs, gl.FRAGMENT_SHADER);
+			gl.attachShader(program, vs);
+			gl.attachShader(program, fs);
+			gl.linkProgram(program);
+			if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+				throw gl.getProgramInfoLog(program);
+			}
+			return program;
+		}
+
+		var vs = document.querySelector("script[type='gl/vertex-shader']").textContent;
+		var fs = document.querySelector("script[type='gl/fragment-shader']").textContent;
+		var program = createProgram(vs, fs);
+		gl.useProgram(program);
+		program.vertexPosAttrib = gl.getAttribLocation(program, 'pos');
+		gl.enableVertexAttribArray(program.vertexPosAttrib);
+		gl.vertexAttribPointer(program.vertexPosBuffer, 2, gl.FLOAT, false, 0, 0);
+		gl.drawArrays(gl.TRIANGLES, 0, 3);
+	</script>
+</body>
+</html>
