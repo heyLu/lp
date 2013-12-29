@@ -19,32 +19,27 @@
 		investigate the third dimension.
 	</canvas>
 	<script type="gl/vertex-shader">
-		attribute vec2 pos;
+		attribute vec3 pos;
+		varying vec3 world_pos;
+
+		uniform mat4 transform;
 
 		void main() {
-			gl_Position = vec4(pos, 0, 1);
+			world_pos = pos;
+			//gl_Position = clipspace(dim.x, dim.y) * vec4(pos + translation, 1);
+			gl_Position = vec4(transform * vec4(pos, 1));
 		}
 	</script>
 	<script type="gl/fragment-shader">
 		precision mediump float;
+		varying vec3 world_pos;
 
 		void main() {
-			gl_FragColor = vec4(0.2, 0.2, 0.2, 1);
+			//gl_FragColor = vec4(gl_FragCoord.x / 901.0, gl_FragCoord.y / 688.0, 0.5, 1);
+			gl_FragColor = vec4(world_pos.x, world_pos.y, world_pos.z, 1);
 		}
 	</script>
 	<script>
-		window.trixl = {};
-		trixl.stage = document.querySelector("#stage");
-		trixl.window = {w: window.innerWidth, h: window.innerHeight};
-		trixl.stage.width = trixl.window.w;
-		trixl.stage.height = trixl.window.h;
-		var gl = trixl.gl = trixl.stage.getContext("webgl");
-
-		var vertexPosBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer);
-		var vertices = [-0.5, -0.5, 0.5, -0.5, 0.0, 0.5];
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-
 		var createShader = function(src, type) {
 			var shader = gl.createShader(type);
 			gl.shaderSource(shader, src);
@@ -68,14 +63,195 @@
 			return program;
 		}
 
+		var geometry = {};
+		geometry.cube = function() {
+			return [
+				// front
+				0, 0, 0,
+				1, 0, 0,
+				0, 1, 0,
+				0, 1, 0,
+				1, 0, 0,
+				1, 1, 0,
+
+				// back
+				1, 0, 1,
+				0, 0, 1,
+				1, 1, 1,
+				1, 1, 1,
+				0, 0, 1,
+				0, 1, 1,
+
+				// left
+				0, 0, 1,
+				0, 0, 0,
+				0, 1, 1,
+				0, 1, 1,
+				0, 0, 0,
+				0, 1, 0,
+
+				// right
+				1, 0, 0,
+				1, 0, 1,
+				1, 1, 0,
+				1, 1, 0,
+				1, 0, 1,
+				1, 1, 1,
+
+				// top
+				0, 1, 0,
+				1, 1, 0,
+				0, 1, 1,
+				0, 1, 1,
+				1, 1, 0,
+				1, 1, 1,
+
+				// bottom
+				0, 0, 1,
+				1, 0, 1,
+				0, 0, 0,
+				0, 0, 0,
+				1, 0, 1,
+				1, 0, 0
+			];
+		};
+
+		var matrix = {};
+		matrix.multiply = function(a, dim_a, b, dim_b) {
+			if (dim_a[1] != dim_b[0]) {
+				throw new Error("cols a != rows b");
+			} else {
+				var c = [];
+				var s = dim_a[1];
+				var n = dim_a[0],
+				    m = dim_b[1];
+				for (var i = 0; i < n; i++) {
+					for (var j = 0; j < m; j++) {
+						var sum = 0;
+						for (var k = 0; k < s; k++) {
+							sum += a[i * s + k] * b[k * m + j];
+						}
+						c[i * m + j] = sum;
+					}
+				}
+				return c;
+			}
+		};
+
+		matrix.multiplyMany4x4 = function() {
+			var m = arguments[0];
+			for(var i = 1; i < arguments.length; i++) {
+				m = matrix.multiply(m, [4, 4], arguments[i], [4, 4]);
+			}
+			return m;
+		}
+
+		matrix.transpose = function(m, dim) {
+			var t = [];
+			for(var i = 0; i < dim[0]; i++) {
+				for(var j = 0; j < dim[1]; j++) {
+					t[j * dim[0] + i] = m[i * dim[1] + j];
+				}
+			}
+			return t;
+		}
+
+		matrix.translate = function(tx, ty, tz) {
+			var tx = tx || 0.0, ty = ty || 0.0, tz = tz || 0.0;
+			return [
+				1, 0, 0, tx,
+				0, 1, 0, ty,
+				0, 0, 1, tz,
+				0, 0, 0,  1
+			];
+		}
+
+		matrix.scale = function(sx, sy, sz) {
+			var sx = sx || 1.0, sy = sy || 1.0, sz = sz || 1.0;
+			return [
+				sx, 0,  0,  0,
+				0,  sy, 0,  0,
+				0,  0,  sz, 0,
+				0,  0,  0,  1
+			];
+		}
+
+		matrix.rotateX = function(angle) {
+			var s = Math.sin(angle);
+			var c = Math.cos(angle);
+			return [
+				1,  0, 0, 0,
+				0,  c, s, 0,
+				0, -s, c, 0,
+				0,  0, 0, 1
+			];
+		}
+
+		matrix.rotateY = function(angle) {
+			var s = Math.sin(angle);
+			var c = Math.cos(angle);
+			return [
+				c, 0, -s, 0,
+				0, 1,  0, 0,
+				s, 0,  c, 0,
+				0, 0,  0, 1
+			];
+		}
+
+		matrix.rotateZ = function(angle) {
+			var s = Math.sin(angle);
+			var c = Math.cos(angle);
+			return [
+				 c, s, 0, 0,
+				-s, c, 0, 0,
+				 0, 0, 1, 0,
+				 0, 0, 0, 1
+			];
+		}
+	</script>
+	<script>
+		window.trixl = {};
+		trixl.stage = document.querySelector("#stage");
+		trixl.window = {w: window.innerWidth, h: window.innerHeight};
+		trixl.stage.width = trixl.window.w;
+		trixl.stage.height = trixl.window.h;
+		var gl = trixl.gl = trixl.stage.getContext("webgl");
+		//gl.enable(gl.CULL_FACE);
+		gl.enable(gl.DEPTH_TEST);
+
+		var vertexPosBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.cube()), gl.STATIC_DRAW);
+
 		var vs = document.querySelector("script[type='gl/vertex-shader']").textContent;
 		var fs = document.querySelector("script[type='gl/fragment-shader']").textContent;
 		var program = createProgram(vs, fs);
 		gl.useProgram(program);
+
 		program.vertexPosAttrib = gl.getAttribLocation(program, 'pos');
 		gl.enableVertexAttribArray(program.vertexPosAttrib);
-		gl.vertexAttribPointer(program.vertexPosBuffer, 2, gl.FLOAT, false, 0, 0);
-		gl.drawArrays(gl.TRIANGLES, 0, 3);
+		gl.vertexAttribPointer(program.vertexPosBuffer, 3, gl.FLOAT, false, 0, 0);
+
+		var angle = {x: 0, y: 0, z: 0};
+		setInterval(function() {
+			program.transform = gl.getUniformLocation(program, 'transform');
+			var transform = matrix.multiplyMany4x4(
+				matrix.rotateX(angle.x / 5),
+				matrix.rotateY(angle.y / 5),
+				matrix.rotateZ(angle.z / 5),
+				//matrix.translate(-0.5, -0.5, 0),
+				matrix.translate(-0.5, -0.5, -0.5),
+				matrix.scale(0.5, 0.5, 0.5)
+			);
+			gl.uniformMatrix4fv(program.transform, false, matrix.transpose(transform, [4, 4]));
+
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+			gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
+
+			angle.x += Math.PI / 10;
+			angle.y += Math.PI / 30;
+			angle.z += Math.PI / 50;
+		}, 50);
 	</script>
 </body>
 </html>
