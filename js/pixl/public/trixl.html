@@ -146,6 +146,16 @@
 			return m;
 		}
 
+		matrix.identity = function(dim) {
+			var m = [];
+			for(var i = 0; i < dim; i++) {
+				for(var j = 0; j < dim; j++) {
+					m[i * dim + j] = i == j ? 1.0 : 0.0;
+				}
+			}
+			return m;
+		}
+
 		matrix.transpose = function(m, dim) {
 			var t = [];
 			for(var i = 0; i < dim[0]; i++) {
