@@ -2,6 +2,8 @@
 
 draw pixls.
 
+![what it looks like](screen.png)
+
 see the [whirlwind intro][] for a quickstart.
 
 it's live at <http://pixl.papill0n.org>.
