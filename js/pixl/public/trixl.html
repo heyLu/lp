@@ -169,10 +169,10 @@
 		matrix.translate = function(tx, ty, tz) {
 			var tx = tx || 0.0, ty = ty || 0.0, tz = tz || 0.0;
 			return [
-				1, 0, 0, tx,
-				0, 1, 0, ty,
-				0, 0, 1, tz,
-				0, 0, 0,  1
+				1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				tx, ty, tz, 1
 			];
 		}
 
