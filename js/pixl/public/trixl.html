@@ -38,10 +38,15 @@
 	</script>
 	<script type="gl/fragment-shader">
 		precision mediump float;
+		uniform vec4 color;
 		varying vec3 world_pos;
 
 		void main() {
-			gl_FragColor = vec4(world_pos.x, world_pos.y, world_pos.z, 1);
+			if (color.x >= 0.0 && color.x <= 1.0) {
+				gl_FragColor = color;
+			} else {
+				gl_FragColor = vec4(world_pos.x, world_pos.y, world_pos.z, 1);
+			}
 		}
 	</script>
 	<script>
@@ -242,7 +247,7 @@
 				return s;
 			}
 
-			trixl.debug.innerHTML = coord_html(pos[0]) + ", " + coord_html(pos[1]) + ", " + coord_html(pos[2]);
+			return coord_html(pos[0]) + ", " + coord_html(pos[1]) + ", " + coord_html(pos[2]);
 		}
 		var gl = trixl.gl = trixl.stage.getContext("webgl");
 		//gl.enable(gl.CULL_FACE);
@@ -261,25 +266,45 @@
 		gl.enableVertexAttribArray(program.vertexPosAttrib);
 		gl.vertexAttribPointer(program.vertexPosBuffer, 3, gl.FLOAT, false, 0, 0);
 
+		program.color = gl.getUniformLocation(program, 'color');
+		gl.uniform4f(program.color, -1, -1, -1, -1);
+
 		var angle = {x: 0, y: 0, z: 0};
+		var offset = {x: 0, y: 0, z: 0};
 		program.transform = gl.getUniformLocation(program, 'transform');
 		trixl.redraw = function() {
-			var transform = matrix.multiplyMany4x4(
-				//matrix.identity(4), matrix.identity(4) /*
-				matrix.translate(-0.5, -0.5, -0.0),
-				matrix.scale(0.5, 0.5, 0.5),
-				matrix.rotateZ(angle.z / 4),
-				//matrix.rotateY(angle.y / 10),
-				matrix.rotateX(angle.x / 4),
-				//matrix.translate(-0.5, -0.5, 0),
-				//matrix.translate(-0.5, -0.5, -0.5),
-				matrix.translate(-0.0, -0.0, -0.1)
-				//matrix.perspective(Math.PI / 3, trixl.window.w / trixl.window.h, 0, 2000) //*/
-			);
-			trixl.debug_pos(matrix.multiply([1,1,1,1], [1, 4], transform, [4, 4]));
-			gl.uniformMatrix4fv(program.transform, false, transform);
+			var aspect = trixl.window.w / trixl.window.h;
+			var transform = function(pos) {
+				return matrix.multiplyMany4x4(
+					//matrix.scale(0.6, 0.6, 0.6),
+					matrix.translate(-0.5, -0.5, -0.5),
+					matrix.rotateZ(angle.z / 10),
+					//matrix.rotateY(angle.y / 10),
+					matrix.rotateX(angle.x / 10),
+					matrix.translate(pos[0] + offset.x, pos[1] + offset.y, pos[2] + offset.z),
+					[1, 0, 0, 0,
+					 0, 1, 0, 0,
+					 0, 0, 1, 1,
+					 0, 0, 0, 1],
+					[Math.PI / 3 / aspect, 0, 0, 0,
+					 0, Math.PI / 3, 0, 0,
+					 0, 0, 1, 0,
+					 0, 0, 0, 1]
+				);
+			}
+			var t = transform([0.0, 0.0, 2]);
+			trixl.debug.innerHTML = "";
+			[[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0],
+			 [0, 0, 1], [0, 1, 1], [1, 0, 1], [1, 1, 1]].forEach(function(el) {
+				trixl.debug.innerHTML +=
+				trixl.debug_pos(matrix.multiply([el[0], el[1], el[2], 1], [1, 4], t, [4, 4]));
+				trixl.debug.innerHTML += "<br />";
+			 });
 
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+			gl.uniform4f(program.color, (Math.sin(angle.x) + 1.0) * 0.5, 0, 0, 1.0);
+			gl.uniformMatrix4fv(program.transform, false, t);
 			gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
 
 			angle.x += Math.PI / 10;
