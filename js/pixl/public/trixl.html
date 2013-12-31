@@ -307,9 +307,30 @@
 			gl.uniformMatrix4fv(program.transform, false, t);
 			gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
 
+			var c = (Math.sin(angle.x) + 1.0) * 0.5;
+			gl.uniform4f(program.color, c, c, c, 1.0);
+
+			gl.uniformMatrix4fv(program.transform, false, transform([-3.0, 0.0, 2]));
+			gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
+
+			gl.uniformMatrix4fv(program.transform, false, transform([+3.0, 0.0, 2]));
+			gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
+
+			gl.uniformMatrix4fv(program.transform, false, transform([+0.0, +2.0, 2]));
+			gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
+
+			gl.uniformMatrix4fv(program.transform, false, transform([+0.0, -2.0, 2]));
+			gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
+
+			gl.uniform4f(program.color, -1, -1, -1, 0);
+
 			angle.x += Math.PI / 10;
 			angle.y += Math.PI / 10;
 			angle.z += Math.PI / 10;
+
+			offset.x = Math.sin(angle.x * 0.1);
+			offset.y = Math.sin(angle.y * 0.1);
+			offset.z = Math.cos(angle.z * 0.1) * 2;
 		}
 
 		trixl.step = function() {
