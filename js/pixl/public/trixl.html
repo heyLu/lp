@@ -26,7 +26,6 @@
 
 		void main() {
 			world_pos = pos;
-			//gl_Position = clipspace(dim.x, dim.y) * vec4(pos + translation, 1);
 			gl_Position = vec4(transform * vec4(pos, 1));
 		}
 	</script>
@@ -35,7 +34,6 @@
 		varying vec3 world_pos;
 
 		void main() {
-			//gl_FragColor = vec4(gl_FragCoord.x / 901.0, gl_FragCoord.y / 688.0, 0.5, 1);
 			gl_FragColor = vec4(world_pos.x, world_pos.y, world_pos.z, 1);
 		}
 	</script>
