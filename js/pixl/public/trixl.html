@@ -316,10 +316,10 @@
 			gl.uniformMatrix4fv(program.transform, false, transform([+3.0, 0.0, 2]));
 			gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
 
-			gl.uniformMatrix4fv(program.transform, false, transform([+0.0, +2.0, 2]));
+			gl.uniformMatrix4fv(program.transform, false, transform([+0.0, +3.0, 2]));
 			gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
 
-			gl.uniformMatrix4fv(program.transform, false, transform([+0.0, -2.0, 2]));
+			gl.uniformMatrix4fv(program.transform, false, transform([+0.0, -3.0, 2]));
 			gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
 
 			gl.uniform4f(program.color, -1, -1, -1, 0);
