@@ -262,25 +262,44 @@
 		gl.vertexAttribPointer(program.vertexPosBuffer, 3, gl.FLOAT, false, 0, 0);
 
 		var angle = {x: 0, y: 0, z: 0};
-		setInterval(function() {
-			program.transform = gl.getUniformLocation(program, 'transform');
+		program.transform = gl.getUniformLocation(program, 'transform');
+		trixl.redraw = function() {
 			var transform = matrix.multiplyMany4x4(
-				matrix.rotateX(angle.x / 5),
-				matrix.rotateY(angle.y / 5),
-				matrix.rotateZ(angle.z / 5),
+				//matrix.identity(4), matrix.identity(4) /*
+				matrix.translate(-0.5, -0.5, -0.0),
+				matrix.scale(0.5, 0.5, 0.5),
+				matrix.rotateZ(angle.z / 4),
+				//matrix.rotateY(angle.y / 10),
+				matrix.rotateX(angle.x / 4),
 				//matrix.translate(-0.5, -0.5, 0),
-				matrix.translate(-0.5, -0.5, -0.5),
-				matrix.scale(0.5, 0.5, 0.5)
+				//matrix.translate(-0.5, -0.5, -0.5),
+				matrix.translate(-0.0, -0.0, -0.1)
+				//matrix.perspective(Math.PI / 3, trixl.window.w / trixl.window.h, 0, 2000) //*/
 			);
-			gl.uniformMatrix4fv(program.transform, false, matrix.transpose(transform, [4, 4]));
+			trixl.debug_pos(matrix.multiply([1,1,1,1], [1, 4], transform, [4, 4]));
+			gl.uniformMatrix4fv(program.transform, false, transform);
 
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 			gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
 
 			angle.x += Math.PI / 10;
-			angle.y += Math.PI / 30;
-			angle.z += Math.PI / 50;
-		}, 50);
+			angle.y += Math.PI / 10;
+			angle.z += Math.PI / 10;
+		}
+
+		trixl.step = function() {
+			trixl.redraw();
+			trixl.step.reqId = requestAnimationFrame(trixl.step);
+		}
+		trixl.start = function() {
+			trixl.step.reqId = requestAnimationFrame(trixl.step);
+		}
+		trixl.stop = function() {
+			cancelAnimationFrame(trixl.step.reqId);
+			trixl.step.reqId = null;
+		}
+
+		trixl.start();
 	</script>
 </body>
 </html>
