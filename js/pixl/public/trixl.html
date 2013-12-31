@@ -52,6 +52,16 @@
 	<script src="gl.js"></script>
 	<script src="geometry.js"></script>
 	<script src="matrix.js"></script>
+	<script src="glmatrix.js"></script>
+	<script>
+		mat4.multiplyMany = function() {
+			var m = arguments[0];
+			for(var i = 1; i < arguments.length; i++) {
+				m = mat4.multiply([], arguments[i], m);
+			}
+			return m;
+		}
+	</script>
 	<script>
 		window.trixl = {};
 		trixl.stage = document.querySelector("#stage");
@@ -98,7 +108,7 @@
 		trixl.redraw = function() {
 			var aspect = trixl.window.w / trixl.window.h;
 			var transform = function(pos) {
-				return matrix.multiplyMany4x4(
+				return mat4.multiplyMany(
 					//matrix.scale(0.6, 0.6, 0.6),
 					matrix.translate(-0.5, -0.5, -0.5),
 					matrix.rotateZ(angle.z / 10),
