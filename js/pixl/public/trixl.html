@@ -310,6 +310,14 @@
 				}
 			}
 		});
+
+		window.onresize = function() {
+			trixl.window.w = window.innerWidth;
+			trixl.window.h = window.innerHeight;
+			trixl.stage.width = trixl.window.w;
+			trixl.stage.height = trixl.window.h;
+			gl.viewport(0, 0, trixl.window.w, trixl.window.h);
+		}
 	</script>
 </body>
 </html>
