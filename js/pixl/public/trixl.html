@@ -228,6 +228,15 @@
 				 0, 0, 0, 1
 			];
 		}
+
+		matrix.persective = function(fov, aspect) {
+			return [
+				Math.PI / 3 / aspect, 0, 0, 0,
+				0, Math.PI / 3, 0, 0,
+				0, 0, 1, 1,
+				0, 0, 0, 1
+			];
+		}
 	</script>
 	<script>
 		window.trixl = {};
@@ -282,14 +291,7 @@
 					//matrix.rotateY(angle.y / 10),
 					matrix.rotateX(angle.x / 10),
 					matrix.translate(pos[0] + offset.x, pos[1] + offset.y, pos[2] + offset.z),
-					[1, 0, 0, 0,
-					 0, 1, 0, 0,
-					 0, 0, 1, 1,
-					 0, 0, 0, 1],
-					[Math.PI / 3 / aspect, 0, 0, 0,
-					 0, Math.PI / 3, 0, 0,
-					 0, 0, 1, 0,
-					 0, 0, 0, 1]
+					matrix.persective(Math.PI / 3, aspect)
 				);
 			}
 			var t = transform([0.0, 0.0, 2]);
