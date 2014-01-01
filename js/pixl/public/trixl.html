@@ -206,16 +206,16 @@
 				}
 			}
 
-			if (isPressed(37)) {
+			if (isPressed(37) || isPressed(65)) { // left || a
 				trixl.pos.x += 0.1;
 			}
-			if (isPressed(38)) {
+			if (isPressed(38) || isPressed(87)) { // up || w
 				trixl.pos.z -= 0.1;
 			}
-			if (isPressed(39)) {
+			if (isPressed(39) || isPressed(68)) { // right || d
 				trixl.pos.x -= 0.1;
 			}
-			if (isPressed(40)) {
+			if (isPressed(40) || isPressed(83)) { // down || s
 				trixl.pos.z += 0.1;
 			}
 		});
