@@ -103,6 +103,7 @@
 		gl.uniform4f(program.color, -1, -1, -1, -1);
 
 		trixl.pos = {x: 0, y: 0, z: 5, a: 0};
+		trixl.focus = {x: 0, y: 0, z: 5, a: 0};
 
 		var angle = {x: 0, y: 0, z: 0};
 		var offset = {x: 0, y: 0, z: 0};
@@ -114,8 +115,8 @@
 			);
 			var camera_pos = camera.slice(12, 15);
 			var focus_pos = mat4.multiplyMany(
-				matrix.translate(trixl.pos.x, trixl.pos.y, trixl.pos.z + 5),
-				matrix.rotateY(trixl.pos.a)
+				matrix.translate(trixl.pos.x + trixl.focus.x, trixl.pos.y + trixl.focus.y, trixl.pos.z + trixl.focus.z),
+				matrix.rotateY(trixl.pos.a + trixl.focus.a)
 			).slice(12, 15);
 			var up = [0, 1, 0];
 			camera = mat4.lookAt([], camera_pos, focus_pos, up);
