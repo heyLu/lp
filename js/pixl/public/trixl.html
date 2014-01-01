@@ -102,10 +102,21 @@
 		program.color = gl.getUniformLocation(program, 'color');
 		gl.uniform4f(program.color, -1, -1, -1, -1);
 
+		trixl.pos = {x: 0, y: 0, z: 0, a: 0};
+
 		var angle = {x: 0, y: 0, z: 0};
 		var offset = {x: 0, y: 0, z: 0};
 		program.transform = gl.getUniformLocation(program, 'transform');
 		trixl.redraw = function() {
+			var camera = mat4.multiplyMany(
+				matrix.translate(trixl.pos.x, trixl.pos.y, trixl.pos.z),
+				matrix.rotateY(trixl.pos.a)
+			);
+			var camera_pos = [camera[12], camera[13], camera[14]];
+			var up = [0, 1, 0];
+			camera = mat4.lookAt([], camera_pos, [0, 0, 0], up);
+			var view = mat4.invert([], camera);
+
 			var aspect = trixl.window.w / trixl.window.h;
 			var transform = function(pos) {
 				return mat4.multiplyMany(
@@ -115,6 +126,7 @@
 					//matrix.rotateY(angle.y / 10),
 					matrix.rotateX(angle.x / 10),
 					matrix.translate(pos[0] + offset.x, pos[1] + offset.y, pos[2] + offset.z),
+					view,
 					matrix.persective(Math.PI / 3, aspect)
 				);
 			}
