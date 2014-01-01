@@ -224,6 +224,21 @@
 			trixl.input.keys.delete(ev.keyCode);
 		});
 
+		trixl.input.mouse = {last: null};
+		trixl.stage.addEventListener("mousemove",  function(ev) {
+			var mouse = trixl.input.mouse;
+
+			if (mouse.last === null) {
+				mouse.last = {x: ev.clientX, y: ev.clientY};
+			}
+
+			var diff = { x: mouse.last.x - ev.clientX, y: mouse.last.y - ev.clientY };
+			trixl.focus.a += diff.x * 0.01;
+			trixl.focus.y += diff.y * 0.01;
+
+			mouse.last = {x: ev.clientX, y: ev.clientY};
+		});
+
 		window.onresize = function() {
 			trixl.window.w = window.innerWidth;
 			trixl.window.h = window.innerHeight;
