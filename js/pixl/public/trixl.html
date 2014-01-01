@@ -186,12 +186,26 @@
 		trixl.start();
 
 		document.addEventListener("keydown", function(ev) {
-			if (ev.keyCode == 32) {
+			switch (ev.keyCode) {
+			case 32:
 				if (trixl.step.reqId == null) {
 					trixl.start();
 				} else {
 					trixl.stop();
 				}
+				break;
+			case 37: // left
+				trixl.pos.x -= 0.1;
+				break;
+			case 38: // up
+				trixl.pos.z -= 0.1;
+				break;
+			case 39: // right
+				trixl.pos.x += 0.1;
+				break;
+			case 40: // down
+				trixl.pos.z += 0.1;
+				break;
 			}
 		});
 
