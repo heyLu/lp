@@ -189,28 +189,38 @@
 
 		trixl.start();
 
+		trixl.input = {};
+		trixl.input.keys = new Set();
 		document.addEventListener("keydown", function(ev) {
-			switch (ev.keyCode) {
-			case 32:
+			trixl.input.keys.add(ev.keyCode);
+			var isPressed = function(keyCode) {
+				return trixl.input.keys.has(keyCode);
+			}
+
+			if (isPressed(32)) { // space
 				if (trixl.step.reqId == null) {
 					trixl.start();
 				} else {
 					trixl.stop();
 				}
-				break;
-			case 37: // left
-				trixl.pos.x -= 0.1;
-				break;
-			case 38: // up
-				trixl.pos.z -= 0.1;
-				break;
-			case 39: // right
-				trixl.pos.x += 0.1;
-				break;
-			case 40: // down
-				trixl.pos.z += 0.1;
-				break;
 			}
+
+			if (isPressed(37)) {
+				trixl.pos.x += 0.1;
+			}
+			if (isPressed(38)) {
+				trixl.pos.z -= 0.1;
+			}
+			if (isPressed(39)) {
+				trixl.pos.x -= 0.1;
+			}
+			if (isPressed(40)) {
+				trixl.pos.z += 0.1;
+			}
+		});
+
+		document.addEventListener("keyup", function(ev) {
+			trixl.input.keys.delete(ev.keyCode);
 		});
 
 		window.onresize = function() {
