@@ -101,7 +101,7 @@ matrix.rotateZ = function(angle) {
 	];
 }
 
-matrix.persective = function(fov, aspect) {
+matrix.perspective = function(fov, aspect) {
 	return [
 		Math.PI / 3 / aspect, 0, 0, 0,
 		0, Math.PI / 3, 0, 0,
