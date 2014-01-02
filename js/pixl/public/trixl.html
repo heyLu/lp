@@ -146,8 +146,7 @@
 		var offset = {x: 0, y: 0, z: 0};
 		program.transform = gl.getUniformLocation(program, 'transform');
 		trixl.redraw = function() {
-			var camera = mat4.lookAt([], trixl.camera.pos, trixl.camera.focus, trixl.camera.up);
-			var view = mat4.invert([], camera);
+			var view = mat4.lookAt([], trixl.camera.pos, trixl.camera.focus, trixl.camera.up);
 
 			var aspect = trixl.window.w / trixl.window.h;
 			var transform = function(pos) {
