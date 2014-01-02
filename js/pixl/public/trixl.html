@@ -142,6 +142,8 @@
 		program.color = gl.getUniformLocation(program, 'color');
 		gl.uniform4f(program.color, -1, -1, -1, -1);
 
+		trixl.color = [0, 0, 0, 1];
+
 		trixl.world = new Map([
 			[[0, 0, 2], {color: [0.7, 0, 0, 1]}],
 			[[-3.0, +0.0, 2], {color: [0.5, 0.5, 0.5, 1]}],
@@ -167,7 +169,7 @@
 			    y = lo + Math.round(Math.random() * (hi - lo)),
 			    z = lo + Math.round(Math.random() * (hi - lo)),
 			    color = color || [Math.random(), Math.random(), Math.random(), 1];
-			trixl.world.set([x, y, z], {color: color});
+			trixl.world.set([x, y, z], {color: color || trixl.color});
 		}
 
 		trixl.generate.many = function(n, lo, hi, color) {
@@ -212,7 +214,7 @@
 			for (var pair of trixl.world) {
 				var pos = pair[0], data = pair[1];
 
-				gl.uniform4fv(program.color, data.color);
+				gl.uniform4fv(program.color, data ? data.color || trixl.color : trixl.color);
 				gl.uniformMatrix4fv(program.transform, false, transform(pos));
 				gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
 			}
