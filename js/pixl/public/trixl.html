@@ -61,6 +61,15 @@
 			}
 			return m;
 		}
+
+		var range = function(lo, hi) {
+			var both = hi !== undefined,
+			    l = both ? lo : 0,
+			    h = both ? hi : lo;
+			return Array.apply(null, Array(h - l)).map(function(_, i) {
+				return l + i;
+			});
+		}
 	</script>
 	<script>
 		window.trixl = {};
@@ -180,6 +189,18 @@
 			trixl.generate.many(10, -3, 3);
 			trixl.generate.many(100, -25, 25);
 			trixl.generate.many(1000, -100, 100);
+		}
+
+		trixl.geometry = {};
+
+		trixl.geometry.circle = function(pos, radius, color) {
+			range(0, 2 * radius).map(function(i) {
+				trixl.world.set([
+					pos[0] + radius * Math.sin(i * Math.PI / radius),
+					pos[1] + radius * Math.cos(i * Math.PI / radius),
+					pos[2]
+				], {color: color || trixl.color});
+			});
 		}
 
 		var angle = {x: 0, y: 0, z: 0};
