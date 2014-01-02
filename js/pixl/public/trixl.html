@@ -161,6 +161,25 @@
 			return trixl.world.delete(key);
 		}
 
+		trixl.generate = {};
+		trixl.generate.random = function(lo, hi, color) {
+			var x = lo + Math.round(Math.random() * (hi - lo)),
+			    y = lo + Math.round(Math.random() * (hi - lo)),
+			    z = lo + Math.round(Math.random() * (hi - lo)),
+			    color = color || [Math.random(), Math.random(), Math.random(), 1];
+			trixl.world.set([x, y, z], {color: color});
+		}
+
+		trixl.generate.many = function(n, lo, hi, color) {
+			Array.apply(null, Array(n)).map(function() { trixl.generate.random(lo, hi, color) });
+		}
+
+		trixl.generate.fun = function() {
+			trixl.generate.many(10, -3, 3);
+			trixl.generate.many(100, -25, 25);
+			trixl.generate.many(1000, -100, 100);
+		}
+
 		var angle = {x: 0, y: 0, z: 0};
 		var offset = {x: 0, y: 0, z: 0};
 		program.transform = gl.getUniformLocation(program, 'transform');
