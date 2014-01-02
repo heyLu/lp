@@ -86,6 +86,46 @@
 		//gl.enable(gl.CULL_FACE);
 		gl.enable(gl.DEPTH_TEST);
 
+		trixl.camera = { pos: [0, 0, 5], focus: [0, 0, 10], up: [0, 1, 0] };
+		trixl.camera.front = function() {
+			var front = vec3.subtract([], trixl.camera.focus, trixl.camera.pos);
+			return vec3.normalize(front, front);
+		}
+		trixl.camera.strafe = function(front) {
+			var strafe = vec3.cross([], front || trixl.camera.front(), trixl.camera.up);
+			return vec3.normalize(strafe, strafe);
+		}
+		trixl.camera.forward = function(scale) {
+			var front = trixl.camera.front();
+			vec3.scale(front, front, scale);
+
+			vec3.add(trixl.camera.pos, trixl.camera.pos, front);
+			vec3.add(trixl.camera.focus, trixl.camera.focus, front);
+		}
+		trixl.camera.sideways = function(scale) {
+			var front = trixl.camera.front();
+			var strafe = trixl.camera.strafe(front);
+			vec3.scale(strafe, strafe, scale);
+
+			vec3.add(trixl.camera.pos, trixl.camera.pos, strafe);
+			vec3.add(trixl.camera.focus, trixl.camera.focus, strafe);
+		}
+		trixl.camera.rotate = function(dx, dy) {
+			var front = trixl.camera.front();
+			var strafe = trixl.camera.strafe(front);
+
+			trixl.camera.rotateAround(dx, trixl.camera.up);
+			trixl.camera.rotateAround(dy, strafe);
+		}
+		trixl.camera.rotateAround = function(angle, axis) {
+			var front = trixl.camera.front();
+
+			var q = quat.setAxisAngle([], axis, angle);
+			vec3.transformQuat(front, front, q);
+
+			vec3.add(trixl.camera.focus, trixl.camera.pos, front);
+		}
+
 		var vertexPosBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.cube()), gl.STATIC_DRAW);
@@ -102,30 +142,16 @@
 		program.color = gl.getUniformLocation(program, 'color');
 		gl.uniform4f(program.color, -1, -1, -1, -1);
 
-		trixl.pos = {x: 0, y: 0, z: 5, a: 0};
-		trixl.focus = {x: 0, y: 0, z: 5, a: 0};
-
 		var angle = {x: 0, y: 0, z: 0};
 		var offset = {x: 0, y: 0, z: 0};
 		program.transform = gl.getUniformLocation(program, 'transform');
 		trixl.redraw = function() {
-			var camera = mat4.multiplyMany(
-				matrix.translate(trixl.pos.x, trixl.pos.y, trixl.pos.z),
-				matrix.rotateY(trixl.pos.a)
-			);
-			var camera_pos = camera.slice(12, 15);
-			var focus_pos = mat4.multiplyMany(
-				matrix.translate(trixl.pos.x + trixl.focus.x, trixl.pos.y + trixl.focus.y, trixl.pos.z + trixl.focus.z),
-				matrix.rotateY(trixl.pos.a + trixl.focus.a)
-			).slice(12, 15);
-			var up = [0, 1, 0];
-			camera = mat4.lookAt([], camera_pos, focus_pos, up);
+			var camera = mat4.lookAt([], trixl.camera.pos, trixl.camera.focus, trixl.camera.up);
 			var view = mat4.invert([], camera);
 
 			var aspect = trixl.window.w / trixl.window.h;
 			var transform = function(pos) {
 				return mat4.multiplyMany(
-					//matrix.scale(0.6, 0.6, 0.6),
 					matrix.translate(-0.5, -0.5, -0.5),
 					matrix.rotateZ(angle.z / 10),
 					//matrix.rotateY(angle.y / 10),
@@ -207,16 +233,16 @@
 			}
 
 			if (isPressed(37) || isPressed(65)) { // left || a
-				trixl.pos.x += 0.1;
+				trixl.camera.sideways(-0.05);
 			}
 			if (isPressed(38) || isPressed(87)) { // up || w
-				trixl.pos.z -= 0.1;
+				trixl.camera.forward(-0.05);
 			}
 			if (isPressed(39) || isPressed(68)) { // right || d
-				trixl.pos.x -= 0.1;
+				trixl.camera.sideways(0.05);
 			}
 			if (isPressed(40) || isPressed(83)) { // down || s
-				trixl.pos.z += 0.1;
+				trixl.camera.forward(0.05);
 			}
 		});
 
@@ -233,8 +259,7 @@
 			}
 
 			var diff = { x: mouse.last.x - ev.clientX, y: mouse.last.y - ev.clientY };
-			trixl.focus.a += diff.x * 0.01;
-			trixl.focus.y += diff.y * 0.01;
+			trixl.camera.rotate(diff.x * 0.01, diff.y * 0.01);
 
 			mouse.last = {x: ev.clientX, y: ev.clientY};
 		});
