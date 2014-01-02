@@ -150,6 +150,17 @@
 			[[+0.0, +3.0, 2], {color: [0.5, 0.5, 0.5, 1]}]
 		]);
 
+		trixl.world.remove = function(pos) {
+			var key = null;
+			for(var k of trixl.world.keys()) {
+				if (k[0] === pos[0] && k[1] === pos[1] && k[2] === pos[2]) {
+					key = k;
+					break;
+				}
+			}
+			return trixl.world.delete(key);
+		}
+
 		var angle = {x: 0, y: 0, z: 0};
 		var offset = {x: 0, y: 0, z: 0};
 		program.transform = gl.getUniformLocation(program, 'transform');
