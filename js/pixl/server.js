@@ -66,7 +66,7 @@ app.get('/load/:name', function(req, res) {
 var server = http.createServer(app);
 server.listen(8001);
 
-var wss = new ws.Server({server: server});
+var wss = new ws.Server({server: server, path: '/ws'});
 
 var last_active = 0;
 var world = {};

@@ -184,7 +184,7 @@
 
 		pixl.online = false;
 		pixl.connect = function() {
-			pixl.ws = new WebSocket('ws://' + (location.host || 'localhost:8001'));
+			pixl.ws = new WebSocket('ws://' + (location.host || 'localhost:8001') + '/ws');
 			pixl.ws.onopen = function() {
 				pixl.online = true;
 				pixl.status.online.style.backgroundColor = "green";
