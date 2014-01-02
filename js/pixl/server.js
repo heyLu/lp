@@ -18,11 +18,13 @@ app.get('/stats', function(req, res) {
 		last_active: new Date(last_active).toISOString()
 	};
 	res.setHeader('Content-Type', 'text/plain');
+	res.setHeader('Access-Control-Allow-Origin', '*');
 	res.send(JSON.stringify(stats, null, "  "));
 });
 
 app.get('/world', function(req, res) {
 	res.setHeader('Content-Type', 'text/plain');
+	res.setHeader('Access-Control-Allow-Origin', '*');
 	res.send(JSON.stringify(world));
 });
 
