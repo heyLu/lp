@@ -242,6 +242,8 @@
 
 		trixl.start();
 
+		trixl.speed = { move: 0.1, turn: 0.01 }
+
 		trixl.input = {};
 		trixl.input.keys = new Set();
 		document.addEventListener("keydown", function(ev) {
@@ -259,16 +261,16 @@
 			}
 
 			if (isPressed(37) || isPressed(65)) { // left || a
-				trixl.camera.sideways(-0.1);
+				trixl.camera.sideways(-trixl.speed.move);
 			}
 			if (isPressed(38) || isPressed(87)) { // up || w
-				trixl.camera.forward(-0.1);
+				trixl.camera.forward(-trixl.speed.move);
 			}
 			if (isPressed(39) || isPressed(68)) { // right || d
-				trixl.camera.sideways(0.1);
+				trixl.camera.sideways(trixl.speed.move);
 			}
 			if (isPressed(40) || isPressed(83)) { // down || s
-				trixl.camera.forward(0.1);
+				trixl.camera.forward(trixl.speed.move);
 			}
 		});
 
@@ -285,7 +287,7 @@
 			}
 
 			var diff = { x: mouse.last.x - ev.clientX, y: mouse.last.y - ev.clientY };
-			trixl.camera.rotate(diff.x * 0.01, diff.y * 0.01);
+			trixl.camera.rotate(diff.x * trixl.speed.turn, diff.y * trixl.speed.turn);
 
 			mouse.last = {x: ev.clientX, y: ev.clientY};
 		});
