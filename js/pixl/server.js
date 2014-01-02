@@ -7,6 +7,10 @@ var path = require('path');
 var app = express();
 app.use(express.static(__dirname + "/public"));
 
+app.get('/3', function(req, res) {
+	res.sendfile('trixl.html', {root: './public'});
+});
+
 app.get('/stats', function(req, res) {
 	var stats = {
 		users: wss.clients.length,
