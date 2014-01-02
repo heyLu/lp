@@ -114,8 +114,8 @@
 			var front = trixl.camera.front();
 			var strafe = trixl.camera.strafe(front);
 
-			trixl.camera.rotateAround(dx, trixl.camera.up);
-			trixl.camera.rotateAround(dy, strafe);
+			trixl.camera.rotateAround(-dx, trixl.camera.up);
+			trixl.camera.rotateAround(-dy, strafe);
 		}
 		trixl.camera.rotateAround = function(angle, axis) {
 			var front = trixl.camera.front();
