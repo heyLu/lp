@@ -70,6 +70,17 @@
 				return l + i;
 			});
 		}
+
+		var rgbFromCss = function(color) {
+			var el = document.createElement('div');
+			el.style.color = color;
+			var style = getComputedStyle(el);
+			var rgb = style.getPropertyCSSValue('color').getRGBColorValue();
+			var f = function(val) {
+				return val.getFloatValue(CSSPrimitiveValue.CSS_NUMBER);
+			}
+			return [f(rgb.red), f(rgb.green), f(rgb.blue), f(rgb.alpha)];
+		}
 	</script>
 	<script>
 		window.trixl = {};
@@ -315,6 +326,26 @@
 			gl.viewport(0, 0, trixl.window.w, trixl.window.h);
 			trixl.redraw();
 		}
+
+		trixl.importPixls = function(url) {
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', url || 'http://pixl.papill0n.org/world');
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState == 4) {
+					var world = JSON.parse(xhr.responseText);
+					var keys = Object.keys(world);
+					for (var i = 0; i < keys.length; i++) {
+						var key = keys[i];
+						var coords = key.split(',').map(function(n) { return parseInt(n); });
+						var color = rgbFromCss(world[key].color)
+						trixl.world.set([-coords[0], -coords[1], 0],
+							{color: [color[0] / 255.0, color[1] / 255, color[2] / 255, color[3]]});
+					}
+				}
+			}
+			xhr.send();
+		}
+
 	</script>
 </body>
 </html>
