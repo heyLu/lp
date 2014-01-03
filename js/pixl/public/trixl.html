@@ -256,6 +256,31 @@
 			return wavies;
 		}
 
+		trixl.dynamic.jumping = function(lo, hi, interval, color) {
+			var pos = [rand(lo, hi), rand(lo, hi), rand(lo, hi)];
+			var last = 0;
+			var interval = interval || 1000;
+			var color = color || trixl.color;
+			return function(t) {
+				if (Math.abs(last - t) > interval) {
+					pos = [rand(lo, hi), rand(lo, hi), rand(lo, hi)];
+					last = t;
+				}
+				return {x: pos[0], y: pos[1], z: pos[2], color: color};
+			}
+		}
+
+		trixl.dynamic.blinking = function(pos, interval, color) {
+			var interval = interval || 5000;
+			var color = color || trixl.color;
+
+			return function(t) {
+				var c= color;
+				c[3] = Math.sin((t % interval) / interval * Math.PI);
+				return {x: pos[0], y: pos[1], z: pos[2], color: c};
+			}
+		}
+
 		trixl.generate = {};
 		trixl.generate.random = function(lo, hi, color) {
 			var x = lo + Math.round(Math.random() * (hi - lo)),
@@ -292,6 +317,14 @@
 				var h = rand(height);
 
 				trixl.generate.tower(pos, w, h);
+			});
+		}
+
+		trixl.generate.jumpers = function(n, lo, hi, loI, hiI) {
+			range(n).map(function() {
+				var color = [Math.random(), Math.random(), Math.random(), 1];
+				var interval = rand(loI || 10000, hiI || 100000);
+				trixl.world.dynamic.push(trixl.dynamic.jumping(lo, hi, interval, color));
 			});
 		}
 
