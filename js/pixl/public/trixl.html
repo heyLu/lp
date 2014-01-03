@@ -27,23 +27,38 @@
 	<span id="debug"></span>
 	<script type="gl/vertex-shader">
 		attribute vec3 pos;
+		attribute vec3 normal;
+
 		varying vec3 world_pos;
+		varying vec3 lighting;
 
 		uniform mat4 transform;
 
 		void main() {
 			world_pos = pos;
 			gl_Position = vec4(transform * vec4(pos, 1));
+
+			highp vec3 ambientLight = vec3(0.6, 0.6, 0.6);
+			highp vec3 directionalLightColor = vec3(0.5, 0.5, 0.75);
+			highp vec3 directionalVector = vec3(0.85, 0.8, 0.75);
+
+			// FIXME: transform should only be transform w/o view & perspective
+			highp vec4 transformedNormal = transform * vec4(normal, 1.0);
+
+			highp float directional = max(dot(normal, directionalVector), 0.0);
+			lighting = ambientLight + (directionalLightColor * directional);
 		}
 	</script>
 	<script type="gl/fragment-shader">
 		precision mediump float;
+
 		uniform vec4 color;
 		varying vec3 world_pos;
+		varying vec3 lighting;
 
 		void main() {
 			if (color.x >= 0.0 && color.x <= 1.0) {
-				gl_FragColor = color;
+				gl_FragColor = vec4(color.rgb * lighting, color.a);
 			} else {
 				gl_FragColor = vec4(world_pos.x, world_pos.y, world_pos.z, 1);
 			}
@@ -173,18 +188,24 @@
 			vec3.add(trixl.camera.focus, trixl.camera.pos, front);
 		}
 
-		var vertexPosBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.cube()), gl.STATIC_DRAW);
-
 		var vs = document.querySelector("script[type='gl/vertex-shader']").textContent;
 		var fs = document.querySelector("script[type='gl/fragment-shader']").textContent;
 		var program = createProgram(vs, fs);
 		gl.useProgram(program);
 
+		var vertexPosBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.cube()), gl.STATIC_DRAW);
 		program.vertexPosAttrib = gl.getAttribLocation(program, 'pos');
 		gl.enableVertexAttribArray(program.vertexPosAttrib);
-		gl.vertexAttribPointer(program.vertexPosBuffer, 3, gl.FLOAT, false, 0, 0);
+		gl.vertexAttribPointer(program.vertexPosAttrib, 3, gl.FLOAT, false, 0, 0);
+
+		var vertexNormalBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormalBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.cube.normals()), gl.STATIC_DRAW);
+		program.vertexNormalAttrib = gl.getAttribLocation(program, 'normal');
+		gl.enableVertexAttribArray(program.vertexNormalAttrib);
+		gl.vertexAttribPointer(program.vertexNormalAttrib, 3, gl.FLOAT, false, 0, 0);
 
 		program.color = gl.getUniformLocation(program, 'color');
 		gl.uniform4f(program.color, -1, -1, -1, -1);
