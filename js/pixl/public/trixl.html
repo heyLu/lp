@@ -214,6 +214,17 @@
 			});
 		}
 
+		trixl.geometry.sphere = function(pos, radius, color) {
+			for (var i = 0; i < 2 * Math.PI; i += Math.PI / radius) {
+				for (var j = 0; j < Math.PI; j += Math.PI / radius) {
+					var x = pos[0] + radius * Math.cos(i) * Math.sin(j),
+					    y = pos[1] + radius * Math.sin(i) * Math.sin(j),
+						 z = pos[2] + radius * Math.cos(j);
+					trixl.world.set([x, y, z], {color: color});
+				}
+			}
+		}
+
 		var angle = {x: 0, y: 0, z: 0};
 		var offset = {x: 0, y: 0, z: 0};
 		program.transform = gl.getUniformLocation(program, 'transform');
