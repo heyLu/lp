@@ -372,6 +372,22 @@
 			}
 		}
 
+		trixl.geometry.plane = function(pos, v, w, width, height, color) {
+			var v = vec3.normalize([], v), w = vec3.normalize([], w);
+
+			for (var i = 0; i < width; i++) {
+				for (var j = 0; j < height; j++) {
+					var pos = vec3.create();
+					vec3.scaleAndAdd(pos, pos, v, i);
+					vec3.scaleAndAdd(pos, pos, w, j);
+
+					trixl.world.set([
+						Math.round(pos[0]), Math.round(pos[1]), Math.round(pos[2])
+					], {color: color || trixl.color});
+				}
+			}
+		}
+
 		var angle = {x: 0, y: 0, z: 0};
 		var offset = {x: 0, y: 0, z: 0};
 		program.transform = gl.getUniformLocation(program, 'transform');
