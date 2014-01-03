@@ -91,6 +91,13 @@
 			});
 		}
 
+		var rand = function(lo, hi) {
+			var both = hi !== undefined,
+			    l = both ? lo : 0,
+			    h = both ? hi : lo;
+			return l + Math.round(Math.random() * (h - l));
+		}
+
 		var rgbFromCss = function(color) {
 			var el = document.createElement('div');
 			el.style.color = color;
@@ -266,6 +273,26 @@
 			trixl.generate.many(10, -3, 3);
 			trixl.generate.many(100, -25, 25);
 			trixl.generate.many(1000, -100, 100);
+		}
+
+		trixl.generate.tower = function(pos, width, height, color) {
+			range(height).map(function() {
+				trixl.world.set([
+					rand(pos[0], pos[0] + width),
+					rand(pos[1], pos[1] + height),
+					rand(pos[2], pos[2] + width)
+				], {color: color || [Math.random(), Math.random(), Math.random(), 1]});
+			});
+		}
+
+		trixl.generate.city = function(n, width, height) {
+			range(n).map(function() {
+				var pos = [rand(width), 0, rand(width)];
+				var w = rand(5, 20);
+				var h = rand(height);
+
+				trixl.generate.tower(pos, w, h);
+			});
 		}
 
 		trixl.geometry = {};
