@@ -215,6 +215,40 @@
 			}
 		}
 
+		trixl.dynamic.sin = function(pos, width, height, color) {
+			var color = color || trixl.color;
+			return function(t) {
+				var x = (t * 0.01) % width,
+				    y = height * (Math.sin(t * 0.01) + 1.0) * 0.5;
+				return {x: pos[0] + x, y: pos[1] + y, z: pos[2], color: color};
+			}
+		}
+
+		trixl.dynamic.circleDance = function(pos, radius, height, color) {
+			var color = color || trixl.color;
+			var scale = 1 / (10 * radius)
+			return function(t) {
+				var x = radius * Math.sin(t * scale),
+				    y = height * (Math.sin(t * scale / height) + 1.0) * 0.5,
+				    z = radius * Math.cos(t * scale);
+				return {x: pos[0] + x, y: pos[1] + y, z: pos[2] + z, color: color};
+			}
+		}
+
+		trixl.dynamic.sinWave = function(pos, length, width, height, color) {
+			var wavies = [];
+			for (var i = 0; i < length; i++) {
+				var sin = trixl.dynamic.sin(pos, width, height, color);
+				var wavie = function(i) {
+					return function(t) {
+						return sin(t - i * 250);
+					}
+				}(i);
+				wavies.push(wavie);
+			}
+			return wavies;
+		}
+
 		trixl.generate = {};
 		trixl.generate.random = function(lo, hi, color) {
 			var x = lo + Math.round(Math.random() * (hi - lo)),
