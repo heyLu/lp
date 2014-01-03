@@ -49,6 +49,26 @@
 			}
 		}
 	</script>
+	<script>
+		var polyfill = {};
+
+		polyfill.pointerLockElement = function() {
+			return document.pointerLockElement ||
+				document.webkitPointerLockElement ||
+				document.mozPointerLockElement;
+		}
+
+		Element.prototype.requestPointerLock =
+			Element.prototype.mozRequestPointerLock ||
+			Element.prototype.webkitRequestPointerLock ||
+			Element.prototype.requestPointerLock;
+
+		polyfill.mouseEvent = function(ev) {
+			ev.movementX = ev.movementX || ev.mozMovementX;
+			ev.movementY = ev.movementY || ev.mozMovementY;
+			return ev;
+		}
+	</script>
 	<script src="gl.js"></script>
 	<script src="geometry.js"></script>
 	<script src="matrix.js"></script>
@@ -323,10 +343,20 @@
 				mouse.last = {x: ev.clientX, y: ev.clientY};
 			}
 
-			var diff = { x: mouse.last.x - ev.clientX, y: mouse.last.y - ev.clientY };
+			ev = polyfill.mouseEvent(ev);
+			var diff = {
+				x: -ev.movementX || mouse.last.x - ev.clientX,
+				y: -ev.movementY || mouse.last.y - ev.clientY
+			};
 			trixl.camera.rotate(diff.x * trixl.speed.turn, diff.y * trixl.speed.turn);
 
 			mouse.last = {x: ev.clientX, y: ev.clientY};
+		});
+
+		trixl.stage.addEventListener("mousedown", function(ev) {
+			if (polyfill.pointerLockElement() === null) {
+				trixl.stage.requestPointerLock();
+			}
 		});
 
 		window.onresize = function() {
