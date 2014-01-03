@@ -203,6 +203,18 @@
 			return trixl.world.delete(key);
 		}
 
+		trixl.world.dynamic = [];
+
+		trixl.dynamic = {};
+		trixl.dynamic.orbit = function(pos, radius, color) {
+			var color = color || trixl.color;
+			return function(t) {
+				var x = radius * Math.sin(t * 0.01),
+				    y = radius * Math.cos(t * 0.01);
+				return {x: pos[0] + x, y: pos[1] + y, z: pos[2], color: color};
+			}
+		}
+
 		trixl.generate = {};
 		trixl.generate.random = function(lo, hi, color) {
 			var x = lo + Math.round(Math.random() * (hi - lo)),
@@ -248,7 +260,7 @@
 		var angle = {x: 0, y: 0, z: 0};
 		var offset = {x: 0, y: 0, z: 0};
 		program.transform = gl.getUniformLocation(program, 'transform');
-		trixl.redraw = function() {
+		trixl.redraw = function(t) {
 			var view = mat4.lookAt([], trixl.camera.pos, trixl.camera.focus, trixl.camera.up);
 
 			var aspect = trixl.window.w / trixl.window.h;
@@ -274,6 +286,14 @@
 				gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
 			}
 
+			trixl.world.dynamic.forEach(function(tr) {
+				var tr = tr(t);
+
+				gl.uniform4fv(program.color, tr.color);
+				gl.uniformMatrix4fv(program.transform, false, transform([tr.x, tr.y, tr.z]));
+				gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
+			});
+
 			gl.uniform4f(program.color, -1, -1, -1, 0);
 
 			//angle.x += Math.PI / 10;
@@ -285,8 +305,8 @@
 			//offset.z = Math.cos(angle.z * 0.1) * 2;
 		}
 
-		trixl.step = function() {
-			trixl.redraw();
+		trixl.step = function(t) {
+			trixl.redraw(t);
 			trixl.step.reqId = requestAnimationFrame(trixl.step);
 		}
 		trixl.start = function() {
