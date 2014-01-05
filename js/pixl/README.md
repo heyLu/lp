@@ -16,6 +16,9 @@ it's live at <http://pixl.papill0n.org>.
 
 see it live at <http://pixl.papill0n.org/3>.
 
+    // quick start (type the following in the console):
+    trixl.generate.fun()
+
 ## todo
 
 * code sharing (especially for worlds created and dynamics, but also for
