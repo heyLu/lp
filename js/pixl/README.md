@@ -15,3 +15,13 @@ it's live at <http://pixl.papill0n.org>.
 `pixl` in 3 dimensions. you can even import the data from pixl.
 
 see it live at <http://pixl.papill0n.org/3>.
+
+## todo
+
+* code sharing (especially for worlds created and dynamics, but also for
+  libraries/modules that could be shared)
+* multiplayer backend as for pixl
+* live-editing from a built-in editor (similar to firefox' scratchpad,
+  but on the page. should also support saving code to `localStorage`.)
+* bug: sometimes when moving the mouse to certain positions (edges of
+  the screen?) the camera rapidly alternates between two positions
