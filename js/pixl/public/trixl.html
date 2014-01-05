@@ -423,8 +423,9 @@
 		}
 
 		trixl.step = function(t) {
-			trixl.redraw(t);
 			trixl.step.reqId = requestAnimationFrame(trixl.step);
+
+			trixl.redraw(t);
 		}
 		trixl.start = function() {
 			trixl.step.reqId = requestAnimationFrame(trixl.step);
