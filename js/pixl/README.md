@@ -26,5 +26,12 @@ see it live at <http://pixl.papill0n.org/3>.
 * multiplayer backend as for pixl
 * live-editing from a built-in editor (similar to firefox' scratchpad,
   but on the page. should also support saving code to `localStorage`.)
+* better performance. noticable lag at 10000 trixls, probably
+  batch-drawing would help, but how? first find out what the bottleneck
+  is.
 * bug: sometimes when moving the mouse to certain positions (edges of
   the screen?) the camera rapidly alternates between two positions
+* bug: doesn't work in chrome, as it's missing support for iterators and
+  the `keys()` function on maps. i didn't find any convenient polyfills
+  (`keys()` should return something iterator-like, e.g. returning raw
+  values on `next()` and `StopIteration` when the end is reached.)
