@@ -388,8 +388,6 @@
 			}
 		}
 
-		var angle = {x: 0, y: 0, z: 0};
-		var offset = {x: 0, y: 0, z: 0};
 		program.transform = gl.getUniformLocation(program, 'transform');
 		trixl.redraw = function(t) {
 			var view = mat4.lookAt([], trixl.camera.pos, trixl.camera.focus, trixl.camera.up);
