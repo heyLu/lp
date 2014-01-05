@@ -396,15 +396,11 @@
 
 			var aspect = trixl.window.w / trixl.window.h;
 			var transform = function(pos) {
-				return mat4.multiplyMany(
-					matrix.translate(-0.5, -0.5, -0.5),
-					matrix.rotateZ(angle.z / 10),
-					//matrix.rotateY(angle.y / 10),
-					matrix.rotateX(angle.x / 10),
-					matrix.translate(pos[0] + offset.x, pos[1] + offset.y, pos[2] + offset.z),
-					view,
-					matrix.perspective(Math.PI / 3, aspect)
-				);
+				var m = mat4.create();
+				mat4.translate(m, m, [-0.5 + pos[0], -0.5 + pos[1], -0.5 + pos[2]]);
+				mat4.multiply(m, view, m);
+				mat4.multiply(m, matrix.perspective(Math.PI / 3, aspect), m);
+				return m;
 			}
 
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -426,14 +422,6 @@
 			});
 
 			gl.uniform4f(program.color, -1, -1, -1, 0);
-
-			//angle.x += Math.PI / 10;
-			//angle.y += Math.PI / 10;
-			//angle.z += Math.PI / 10;
-
-			//offset.x = Math.sin(angle.x * 0.1);
-			//offset.y = Math.sin(angle.y * 0.1);
-			//offset.z = Math.cos(angle.z * 0.1) * 2;
 		}
 
 		trixl.step = function(t) {
