@@ -35,3 +35,6 @@ see it live at <http://pixl.papill0n.org/3>.
   the `keys()` function on maps. i didn't find any convenient polyfills
   (`keys()` should return something iterator-like, e.g. returning raw
   values on `next()` and `StopIteration` when the end is reached.)
+* bug: overwriting trixls isn't supported as `Map#set` compares by
+  reference and not by value. maybe use chunks instead? (could be a
+  performance boost as well.)
