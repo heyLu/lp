@@ -383,12 +383,12 @@
 
 			for (var i = 0; i < width; i++) {
 				for (var j = 0; j < height; j++) {
-					var pos = vec3.create();
-					vec3.scaleAndAdd(pos, pos, v, i);
-					vec3.scaleAndAdd(pos, pos, w, j);
+					var p = vec3.clone(pos);
+					vec3.scaleAndAdd(p, p, v, i);
+					vec3.scaleAndAdd(p, p, w, j);
 
 					trixl.world.set([
-						Math.round(pos[0]), Math.round(pos[1]), Math.round(pos[2])
+						Math.round(p[0]), Math.round(p[1]), Math.round(p[2])
 					], {color: color || trixl.color});
 				}
 			}
