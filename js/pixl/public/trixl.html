@@ -582,7 +582,7 @@
 
 			if (ev.ctrlKey && ev.keyCode == 13) { // ctrl+enter
 				if (editor == document.activeElement) {
-					var sel = editor.value.substr(editor.selectionStart, editor.selectionEnd);
+					var sel = editor.value.substring(editor.selectionStart, editor.selectionEnd);
 					eval(sel);
 				}
 			}
