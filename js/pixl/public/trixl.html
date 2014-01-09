@@ -411,8 +411,9 @@
 
 			for (var pair of trixl.world) {
 				var pos = pair[0], data = pair[1];
+				var color = data ? (data.color.apply ? data.color(pos, t) : data.color) : trixl.color;
 
-				gl.uniform4fv(program.color, data ? data.color || trixl.color : trixl.color);
+				gl.uniform4fv(program.color, color);
 				gl.uniformMatrix4fv(program.transform, false, transform(pos));
 				gl.drawArrays(gl.TRIANGLES, 0, 6 * 6);
 			}
