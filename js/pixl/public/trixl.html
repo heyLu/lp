@@ -109,10 +109,14 @@
 		}
 
 		var rand = function(lo, hi) {
-			var both = hi !== undefined,
-			    l = both ? lo : 0,
-			    h = both ? hi : lo;
-			return l + Math.round(Math.random() * (h - l));
+			switch (arguments.length) {
+			case 0:
+				return Math.random();
+			case 1:
+				return Math.round(Math.random() * lo);
+			default:
+				return lo + Math.round(Math.random() * (hi - lo));
+			}
 		}
 
 		var rgbFromCss = function(color) {
