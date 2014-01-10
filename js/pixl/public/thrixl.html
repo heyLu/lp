@@ -14,6 +14,7 @@
 
 <body>
 	<script src="three.js"></script>
+	<script src="geometry.js"></script>
 	<script>
 		window.trixl = {};
 		trixl.chunks = {};
@@ -49,7 +50,7 @@
 
 		var cube = new THREE.CubeGeometry(1, 1, 1);
 		trixl.toGeometry = function(chunk) {
-			var geometry = new THREE.Object3D();
+			var chunkGeometry = new THREE.Object3D();
 
 			for (var i = 0; i < chunk.voxels.length; i++) {
 				var voxel = chunk.voxels[i];
@@ -67,10 +68,61 @@
 				mesh.matrixAutoUpdate = false;
 				mesh.updateMatrix();
 
-				geometry.add(mesh);
+				chunkGeometry.add(mesh);
 			}
 
-			return geometry;
+			return chunkGeometry;
+		}
+
+		trixl.toBufferGeometry = function(chunk) {
+			var n = 0;
+			for (var i = 0; i < chunk.voxels.length; i++) {
+				n += chunk.voxels[i] ? 1 : 0;
+			}
+			var chunkGeometry = new THREE.BufferGeometry();
+
+			// 6 sides * 2 triangles
+			var m = 6 * 2;
+
+			var vs = n * m * 3 * 3;
+			chunkGeometry.addAttribute('position', Float32Array, vs, 3);
+			chunkGeometry.addAttribute('normal', Float32Array, vs, 3);
+			chunkGeometry.addAttribute('color', Float32Array, vs, 3);
+
+			var positions = chunkGeometry.attributes.position.array;
+			var normals = chunkGeometry.attributes.normal.array;
+			var colors = chunkGeometry.attributes.color.array;
+
+			var cube = geometry.cube();
+			cube.normals = geometry.cube.normals();
+
+			var c = -1;
+			for (var i = 0; i < chunk.voxels.length; i++) {
+				var voxel = chunk.voxels[i];
+				if (!voxel) continue;
+
+				c += 1;
+
+				var x = voxel.pos[0], y = voxel.pos[1], z = voxel.pos[2];
+
+				for (var j = 0; j < cube.length; j += 3) {
+					positions[c * m * 9 + j + 0] = x + cube[j + 0]
+					positions[c * m * 9 + j + 1] = y + cube[j + 1]
+					positions[c * m * 9 + j + 2] = z + cube[j + 2]
+
+					normals[c * m * 9 + j + 0] = cube.normals[j + 0];
+					normals[c * m * 9 + j + 1] = cube.normals[j + 1];
+					normals[c * m * 9 + j + 2] = cube.normals[j + 2];
+
+					colors[c * m * 9 + j + 0] = voxel.color[0];
+					colors[c * m * 9 + j + 1] = voxel.color[1];
+					colors[c * m * 9 + j + 2] = voxel.color[2];
+				}
+			}
+
+			chunkGeometry.computeBoundingSphere();
+			var material = new THREE.MeshBasicMaterial({color: 0x00ff00});
+			return new THREE.Mesh(chunkGeometry, material);
 		}
 
 		trixl.generate = {}
@@ -81,7 +133,7 @@
 					lo + Math.random() * (hi - lo),
 					lo + Math.random() * (hi - lo)
 				];
-				var color = Math.random() * 0xffffff;
+				var color = [Math.random(), Math.random(), Math.random()];
 				trixl.set(pos, {color: color});
 			}
 		}
@@ -89,6 +141,7 @@
 		var scene = new THREE.Scene();
 		var aspect = window.innerWidth / window.innerHeight;
 		var camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+		camera.position.z = 10;
 
 		var renderer = new THREE.WebGLRenderer();
 		renderer.sortObjects = false;
