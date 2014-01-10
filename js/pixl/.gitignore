@@ -1,3 +1,4 @@
 /node_modules
 
 public/glmatrix.js
+public/three.js

@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+<head>
+	<title>.thrixl</title>
+	<meta charset="utf-8" />
+	<style>
+		canvas {
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
+	</style>
+</head>
+
+<body>
+	<script src="three.js"></script>
+	<script>
+		window.trixl = {};
+		trixl.chunks = {};
+		trixl.chunkSize = 32;
+		trixl.bits = 5;
+
+		trixl.toChunk = function(pos) {
+			var b = trixl.bits;
+			return [pos[1] >> b, pos[2] >> b, pos[3] >> b];
+		}
+
+		trixl.toIndex = function(pos) {
+			var b = trixl.bits;
+			var mask = (1 << b) - 1;
+			return (pos[0] & mask) + ((pos[1] & mask) << b) + ((pos[2] & mask) << b * 2);
+		}
+
+		trixl.set = function(pos, data) {
+			var chunkIndex = trixl.toChunk(pos).join(',');
+			var chunk = trixl.chunks[chunkIndex];
+			if (!chunk) {
+				chunk = trixl.chunks[chunkIndex] = { voxels: [] };
+			}
+			data.pos = pos;
+			chunk.voxels[trixl.toIndex(pos)] = data;
+			chunk.dirty = true;
+		}
+
+		trixl.get = function(pos) {
+			var chunk = trixl.chunks[trixl.toChunk(pos).join(',')];
+			return chunk ? (chunk.voxels[trixl.toIndex(pos)] || null) : null;
+		}
+
+		var cube = new THREE.CubeGeometry(1, 1, 1);
+		trixl.toGeometry = function(chunk) {
+			var geometry = new THREE.Object3D();
+
+			for (var i = 0; i < chunk.voxels.length; i++) {
+				var voxel = chunk.voxels[i];
+				if (!voxel) {
+					continue;
+				}
+
+				var mesh = new THREE.Mesh(cube, new THREE.MeshBasicMaterial({color: voxel.color}));
+
+				mesh.position.x = voxel.pos[0];
+				mesh.position.y = voxel.pos[1];
+				mesh.position.z = voxel.pos[2];
+
+				mesh.frustumCulled = false;
+				mesh.matrixAutoUpdate = false;
+				mesh.updateMatrix();
+
+				geometry.add(mesh);
+			}
+
+			return geometry;
+		}
+
+		trixl.generate = {}
+		trixl.generate.many = function(n, lo, hi) {
+			for (var i = 0; i < n; i++) {
+				var pos = [
+					lo + Math.random() * (hi - lo),
+					lo + Math.random() * (hi - lo),
+					lo + Math.random() * (hi - lo)
+				];
+				var color = Math.random() * 0xffffff;
+				trixl.set(pos, {color: color});
+			}
+		}
+
+		var scene = new THREE.Scene();
+		var aspect = window.innerWidth / window.innerHeight;
+		var camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+
+		var renderer = new THREE.WebGLRenderer();
+		renderer.sortObjects = false;
+		renderer.setClearColor(0xffffff);
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		document.body.appendChild(renderer.domElement);
+
+		var group = new THREE.Object3D();
+		group.frustumCulled = false;
+		scene.add(group);
+
+		var render = function() {
+			requestAnimationFrame(render);
+
+			for (var key in trixl.chunks) {
+				var chunk = trixl.chunks[key];
+				if (chunk.dirty) {
+					group.remove(chunk.geometry);
+					chunk.geometry = trixl.toGeometry(chunk);
+					chunk.dirty = false;
+					group.add(chunk.geometry);
+				}
+			}
+
+			renderer.render(scene, camera);
+		}
+
+		render();
+
+		document.addEventListener("keydown", function(ev) {
+			if (ev.keyCode == 87) {
+				camera.position.z -= 1.0;
+			}
+			if (ev.keyCode == 83) {
+				camera.position.z += 1.0;
+			}
+		});
+	</script>
+</body>
+</html>
