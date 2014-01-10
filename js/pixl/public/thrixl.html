@@ -167,7 +167,7 @@
 				var chunk = trixl.chunks[key];
 				if (chunk.dirty) {
 					group.remove(chunk.geometry);
-					chunk.geometry = trixl.toGeometry(chunk);
+					chunk.geometry = trixl.toBufferGeometry(chunk);
 					chunk.dirty = false;
 					group.add(chunk.geometry);
 				}
