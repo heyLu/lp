@@ -2,3 +2,5 @@
 
 public/glmatrix.js
 public/three.js
+
+.server.log
