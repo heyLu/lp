@@ -121,7 +121,10 @@
 				}
 			}
 
-			var material = new THREE.MeshBasicMaterial({color: 0x00ff00});
+			var material = new THREE.MeshLambertMaterial({
+				vertexColors: true,
+				side: THREE.DoubleSide
+			});
 			return new THREE.Mesh(chunkGeometry, material);
 		}
 
@@ -147,7 +150,14 @@
 		controls.movementSpeed = 5.0;
 		controls.rollSpeed = 0.75;
 
+		var ambient = new THREE.AmbientLight(0x606060);
+		scene.add(ambient);
+
+		var light = new THREE.PointLight(0xffffff, 1, 10000);
+		scene.add(light);
+
 		var renderer = new THREE.WebGLRenderer();
+		renderer.physicallyBasedShading = true;
 		renderer.sortObjects = false;
 		renderer.setClearColor(0xffffff);
 		renderer.setSize(window.innerWidth, window.innerHeight);
@@ -173,6 +183,8 @@
 			}
 
 			controls.update(clock.getDelta());
+			light.position.copy(camera.position);
+			light.rotation.copy(camera.rotation);
 			renderer.render(scene, camera);
 		}
 
