@@ -2,5 +2,6 @@
 
 public/glmatrix.js
 public/three.js
+public/three.flycontrols.js
 
 .server.log

@@ -14,6 +14,7 @@
 
 <body>
 	<script src="three.js"></script>
+	<script src="three.flycontrols.js"></script>
 	<script src="geometry.js"></script>
 	<script>
 		window.trixl = {};
@@ -143,6 +144,10 @@
 		var camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
 		camera.position.z = 10;
 
+		var controls = new THREE.FlyControls(camera);
+		controls.movementSpeed = 5.0;
+		controls.rollSpeed = 0.75;
+
 		var renderer = new THREE.WebGLRenderer();
 		renderer.sortObjects = false;
 		renderer.setClearColor(0xffffff);
@@ -152,6 +157,8 @@
 		var group = new THREE.Object3D();
 		group.frustumCulled = false;
 		scene.add(group);
+
+		var clock = new THREE.Clock();
 
 		var render = function() {
 			requestAnimationFrame(render);
@@ -166,19 +173,12 @@
 				}
 			}
 
+			controls.update(clock.getDelta());
 			renderer.render(scene, camera);
 		}
 
 		render();
 
-		document.addEventListener("keydown", function(ev) {
-			if (ev.keyCode == 87) {
-				camera.position.z -= 1.0;
-			}
-			if (ev.keyCode == 83) {
-				camera.position.z += 1.0;
-			}
-		});
 	</script>
 </body>
 </html>
