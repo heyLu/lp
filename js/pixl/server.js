@@ -1,6 +1,7 @@
 var ws = require('ws');
 var http = require('http');
 var express = require('express');
+var processBody = require('body');
 var fs = require('fs');
 var path = require('path');
 
@@ -63,6 +64,32 @@ app.get('/load/:name', function(req, res) {
 			res.send(JSON.stringify({pixls: Object.keys(world).length}));
 		}
 	})
+});
+
+app.get('/script/:name', function(req, res) {
+  var file = req.params.name + '.js';
+  var dir = './public';
+  if (!fs.existsSync(path.join(dir, file))) {
+    dir = './data/scripts';
+  }
+  res.sendfile(file, {root: dir});
+});
+
+app.post('/script/:name', function(req, res) {
+  processBody(req, function(err, body) {
+    if (err) {
+      res.send(JSON.stringify({status: "error", error: err}));
+    }
+
+    fs.writeFile(path.join('./data/scripts/', req.params.name + '.js'), body, function(err) {
+    if (err) {
+      res.statusCode = 404;
+      res.send(JSON.stringify({status: "error", error: err}));
+    } else {
+      res.send(JSON.stringify({status: "ok"}));
+    }
+  });
+  });
 });
 
 var server = http.createServer(app);

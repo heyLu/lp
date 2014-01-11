@@ -587,5 +587,28 @@
 			}
 		});
 	</script>
+	<script>
+		trixl.script = {};
+
+		trixl.script.load = function(name) {
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', '/script/' + name);
+			xhr.onreadystatechange = function(ev) {
+				if (xhr.readyState == 4) {
+					var scriptEl = document.createElement('script');
+					scriptEl.textContent = xhr.responseText;
+
+					document.body.appendChild(scriptEl);
+				}
+			}
+			xhr.send();
+		};
+
+		trixl.script.save = function(name, script) {
+			var xhr = new XMLHttpRequest();
+			xhr.open('POST', '/script/' + name);
+			xhr.send(script);
+		}
+	</script>
 </body>
 </html>

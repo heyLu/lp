@@ -1,5 +1,7 @@
 /node_modules
 
+/data
+
 public/glmatrix.js
 public/three.js
 public/three.flycontrols.js
