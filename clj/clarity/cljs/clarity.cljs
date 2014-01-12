@@ -42,6 +42,7 @@
     om/IRender
     (render [_]
       (dom/input #js {:type text
+                      :value (om/read d :data)
                       :placeholder ":my.ns/identifier"
                       :pattern "^:(\\w+|\\w+(\\.\\w+)*\\/\\w+)$"
                       :onChange #(change-data % d valid? read-keyword)}))))
