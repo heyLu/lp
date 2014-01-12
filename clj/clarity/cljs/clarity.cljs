@@ -16,17 +16,17 @@
     :data "hello"}))
 
 (defmulti make-typed-input
-  (fn [type & _]
+  (fn [{type :type} & _]
     (if (seq? type)
       (first type)
       type)))
 
 (defn change-data
-  ([ev owner]
-   (om/set-state! owner :data (.. ev -target -value)))
-  ([ev owner pred parse]
+  ([ev d]
+   (om/update! d assoc :data (.. ev -target -value)))
+  ([ev d pred parse]
    (when (pred (.-target ev))
-     (om/set-state! owner :data (parse (.. ev -target -value))))))
+     (om/update! d assoc :data (parse (.. ev -target -value))))))
 
 (defn valid? [el]
   (.. el -validity -valid))
@@ -37,29 +37,21 @@
       (keyword name)
       nil)))
 
-(defmethod make-typed-input 'Keyword [type data owner]
+(defmethod make-typed-input 'Keyword [d owner]
   (reify
-    om/IInitState
-    (init-state [_] {:data data})
     om/IRender
     (render [_]
       (dom/input #js {:type text
                       :placeholder ":my.ns/identifier"
                       :pattern "^:(\\w+|\\w+(\\.\\w+)*\\/\\w+)$"
-                      :onChange #(change-data % owner valid? read-keyword)}))))
+                      :onChange #(change-data % d valid? read-keyword)}))))
 
-(defmethod make-typed-input 'String [type data owner]
+(defmethod make-typed-input 'String [d owner]
   (reify
-    om/IInitState
-    (init-state [_] {:data data})
     om/IRender
     (render [_]
       (dom/input #js {:type "text"
-                      :value (om/get-state owner :data)
-                      :onChange #(change-data % owner)}))))
+                      :value (om/read d :data)
+                      :onChange #(change-data % d)}))))
 
-(defn typed-input [typed-data owner]
-  (let [{:keys [type data]} typed-data]
-    (make-typed-input type data owner)))
-
-(om/root (atom {:type 'Keyword}) typed-input (.getElementById js/document "typed_input"))
+(om/root (atom {:type 'Keyword}) make-typed-input (.getElementById js/document "typed_input"))
