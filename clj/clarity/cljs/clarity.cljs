@@ -14,13 +14,6 @@
 ;  does change the data, if it doesn't signal the
 ;  error and don't change the data
 
-(defn change-data
-  ([ev d]
-   (om/update! d assoc :data (.. ev -target -value)))
-  ([ev d pred parse]
-   (when (pred (.-target ev))
-     (om/update! d assoc :data (parse (.. ev -target -value))))))
-
 (defn valid? [el]
   (.. el -validity -valid))
 
