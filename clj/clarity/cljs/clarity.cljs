@@ -30,6 +30,16 @@
       (keyword name)
       nil)))
 
+(defn typed-keyword [kw owner]
+  (om/component
+    (dom/input #js {:type "text"
+                    :className "field"
+                    :value (om/value kw)
+                    :pattern "^:(\\w+|\\w+(\\.\\w+)*\\/\\w+)$"
+                    :onChange (fn [ev]
+                                (when (valid? (.-target ev))
+                                  (om/update! kw (fn [o n] n) (read-keyword (.. ev -target -value)))))})))
+
 (defn typed-string [string owner]
   (om/component
     (dom/input #js {:type "text"
@@ -45,6 +55,7 @@
     (render [_]
       (dom/div nil
         (dom/span nil "{")
+        (om/build typed-keyword (:kw data))
         (om/build typed-string (:str data))
         (dom/span nil "}")))))
 
