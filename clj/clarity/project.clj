@@ -5,7 +5,7 @@
 
                  [com.datomic/datomic-free "0.9.4331"]
 
-                 [om "0.1.5"]
+                 [om "0.1.6"]
 
                  [ring "1.2.1"]
                  [compojure "1.1.6"]
@@ -16,4 +16,4 @@
   :ring {:handler clarity.server/app}
   :cljsbuild {:crossovers [clarity.types]
               :crossover-path "target/crossover"
-              :builds [{:source-paths ["cljs"]}]})
+              :builds [{:source-paths ["om/src" "cljs"]}]})

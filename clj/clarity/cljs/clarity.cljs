@@ -4,22 +4,15 @@
 
 (enable-console-print!)
 
+(extend-type string
+  ICloneable
+  (-clone [s] (js/String. s)))
+
 ; data for one node: type and optionally data
 ;  if data is present, fill the node with the data
 ;  on input, check if input conforms to data, if it
 ;  does change the data, if it doesn't signal the
 ;  error and don't change the data
-
-(def example-state
-  (atom
-   {:type 'String
-    :data "hello"}))
-
-(defmulti make-typed-input
-  (fn [{type :type} & _]
-    (if (seq? type)
-      (first type)
-      type)))
 
 (defn change-data
   ([ev d]
@@ -37,22 +30,28 @@
       (keyword name)
       nil)))
 
-(defmethod make-typed-input 'Keyword [d owner]
+(defn typed-string [string owner]
+  (om/component
+    (dom/input #js {:type "text"
+                    :className "field"
+                    :value (om/value string)
+                    :onChange #(om/update! string (fn [o n] n) (.. % -target -value))})))
+
+(defn typed-input [data owner]
   (reify
+    om/IWillUpdate
+    (will-update [_ p s] (prn p s))
     om/IRender
     (render [_]
-      (dom/input #js {:type text
-                      :value (om/read d :data)
-                      :placeholder ":my.ns/identifier"
-                      :pattern "^:(\\w+|\\w+(\\.\\w+)*\\/\\w+)$"
-                      :onChange #(change-data % d valid? read-keyword)}))))
+      (dom/div nil
+        (dom/span nil "{")
+        (om/build typed-string (:str data))
+        (dom/span nil "}")))))
 
-(defmethod make-typed-input 'String [d owner]
-  (reify
-    om/IRender
-    (render [_]
-      (dom/input #js {:type "text"
-                      :value (om/read d :data)
-                      :onChange #(change-data % d)}))))
+(def app-state
+  (atom
+    {:kw :hello
+     :str "hello"
+     :many [1 2 3]}))
 
-(om/root (atom {:type 'Keyword}) make-typed-input (.getElementById js/document "typed_input"))
+(om/root app-state typed-input (.getElementById js/document "typed_input"))
