@@ -37,14 +37,12 @@
 (defmethod make-typed-input 'Number [number owner]
   (om/component
     (dom/input #js {:type "number"
-                    :className "field"
                     :value (om/value number)
                     :onChange #(om/update! number (fn [_ n] n) (js/parseFloat (.. % -target -value)))})))
 
 (defmethod make-typed-input 'Keyword [kw owner]
   (om/component
     (dom/input #js {:type "text"
-                    :className "field"
                     :value (om/value kw)
                     :pattern "^:(\\w+|\\w+(\\.\\w+)*\\/\\w+)$"
                     :onChange (fn [ev]
@@ -54,13 +52,12 @@
 (defmethod make-typed-input 'String [string owner]
   (om/component
     (dom/input #js {:type "text"
-                    :className "field"
                     :value (om/value string)
                     :onChange #(om/update! string (fn [_ n] n) (.. % -target -value))})))
 
 (defmethod make-typed-input 'HMap [m owner {type :type}]
   (om/component
-    (dom/div #js {:className "field"}
+    (dom/div nil
       (dom/span nil "{")
       (into-array
         (map (fn [[k v]]
