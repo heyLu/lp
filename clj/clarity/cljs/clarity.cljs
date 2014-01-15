@@ -6,13 +6,17 @@
 
 (enable-console-print!)
 
-(extend-type string
+(extend-type js/Boolean
   ICloneable
-  (-clone [s] (js/String. s)))
+  (-clone [b] b))
 
 (extend-type number
   ICloneable
   (-clone [n] (js/Number. n)))
+
+(extend-type string
+  ICloneable
+  (-clone [s] (js/String. s)))
 
 ; data for one node: type and optionally data
 ;  if data is present, fill the node with the data
@@ -35,6 +39,12 @@
       (sequential? type) (first type)
       (map? type) (get-type (:type type))
       :else type)))
+
+(defmethod empty-value 'Boolean [{:keys [default]}]
+  (js/Boolean.
+    (if-not (nil? default)
+      default
+      false)))
 
 (defmethod empty-value 'Number [{:keys [default]}]
   (or default 0))
@@ -64,6 +74,12 @@
       (sequential? type) (first type)
       (map? type) (:type type)
       :else type)))
+
+(defmethod make-typed-input 'Boolean [bool owner]
+  (om/component
+    (dom/input #js {:type "checkbox"
+                    :checked (.valueOf bool)
+                    :onChange #(om/update! bool (fn [_ n] n) (js/Boolean. (.. % -target -checked)))})))
 
 (defmethod make-typed-input 'Number [number owner]
   (om/component
@@ -128,6 +144,7 @@
                                   (Value :de)
                                   (Value :fr)
                                   (Value :jp))
+                     :fun Boolean
                      :gender Keyword})]
     (atom
      {:type type
