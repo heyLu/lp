@@ -4,19 +4,8 @@
             [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]))
 
+
 (enable-console-print!)
-
-(extend-type js/Boolean
-  ICloneable
-  (-clone [b] b))
-
-(extend-type number
-  ICloneable
-  (-clone [n] (js/Number. n)))
-
-(extend-type string
-  ICloneable
-  (-clone [s] (js/String. s)))
 
 ; data for one node: type and optionally data
 ;  if data is present, fill the node with the data
@@ -75,35 +64,42 @@
       (map? type) (:type type)
       :else type)))
 
-(defmethod make-typed-input 'Boolean [bool owner]
+(defmethod make-typed-input 'Boolean [m owner {:keys [type key val]}]
   (om/component
     (dom/input #js {:type "checkbox"
-                    :checked (.valueOf bool)
-                    :onChange #(om/update! bool (fn [_ n] n) (js/Boolean. (.. % -target -checked)))})))
+                    :checked (.valueOf (or val (empty-value type)))
+                    :onChange #(om/transact! m key (fn [_ n] n) (js/Boolean. (.. % -target -checked)))})))
 
-(defmethod make-typed-input 'Number [number owner]
+(defmethod make-typed-input 'Number [m owner {:keys [key val]}]
   (om/component
     (dom/input #js {:type "number"
-                    :value (om/value number)
-                    :onChange #(om/update! number (fn [_ n] n) (js/parseFloat (.. % -target -value)))})))
+                    :value val
+                    :onChange (update-on-change! m key js/parseFloat)})))
 
 (def keyword-pattern "^:(\\w+|\\w+(\\.\\w+)*\\/\\w+)$")
 
-(defmethod make-typed-input 'Keyword [kw owner]
+(defmethod make-typed-input 'Keyword [m owner {:keys [key val]}]
   (om/component
     (dom/input #js {:type "text"
-                    :value (om/value kw)
+                    :value val
                     :pattern keyword-pattern
-                    :onChange (fn [ev]
-                                (when (valid? (.-target ev))
-                                  (om/update! kw (fn [o n] n) (or (read-keyword (.. ev -target -value))
-                                                                  (empty-value 'Keyword)))))})))
+                    :onChange (update-on-change! m key #(or (read-keyword %) (empty-value type)))})))
 
-(defmethod make-typed-input 'String [string owner]
+(defn update-on-change!
+  ([m k] (update-on-change! m k identity))
+  ([m k transform-fn] (update-on-change! m k transform-fn false))
+  ([m k transform-fn optional?]
+   (fn [ev]
+     (let [new-val (transform-fn (.. ev -target -value))]
+       (if (and optional? (empty? new-val))
+         (om/update! m dissoc k)
+         (om/transact! m k (fn [_ n] n) new-val))))))
+
+(defmethod make-typed-input 'String [m owner {:keys [type key val optional?]}]
   (om/component
     (dom/input #js {:type "text"
-                    :value (om/value string)
-                    :onChange #(om/update! string (fn [_ n] n) (.. % -target -value))})))
+                    :value val
+                    :onChange (update-on-change! m key identity optional?)})))
 
 (defmethod make-typed-input 'Value [value owner]
   (om/component
@@ -116,28 +112,32 @@
                     (keyword? value) {:type "text", :pattern keyword-pattern}
                     :else {:type "text"}))))))
 
-(defmethod make-typed-input 'U [value owner {type :type}]
+(defmethod make-typed-input 'U [m owner {:keys [type key val]}]
   (om/component
-    (dom/select #js {:onChange #(om/update! value (fn [_ n] n) (r/read-string (.. % -target -value)))}
+    (dom/select #js {:onChange (update-on-change! m key r/read-string)}
       (into-array
         (map (fn [[_ v]]
                (dom/option nil (str v)))
              (rest type))))))
 
 (defmethod make-typed-input 'HMap [m owner {type :type}]
-  (om/component
-    (dom/div nil
-      (dom/span nil "{")
-      (into-array
-        (map (fn [[k v]]
-               (dom/div #js {:className "field"}
-                 (dom/label nil (str k))
-                 (om/build make-typed-input v {:opts {:type (k (nth type 2))}})))
-             m))
-      (dom/span nil "}"))))
+  (let [hmap (apply hash-map (rest type))
+        required (:mandatory hmap)
+        optional (:optional hmap)]
+    (om/component
+      (dom/div nil
+        (dom/span nil "{")
+        (into-array
+          (map (fn [[k t]]
+                 (dom/div #js {:className "field"}
+                   (dom/label nil (str k))
+                   (om/build make-typed-input m {:opts {:type t, :key k, :val (k m)
+                                                        :optional? (contains? optional k)}})))
+               (merge required optional)))
+        (dom/span nil "}")))))
 
 (def app-state
-  (let [type '(HMap :mandatory
+  (let [type '[HMap :mandatory
                     {:name {:type String :default "Paul"},
                      :age {:type Number, :default 10},
                      :language (U (Value :en)
@@ -145,7 +145,9 @@
                                   (Value :fr)
                                   (Value :jp))
                      :fun Boolean
-                     :gender Keyword})]
+                     :gender Keyword}
+                    :optional
+                    {:secret-skill String}]]
     (atom
      {:type type
       :data (empty-value type)})))
