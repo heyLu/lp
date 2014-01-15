@@ -109,7 +109,7 @@
   (om/component
    (dom/input (clj->js
                 (into {:value (str value)
-                       :readOnly ""}
+                       :readOnly "readOnly"}
                   (cond
                     (instance? js/Boolean value) {:type "checkbox", :checked value}
                     (number? value) {:type "number"}
