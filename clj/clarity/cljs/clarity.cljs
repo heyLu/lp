@@ -128,6 +128,13 @@
                (dom/option nil (str v)))
              (rest type))))))
 
+(defn make-typed-field [m optional?]
+  (fn [[k t]]
+    (dom/div #js {:className "field"}
+      (dom/label nil (str k (when optional? " (optional)")))
+      (om/build make-typed-input m {:opts {:type t, :key k, :val (k m)
+                                           :optional? optional?}}))))
+
 (defmethod make-typed-input 'HMap [m owner {type :type}]
   (let [hmap (apply hash-map (rest type))
         required (:mandatory hmap)
@@ -135,13 +142,8 @@
     (om/component
       (dom/div nil
         (dom/span nil "{")
-        (into-array
-          (map (fn [[k t]]
-                 (dom/div #js {:className "field"}
-                   (dom/label nil (str k))
-                   (om/build make-typed-input m {:opts {:type t, :key k, :val (k m)
-                                                        :optional? (contains? optional k)}})))
-               (merge required optional)))
+        (into-array (map (make-typed-field m false) required))
+        (into-array (map (make-typed-field m true) optional))
         (dom/span nil "}")))))
 
 (def app-state
