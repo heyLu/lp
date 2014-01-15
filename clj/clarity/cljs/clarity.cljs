@@ -70,7 +70,8 @@
                     :pattern "^:(\\w+|\\w+(\\.\\w+)*\\/\\w+)$"
                     :onChange (fn [ev]
                                 (when (valid? (.-target ev))
-                                  (om/update! kw (fn [o n] n) (read-keyword (.. ev -target -value)))))})))
+                                  (om/update! kw (fn [o n] n) (or (read-keyword (.. ev -target -value))
+                                                                  (empty-value 'Keyword)))))})))
 
 (defmethod make-typed-input 'String [string owner]
   (om/component
