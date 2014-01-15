@@ -104,16 +104,17 @@
                     :value val
                     :onChange (update-on-change! m key identity optional?)})))
 
-(defmethod make-typed-input 'Value [value owner]
-  (om/component
-   (dom/input (clj->js
-                (into {:value (str value)
-                       :readOnly "readOnly"}
-                  (cond
-                    (instance? js/Boolean value) {:type "checkbox", :checked value}
-                    (number? value) {:type "number"}
-                    (keyword? value) {:type "text", :pattern keyword-pattern}
-                    :else {:type "text"}))))))
+(defmethod make-typed-input 'Value [m owner {type :type}]
+  (let [[_ value] type]
+    (om/component
+      (dom/input (clj->js
+                   (into {:value (str value)
+                          :readOnly "readOnly"}
+                         (cond
+                           (instance? js/Boolean value) {:type "checkbox", :checked value}
+                           (number? value) {:type "number"}
+                           (keyword? value) {:type "text", :pattern keyword-pattern}
+                           :else {:type "text"})))))))
 
 (defmethod make-typed-input 'Option [m owner {type :type :as opts}]
   (let [[_ type] type]
