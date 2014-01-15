@@ -43,6 +43,9 @@
 (defmethod empty-value 'String [{:keys [default]}]
   (or default ""))
 
+(defmethod empty-value 'U [[_ & [[_ v]]]]
+  v)
+
 (defmethod empty-value 'HMap [spec]
   (let [entries (nth spec 2)]
     (into {}
@@ -79,6 +82,14 @@
                     :value (om/value string)
                     :onChange #(om/update! string (fn [_ n] n) (.. % -target -value))})))
 
+(defmethod make-typed-input 'U [value owner {type :type}]
+  (om/component
+    (dom/select nil
+      (into-array
+        (map (fn [[_ v]]
+               (dom/option nil (str v)))
+             (rest type))))))
+
 (defmethod make-typed-input 'HMap [m owner {type :type}]
   (om/component
     (dom/div nil
@@ -95,6 +106,10 @@
   (let [type '(HMap :mandatory
                     {:name {:type String :default "Paul"},
                      :age {:type Number, :default 10},
+                     :language (U (Value :en)
+                                  (Value :de)
+                                  (Value :fr)
+                                  (Value :jp))
                      :gender Keyword})]
     (atom
      {:type type
