@@ -27,6 +27,29 @@
       (keyword name)
       nil)))
 
+(defmulti empty-value
+  (fn get-type [type]
+    (cond
+      (sequential? type) (first type)
+      (map? type) (get-type (:type type))
+      :else type)))
+
+(defmethod empty-value 'Number [{:keys [default]}]
+  (or default 0))
+
+(defmethod empty-value 'Keyword [{:keys [default]}]
+  (or default :keyword))
+
+(defmethod empty-value 'String [{:keys [default]}]
+  (or default ""))
+
+(defmethod empty-value 'HMap [spec]
+  (let [entries (nth spec 2)]
+    (into {}
+          (map (fn [[k v]]
+                 [k (empty-value v)])
+               entries))))
+
 (defmulti make-typed-input
   (fn [_ _ {type :type} & _]
     (cond
@@ -68,9 +91,13 @@
       (dom/span nil "}"))))
 
 (def app-state
-  (atom
-    '{:type (HMap :mandatory {:name String, :age Number, :gender Keyword})
-      :data {:name "Paul", :age 3, :gender :unknown}}))
+  (let [type '(HMap :mandatory
+                    {:name {:type String :default "Paul"},
+                     :age {:type Number, :default 10},
+                     :gender Keyword})]
+    (atom
+     {:type type
+      :data (empty-value type)})))
 
 (defn typed-input [{:keys [type data]} owner]
   (reify
