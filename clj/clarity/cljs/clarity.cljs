@@ -47,6 +47,9 @@
 (defmethod empty-value 'Value [[_ v]]
   v)
 
+(defmethod empty-value 'Option [[_ v]]
+  (empty-value v))
+
 (defmethod empty-value 'U [[_ & [[_ v]]]]
   v)
 
@@ -111,6 +114,10 @@
                     (number? value) {:type "number"}
                     (keyword? value) {:type "text", :pattern keyword-pattern}
                     :else {:type "text"}))))))
+
+(defmethod make-typed-input 'Option [m owner {type :type :as opts}]
+  (let [[_ type] type]
+    (make-typed-input m owner (assoc opts :type type))))
 
 (defmethod make-typed-input 'U [m owner {:keys [type key val]}]
   (om/component
