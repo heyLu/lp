@@ -45,7 +45,7 @@
     {:error (str "Expected value of type Map, but got value " val ".")}))
 
 (def datomic-attr-type
-  '(HMap :mandatory {:db/id (Value "#db/id[db.part/db]")
+  '(HMap :mandatory {:db/id (Value "#db/id[:db.part/db]")
                      :db/ident Keyword
                      :db/valueType (U (Value :db.type/keyword)
                                       (Value :db.type/string)
