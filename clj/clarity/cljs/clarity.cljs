@@ -43,6 +43,9 @@
 (defmethod empty-value 'String [{:keys [default]}]
   (or default ""))
 
+(defmethod empty-value 'Value [[_ v]]
+  v)
+
 (defmethod empty-value 'U [[_ & [[_ v]]]]
   v)
 
@@ -66,11 +69,13 @@
                     :value (om/value number)
                     :onChange #(om/update! number (fn [_ n] n) (js/parseFloat (.. % -target -value)))})))
 
+(def keyword-pattern "^:(\\w+|\\w+(\\.\\w+)*\\/\\w+)$")
+
 (defmethod make-typed-input 'Keyword [kw owner]
   (om/component
     (dom/input #js {:type "text"
                     :value (om/value kw)
-                    :pattern "^:(\\w+|\\w+(\\.\\w+)*\\/\\w+)$"
+                    :pattern keyword-pattern
                     :onChange (fn [ev]
                                 (when (valid? (.-target ev))
                                   (om/update! kw (fn [o n] n) (or (read-keyword (.. ev -target -value))
@@ -81,6 +86,17 @@
     (dom/input #js {:type "text"
                     :value (om/value string)
                     :onChange #(om/update! string (fn [_ n] n) (.. % -target -value))})))
+
+(defmethod make-typed-input 'Value [value owner]
+  (om/component
+   (dom/input (clj->js
+                (into {:value (str value)
+                       :readOnly ""}
+                  (cond
+                    (instance? js/Boolean value) {:type "checkbox", :checked value}
+                    (number? value) {:type "number"}
+                    (keyword? value) {:type "text", :pattern keyword-pattern}
+                    :else {:type "text"}))))))
 
 (defmethod make-typed-input 'U [value owner {type :type}]
   (om/component
