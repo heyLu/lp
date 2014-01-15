@@ -1,5 +1,7 @@
 (ns clarity
-  (:require [om.core :as om :include-macros true]
+  (:require [cljs.reader :as r]
+
+            [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]))
 
 (enable-console-print!)
@@ -100,7 +102,7 @@
 
 (defmethod make-typed-input 'U [value owner {type :type}]
   (om/component
-    (dom/select nil
+    (dom/select #js {:onChange #(om/update! value (fn [_ n] n) (r/read-string (.. % -target -value)))}
       (into-array
         (map (fn [[_ v]]
                (dom/option nil (str v)))
