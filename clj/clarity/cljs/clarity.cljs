@@ -145,6 +145,9 @@
 (defn make-typed-field [m optional?]
   (fn [[k t]]
     (dom/div #js {:className "field"}
+      (when optional?
+        (dom/input #js {:type "button", :value "-",
+                        :onClick (fn [_] (om/update! m dissoc k))}))
       (dom/label nil (str k (when optional? " (optional)")))
       (om/build make-typed-input m {:opts {:type (om/value t), :key k, :val (k m)
                                            :optional? optional?}}))))
