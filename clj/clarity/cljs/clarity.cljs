@@ -131,8 +131,13 @@
   (fn [[k t]]
     (dom/div #js {:className "field"}
       (dom/label nil (str k (when optional? " (optional)")))
-      (om/build make-typed-input m {:opts {:type t, :key k, :val (k m)
-                                           :optional? optional?}}))))
+        (let [m+ (assoc m k (empty-value t))
+              c (or (k m) (k m+))
+              [m c] (if (and (om/cursor? c) (coll? c))
+                      [c m+]
+                      [m c])]
+          (om/build make-typed-input m {:opts {:type t, :key k, :val c
+                                               :optional? optional?}})))))
 
 (defmethod make-typed-input 'HMap [m owner {type :type}]
   (let [hmap (apply hash-map (rest type))
@@ -156,7 +161,12 @@
                      :fun Boolean
                      :gender Keyword}
                     :optional
-                    {:secret-skill String}]]
+                    {:secret-skill String
+                     :traits [HMap :mandatory
+                                   {:mood (U (Value :relaxed)
+                                             (Value :angry)
+                                             (Value :romantic))
+                                    :strength String}]}]]
     (atom
      {:type type
       :data (empty-value type)})))
