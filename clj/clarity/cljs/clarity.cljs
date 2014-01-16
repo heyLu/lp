@@ -203,10 +203,10 @@
 
 (defn typed-input [{:keys [type data]} owner]
   (reify
-    om/IWillUpdate
-    (will-update [_ p s] (prn (:data p) s))
     om/IRender
     (render [_]
-      (om/build make-typed-input data {:opts {:type type}}))))
+      (dom/div nil
+        (om/build make-typed-input data {:opts {:type type}})
+        (dom/pre nil (pr-str data))))))
 
 (om/root app-state typed-input (.getElementById js/document "typed_input"))
