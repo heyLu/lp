@@ -60,6 +60,16 @@
                  [k (empty-value v)])
                entries))))
 
+(defn update-on-change!
+  ([m k] (update-on-change! m k identity))
+  ([m k transform-fn] (update-on-change! m k transform-fn false))
+  ([m k transform-fn optional?]
+   (fn [ev]
+     (let [new-val (transform-fn (.. ev -target -value))]
+       (if (and optional? (empty? new-val))
+         (om/update! m dissoc k)
+         (om/transact! m k (fn [_ n] n) new-val))))))
+
 (defmulti make-typed-input
   (fn [_ _ {type :type} & _]
     (cond
@@ -87,16 +97,6 @@
                     :value val
                     :pattern keyword-pattern
                     :onChange (update-on-change! m key #(or (read-keyword %) (empty-value type)))})))
-
-(defn update-on-change!
-  ([m k] (update-on-change! m k identity))
-  ([m k transform-fn] (update-on-change! m k transform-fn false))
-  ([m k transform-fn optional?]
-   (fn [ev]
-     (let [new-val (transform-fn (.. ev -target -value))]
-       (if (and optional? (empty? new-val))
-         (om/update! m dissoc k)
-         (om/transact! m k (fn [_ n] n) new-val))))))
 
 (defmethod make-typed-input 'String [m owner {:keys [type key val optional?]}]
   (om/component
