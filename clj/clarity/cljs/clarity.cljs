@@ -90,7 +90,7 @@
 
 (def keyword-pattern "^:(\\w+|\\w+(\\.\\w+)*\\/\\w+)$")
 
-(defmethod make-typed-input 'Keyword [m owner {:keys [key val] :as opts}]
+(defmethod make-typed-input 'Keyword [m owner {:keys [type key val] :as opts}]
   (om/component
     (dom/input #js {:type "text"
                     :value val
