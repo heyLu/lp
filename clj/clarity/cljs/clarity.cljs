@@ -131,7 +131,7 @@
   (fn [[k t]]
     (dom/div #js {:className "field"}
       (dom/label nil (str k (when optional? " (optional)")))
-      (om/build make-typed-input m {:opts {:type t, :key k, :val (k m)
+      (om/build make-typed-input m {:opts {:type (om/value t), :key k, :val (k m)
                                            :optional? optional?}}))))
 
 (defmethod make-typed-input 'HMap [m owner {type :type}]
