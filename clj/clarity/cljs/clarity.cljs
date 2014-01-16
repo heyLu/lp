@@ -134,6 +134,31 @@
       (om/build make-typed-input m {:opts {:type (om/value t), :key k, :val (k m)
                                            :optional? optional?}}))))
 
+(defn read-string-safe [s default]
+  (let [r (r/push-back-reader s)]
+    (r/read r false default false)))
+
+(defn update-dynamic-field! [type owner]
+  (fn [ev]
+    (let [k (om/get-state owner :key)
+          t (read-string-safe (om/get-state owner :type) nil)]
+      (when (and k t)
+        (om/transact! type [4] (fn [optional]
+                                 (assoc optional k t)))
+        (om/set-state! owner :key nil)
+        (om/set-state! owner :type nil)))))
+
+(defn make-dynamic-field [m owner type]
+  (om/component
+    (dom/div #js {:className "field"}
+      (dom/input #js {:type "button", :value "+"
+                      :onClick (update-dynamic-field! type owner)})
+      (dom/input #js {:type "text", :pattern keyword-pattern, :placeholder ":a.key/word"
+                      :value (om/get-state owner :key)
+                      :onChange #(om/set-state! owner :key (read-keyword (.. % -target -value)))})
+      (dom/input #js {:type "text", :value (om/get-state owner :type)
+                      :onChange #(om/set-state! owner :type (.. % -target -value))}))))
+
 (defmethod make-typed-input 'HMap [m owner {type :type}]
   (let [hmap (apply hash-map (rest type))
         required (:mandatory hmap)
@@ -143,6 +168,7 @@
         (dom/span nil "{")
         (into-array (map (make-typed-field m false) required))
         (into-array (map (make-typed-field m true) optional))
+        (om/build make-dynamic-field m {:opts type})
         (dom/span nil "}")))))
 
 (def app-state
