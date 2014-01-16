@@ -30,10 +30,9 @@
       :else type)))
 
 (defmethod empty-value 'Boolean [{:keys [default]}]
-  (js/Boolean.
-    (if-not (nil? default)
-      default
-      false)))
+  (if-not (nil? default)
+    default
+    false))
 
 (defmethod empty-value 'Number [{:keys [default]}]
   (or default 0))
@@ -60,15 +59,15 @@
                  [k (empty-value v)])
                entries))))
 
-(defn update-on-change!
-  ([m k] (update-on-change! m k identity))
-  ([m k transform-fn] (update-on-change! m k transform-fn false))
-  ([m k transform-fn optional?]
-   (fn [ev]
-     (let [new-val (transform-fn (.. ev -target -value))]
-       (if (and optional? (empty? new-val))
-         (om/update! m dissoc k)
-         (om/transact! m k (fn [_ n] n) new-val))))))
+(defn update-on-change! [m k {:keys [extract-fn transform-fn optional? type]
+                              :or {extract-fn #(.-value %)
+                                   transform-fn identity
+                                   type 'String}}]
+  (fn [ev]
+    (let [new-val (transform-fn (extract-fn (.-target ev)))]
+      (if (and optional? (= new-val (empty-value type)))
+        (om/update! m dissoc k)
+        (om/transact! m k (fn [_ n] n) new-val)))))
 
 (defmulti make-typed-input
   (fn [_ _ {type :type} & _]
@@ -77,32 +76,32 @@
       (map? type) (:type type)
       :else type)))
 
-(defmethod make-typed-input 'Boolean [m owner {:keys [type key val]}]
+(defmethod make-typed-input 'Boolean [m owner {:keys [type key val] :as opts}]
   (om/component
     (dom/input #js {:type "checkbox"
-                    :checked (.valueOf (or val (empty-value type)))
-                    :onChange #(om/transact! m key (fn [_ n] n) (js/Boolean. (.. % -target -checked)))})))
+                    :checked (or val (empty-value type))
+                    :onChange (update-on-change! m key (assoc opts :extract-fn #(.-checked %)))})))
 
-(defmethod make-typed-input 'Number [m owner {:keys [key val]}]
+(defmethod make-typed-input 'Number [m owner {:keys [key val] :as opts}]
   (om/component
     (dom/input #js {:type "number"
                     :value val
-                    :onChange (update-on-change! m key js/parseFloat)})))
+                    :onChange (update-on-change! m key (assoc opts :transform-fn js/parseFloat))})))
 
 (def keyword-pattern "^:(\\w+|\\w+(\\.\\w+)*\\/\\w+)$")
 
-(defmethod make-typed-input 'Keyword [m owner {:keys [key val]}]
+(defmethod make-typed-input 'Keyword [m owner {:keys [key val] :as opts}]
   (om/component
     (dom/input #js {:type "text"
                     :value val
                     :pattern keyword-pattern
-                    :onChange (update-on-change! m key #(or (read-keyword %) (empty-value type)))})))
+                    :onChange (update-on-change! m key (assoc opts :transform-fn #(or (read-keyword %) (empty-value type))))})))
 
-(defmethod make-typed-input 'String [m owner {:keys [type key val optional?]}]
+(defmethod make-typed-input 'String [m owner {:keys [type key val] :as opts}]
   (om/component
     (dom/input #js {:type "text"
                     :value val
-                    :onChange (update-on-change! m key identity optional?)})))
+                    :onChange (update-on-change! m key opts)})))
 
 (defmethod make-typed-input 'Value [m owner {type :type}]
   (let [[_ value] type]
@@ -111,7 +110,7 @@
                    (into {:value (str value)
                           :readOnly "readOnly"}
                          (cond
-                           (instance? js/Boolean value) {:type "checkbox", :checked value}
+                           (or (true? value) (false? value)) {:type "checkbox", :checked value}
                            (number? value) {:type "number"}
                            (keyword? value) {:type "text", :pattern keyword-pattern}
                            :else {:type "text"})))))))
@@ -120,9 +119,9 @@
   (let [[_ type] type]
     (make-typed-input m owner (assoc opts :type type))))
 
-(defmethod make-typed-input 'U [m owner {:keys [type key val]}]
+(defmethod make-typed-input 'U [m owner {:keys [type key val] :as opts}]
   (om/component
-    (dom/select #js {:onChange (update-on-change! m key r/read-string)}
+    (dom/select #js {:onChange (update-on-change! m key (assoc opts :transform-fn r/read-string))}
       (into-array
         (map (fn [[_ v]]
                (dom/option nil (str v)))
