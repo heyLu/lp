@@ -22,6 +22,12 @@
       (keyword name)
       nil)))
 
+(defn read-string-safe [s default]
+  (try
+    (r/read-string s)
+    (catch js/Error e
+      default)))
+
 (defmulti empty-value
   (fn get-type [type]
     (cond
@@ -45,6 +51,9 @@
 
 (defmethod empty-value 'Value [[_ v]]
   v)
+
+(defmethod empty-value 'Any [{:keys [default]}]
+  (or default nil))
 
 (defmethod empty-value 'Option [[_ v]]
   (empty-value v))
@@ -115,6 +124,12 @@
                            (keyword? value) {:type "text", :pattern keyword-pattern}
                            :else {:type "text"})))))))
 
+(defmethod make-typed-input 'Any [m owner {:keys [key] :as opts}]
+  (om/component
+    (dom/input #js {:type "text"
+                    :onChange (update-on-change! m key
+                                                 (assoc opts :transform-fn #(read-string-safe % nil)))})))
+
 (defmethod make-typed-input 'Option [m owner {type :type :as opts}]
   (let [[_ type] type]
     (make-typed-input m owner (assoc opts :type type))))
@@ -133,10 +148,6 @@
       (dom/label nil (str k (when optional? " (optional)")))
       (om/build make-typed-input m {:opts {:type (om/value t), :key k, :val (k m)
                                            :optional? optional?}}))))
-
-(defn read-string-safe [s default]
-  (let [r (r/push-back-reader s)]
-    (r/read r false default false)))
 
 (defn update-dynamic-field! [type owner]
   (fn [ev]
