@@ -17,6 +17,13 @@
   extension language)
 - the `clj` repl
 
+## Little thoughts
+
+- a lot of interesting people with interesting ideas use Clojure, so
+    maybe it encourages thinking about problems first? you can simply
+    start coding something before having any idea what you're going to
+    do (which is both good and bad).
+
 ## Giggles & quibbles
 
 + the giggles
