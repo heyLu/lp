@@ -79,3 +79,30 @@
 ((call/fresh fives) empty-state)
 
 ;; 4.3 interleaved streams
+
+(define (mplus $1 $2)
+  (cond
+    ((null? $1) $2)
+    ((procedure? $1) (lambda () (mplus $2 ($1))))
+    (else (cons (car $1) (mplus (cdr $1) $2)))))
+
+(define (sixes x)
+  (disj (≡ x 6) (lambda (s/c) (lambda () ((sixes x) s/c)))))
+
+(define fives-and-sixes
+  (call/fresh (lambda (x) (disj (fives x) (sixes x)))))
+
+;; 5 utilities
+
+(define (expand n s)
+  (if (> n 1)
+    (cond
+      ((null? s) s)
+      ((procedure? (cdr s)) `(,(car s) . ,(expand (- n 1) ((cdr s)))))
+      (else `(,(car s) . ,(expand (- n 1) (cdr s)))))
+    s))
+
+(expand 5 (fives-and-sixes empty-state))
+
+(define (run n g)
+  (expand n (g empty-state)))
