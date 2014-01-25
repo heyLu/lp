@@ -5,7 +5,7 @@
 
                  [com.datomic/datomic-free "0.9.4331"]
 
-                 [om "0.1.7-SNAPSHOT"]
+                 [om "0.3.0"]
 
                  [ring "1.2.1"]
                  [compojure "1.1.6"]
