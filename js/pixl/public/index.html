@@ -210,6 +210,12 @@
 		};
 
 		pixl.connect();
+
+        pixl.disconnectAndClear = function() {
+            pixl.disconnect();
+            pixl.world = {};
+            pixl.redraw();
+        }
 	</script>
 </body>
 </html>
