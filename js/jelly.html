@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+    <title>.jelly</title>
+    <meta charset="utf-8" />
+    <style>
+        body { margin: 0; padding: 0; }
+    </style>
+</head>
+
+<body>
+    <canvas id='stage'></canvas>
+    <p>Inspired by <a href="http://thefloorisjelly.tumblr.com/post/13477420108/what-technology-library-do-you-use-to-create-the-jelly">The Floor is Jelly</a>.</p>
+
+    <script>
+        var stage = document.querySelector('#stage');
+        var ctx = stage.getContext('2d');
+
+        var Rect = function(sx, sy, width, height) {
+            var inc = 25;
+
+            var upperLeft = {start: {x: sx, y: sy + inc},
+                             control: {x: sx, y: sy},
+                             end: {x: sx + inc, y: sy}};
+            var upperRight = {start: {x: sx + width - inc, y: sy},
+                              control: {x: sx + width, y: sy},
+                              end: {x: sx + width, y: sy + inc}};
+            var lowerRight = {start: {x: sx + width, y: sy + height - inc},
+                              control: {x: sx + width, y: sy + height},
+                              end: {x: sx + width - inc, y: sy + height}};
+            var lowerLeft = {start: {x: sx + inc, y: sy + height},
+                             control: {x: sx, y: sy + height},
+                             end: {x: sx, y: sy + height - inc}};
+
+            var segments = [upperLeft,
+                            {start: upperLeft.end, control: {x: sx + width / 2, y: sy}, end: upperRight.start},
+                            upperRight,
+                            {start: upperRight.end, control: {x: sx + width, y: sy + height / 2}, end: lowerRight.start},
+                            lowerRight,
+                            {start: lowerRight.end, control: {x: sx + width / 2, y: sy + height}, end: lowerLeft.start},
+                            lowerLeft,
+                            {start: lowerLeft.end, control: {x: sx, y: sy + height / 2}, end: upperLeft.start}];
+
+            var segments = [];
+
+            segments.push(upperLeft);
+            for (var i = sx + inc; i < sx + width - inc; i += inc) {
+                var prev = segments[segments.length - 1];
+                segments.push({start: prev.end,
+                               control: {x: i, y: sy + Math.random() * i/3},
+                               end: {x: i + inc, y: sy}});
+            }
+
+            segments.push(upperRight);
+
+            this.draw = function(ctx) {
+                ctx.beginPath();
+
+                for (var i = 0; i < segments.length; i++) {
+                    var segment = segments[i];
+                    ctx.moveTo(segment.start.x, segment.start.y);
+                    ctx.quadraticCurveTo(segment.control.x, segment.control.y, segment.end.x, segment.end.y);
+                }
+
+                ctx.stroke();
+            }
+        }
+
+        var r = new Rect(50, 50, 200, 100);
+        r.draw(ctx);
+    </script>
+</body>
+</html>
