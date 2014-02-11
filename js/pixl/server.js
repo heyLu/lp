@@ -66,7 +66,7 @@ app.get('/load/:name', function(req, res) {
 	})
 });
 
-app.get('/script/:name', function(req, res) {
+app.get('/scripts/:name', function(req, res) {
   var file = req.params.name + '.js';
   var dir = './public';
   if (!fs.existsSync(path.join(dir, file))) {
@@ -75,7 +75,7 @@ app.get('/script/:name', function(req, res) {
   res.sendfile(file, {root: dir});
 });
 
-app.post('/script/:name', function(req, res) {
+app.post('/scripts/:name', function(req, res) {
   processBody(req, function(err, body) {
     if (err) {
       res.send(JSON.stringify({status: "error", error: err}));

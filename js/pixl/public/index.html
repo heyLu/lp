@@ -240,13 +240,13 @@
 
         pixl.script.save = function(name, scriptObj) {
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/script/' + name);
+            xhr.open('POST', '/scripts/' + name);
             xhr.send(pixl.script.stringify(name, scriptObj));
         };
 
         pixl.script.load = function(name) {
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/script/' + name);
+            xhr.open('GET', '/scripts/' + name);
             xhr.onreadystatechange = function(ev) {
                 if (xhr.readyState == 4) {
                     var code = xhr.responseText;
