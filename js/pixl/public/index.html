@@ -78,6 +78,10 @@
 					y: pixl.window.h / 2 + (world_pos.y - pixl.pos.y) * pixl.size};
 		}
 
+        pixl.area = {};
+        pixl.area.w2 = function() { return Math.round(pixl.window.w / pixl.size / 2); };
+        pixl.area.h2 = function() { return Math.round(pixl.window.h / pixl.size / 2); };
+
 		pixl.at = function(pos) {
 			var p = pixl.world[pos.x + "," + pos.y];
 			return p !== undefined && p.color !== "white";
