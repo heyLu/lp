@@ -232,8 +232,13 @@
 
         pixl.scripts.stringify = function(name, scriptObj) {
             var script = "window." + name + " = " + "{};\n";
-            for (var funName in scriptObj) {
-                script += name + "." + funName + " = " + scriptObj[funName].toString() + ";\n";
+            for (var fnName in scriptObj) {
+                var fn = scriptObj[fnName];
+                script += name + "." + fnName + " = " + fn.toString() + ";\n";
+                if (fn.doc) {
+                    script += name + "." + fnName + ".doc = " + JSON.stringify(fn.doc) + ";\n";
+                }
+
             }
             return script;
         };
