@@ -126,7 +126,7 @@
 			} else if (pixl.size > pixl.window.w / 2) {
 				pixl.size = Math.round(pixl.window.w / 2);
 			}
-			pixl.redraw();
+			requestAnimationFrame(pixl.redraw);
 		});
 
 		window.addEventListener("resize", function(ev) {
