@@ -228,9 +228,9 @@
         }
 	</script>
     <script>
-        pixl.script = {};
+        pixl.scripts = {};
 
-        pixl.script.stringify = function(name, scriptObj) {
+        pixl.scripts.stringify = function(name, scriptObj) {
             var script = "window." + name + " = " + "{};\n";
             for (var funName in scriptObj) {
                 script += name + "." + funName + " = " + scriptObj[funName].toString() + ";\n";
@@ -238,13 +238,13 @@
             return script;
         };
 
-        pixl.script.save = function(name, scriptObj) {
+        pixl.scripts.save = function(name, scriptObj) {
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '/scripts/' + name);
-            xhr.send(pixl.script.stringify(name, scriptObj));
+            xhr.send(pixl.scripts.stringify(name, scriptObj));
         };
 
-        pixl.script.load = function(name) {
+        pixl.scripts.load = function(name) {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/scripts/' + name);
             xhr.onreadystatechange = function(ev) {
