@@ -255,6 +255,20 @@
             }
             xhr.send();
         };
+
+        pixl.scripts.list = function() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/scripts');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4) {
+                    var scripts = xhr.responseText.split("\n");
+                    for (var i = 0; i < scripts.length; i++) {
+                        console.log(scripts[i]);
+                    }
+                }
+            };
+            xhr.send();
+        }
     </script>
 </body>
 </html>
