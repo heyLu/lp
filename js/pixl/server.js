@@ -66,6 +66,12 @@ app.get('/load/:name', function(req, res) {
 	})
 });
 
+app.get('/scripts', function(req, res) {
+	var scripts = fs.readdirSync('./data/scripts');
+	res.setHeader('Content-Type', 'text/plain');
+	res.send(scripts.map(function(s) { return s.slice(0, s.length - 3); }).join("\n"));
+});
+
 app.get('/scripts/:name', function(req, res) {
   var file = req.params.name + '.js';
   var dir = './public';
