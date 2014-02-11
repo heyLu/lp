@@ -227,5 +227,34 @@
             pixl.redraw();
         }
 	</script>
+    <script>
+        pixl.script = {};
+
+        pixl.script.stringify = function(name, scriptObj) {
+            var script = "window." + name + " = " + "{};\n";
+            for (var funName in scriptObj) {
+                script += name + "." + funName + " = " + scriptObj[funName].toString() + ";\n";
+            }
+            return script;
+        };
+
+        pixl.script.save = function(name, scriptObj) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/script/' + name);
+            xhr.send(pixl.script.stringify(name, scriptObj));
+        };
+
+        pixl.script.load = function(name) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/script/' + name);
+            xhr.onreadystatechange = function(ev) {
+                if (xhr.readyState == 4) {
+                    var code = xhr.responseText;
+                    eval(code);
+                }
+            }
+            xhr.send();
+        };
+    </script>
 </body>
 </html>
