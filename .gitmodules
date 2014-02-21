@@ -1,0 +1,12 @@
+[submodule "clj/datomic/mbrainz-sample"]
+	path = clj/datomic/mbrainz-sample
+	url = git://github.com/Datomic/mbrainz-sample
+[submodule "clj/datomic/day-of-datomic"]
+	path = clj/datomic/day-of-datomic
+	url = git://github.com/Datomic/day-of-datomic
+[submodule "clj/datomic/checkouts/mbrainz-sample"]
+	path = clj/datomic/checkouts/mbrainz-sample
+	url = git://github.com/Datomic/mbrainz-sample
+[submodule "clj/datomic/checkouts/day-of-datomic"]
+	path = clj/datomic/checkouts/day-of-datomic
+	url = git://github.com/Datomic/day-of-datomic
