@@ -90,6 +90,7 @@
 		pixl.draw_pixl = function(pos, color, options) {
 			var color = color || pixl.color;
 			pixl.ctx.fillStyle = color;
+			var pos = options.rawValue ? pos : {x: Math.round(pos.x), y: Math.round(pos.y)};
 			var screen_pos = pixl.to_screen(pos);
 			pixl.ctx.fillRect(screen_pos.x, screen_pos.y, pixl.size, pixl.size);
 			pixl.world[pos.x + "," + pos.y] = {color: color};
