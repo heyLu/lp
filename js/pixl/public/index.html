@@ -90,13 +90,14 @@
 		pixl.draw_pixl = function(pos, color, options) {
 			var color = color || pixl.color;
 			pixl.ctx.fillStyle = color;
+			var options = options || {};
 			var pos = options.rawValue ? pos : {x: Math.round(pos.x), y: Math.round(pos.y)};
 			var screen_pos = pixl.to_screen(pos);
 			pixl.ctx.fillRect(screen_pos.x, screen_pos.y, pixl.size, pixl.size);
 			pixl.world[pos.x + "," + pos.y] = {color: color};
 
-			var options = options || {send: true};
-			if (pixl.online && options.send) {
+			var send = options.hasOwnProperty('send') ? options.send : true;
+			if (pixl.online && send) {
 				pixl.ws.send(JSON.stringify([{x: pos.x, y: pos.y, color: color}]));
 			}
 		}
