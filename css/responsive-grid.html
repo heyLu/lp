@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+    <head>
+        <title>A responsive grid using css flexbox.</title>
+        <meta charset="utf-8" />
+        <style type="text/css">
+            .grid {
+                display: flex;
+                flex-flow: row wrap;
+
+                /*width: 40em;*/
+            }
+
+            .grid > div {
+                flex: 0 1 auto;
+
+                min-width: 5em;
+                min-height: 5em;
+
+                margin: 0.5em 1em;
+            }
+
+            .grid > div:hover { opacity: 0.75; }
+
+            .grid > .larger {
+                flex: 4 1 auto;
+            }
+
+            .red { background-color: #e02f56; }
+            .green { background-color: #1ed66b; }
+        </style>
+    </head>
+
+    <body>
+        <h1>A responsive grid using css flexbox</h1>
+
+        <p>By setting <code>flex-flow: row wrap;</code> on the grid container
+            we display the elements inside it as rows that wrap when they are
+            too large for fitting on one line.</p>
+
+        <p>Resize your browser window to have some more fun.</p>
+
+        <p>Firefox doesn't seem to support the <code>flex-flow</code> property yet,
+            so you'd want to use a polyfill.</p>
+
+        <div class="grid">
+            <div class="red"></div>
+            <div class="red"></div>
+            <div class="red larger"></div>
+            <div class="red"></div>
+            <div class="red"></div>
+            <div class="green"></div>
+            <div class="red"></div>
+            <div class="red"></div>
+            <div class="red larger"></div>
+            <div class="red"></div>
+            <div class="red"></div>
+            <div class="red"></div>
+            <div class="red"></div>
+            <div class="red"></div>
+            <div class="red larger"></div>
+            <div class="red"></div>
+            <div class="red"></div>
+            <div class="green"></div>
+            <div class="red"></div>
+            <div class="red"></div>
+            <div class="red larger"></div>
+            <div class="red"></div>
+            <div class="green"></div>
+            <div class="red"></div>
+        </div>
+    </body>
+</html>
