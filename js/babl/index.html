@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+	<head>
+		<title>babl</title>
+		<meta charset="utf-8" />
+	</head>
+
+	<body>
+		<div id="messages">
+		</div>
+		<input id="input" type="text" placeholder="Say something..." />
+
+		<script>
+			var messagesEl = document.getElementById("messages");
+			var inputEl = document.getElementById("input");
+
+			var ws = new WebSocket("ws://localhost:8080");
+
+			inputEl.onkeyup = function(ev) {
+				if (ev.keyCode == 13) {
+					sendMessage(inputEl.value);
+					inputEl.value = "";
+				}
+			}
+
+			function displayMessage(msg) {
+				var msgEl = document.createElement("pre");
+				var msgDate = new Date(msg.timestamp);
+				msgEl.textContent = msgDate.toLocaleTimeString() + " - " + msg.author + ": " + msg.content;
+				messagesEl.appendChild(msgEl);
+			}
+
+			ws.onmessage = function(ev) {
+				var msg = JSON.parse(ev.data);
+				switch (msg.type) {
+					case "message":
+						displayMessage(msg);
+						break;
+					default:
+						console.warn("unkown message type: " + msg.type);
+				}
+			}
+
+			function sendMessage(msg) {
+				var msg = {
+					type: "message",
+					content: msg
+				};
+				console.log("sending: ", msg);
+				ws.send(JSON.stringify(msg));
+			}
+		</script>
+	</body>
+</html>
