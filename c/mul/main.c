@@ -35,6 +35,11 @@ long eval(mpc_ast_t* t) {
 }
 
 int main(int argc, char** argv) {
+	int debug_mode = 0;
+	if (getenv("DEBUG")) {
+		debug_mode = 1;
+	}
+
 	mpc_parser_t* Number = mpc_new("number");
 	mpc_parser_t* Operator = mpc_new("operator");
 	mpc_parser_t* Expr = mpc_new("expr");
@@ -58,7 +63,9 @@ lang     : /^/ <expr>+ /$/ ; \
 		mpc_result_t r;
 		if (mpc_parse("<stdin>", input, Lang, &r)) {
 			mpc_ast_t* t = r.output;
-			mpc_ast_print(t->children[1]);
+			if (debug_mode) {
+				mpc_ast_print(t->children[1]);
+			}
 			long result = eval(t->children[1]);
 			printf("%li\n", result);
 			mpc_ast_delete(r.output);
