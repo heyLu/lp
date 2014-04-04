@@ -14,6 +14,8 @@
 			var messagesEl = document.getElementById("messages");
 			var inputEl = document.getElementById("input");
 
+			setTimeout(loadHistory, 0);
+
 			var ws = new WebSocket("ws://localhost:8080");
 
 			inputEl.onkeyup = function(ev) {
@@ -30,8 +32,7 @@
 				messagesEl.appendChild(msgEl);
 			}
 
-			ws.onmessage = function(ev) {
-				var msg = JSON.parse(ev.data);
+			function handleMessage(msg) {
 				switch (msg.type) {
 					case "message":
 						displayMessage(msg);
@@ -41,6 +42,11 @@
 				}
 			}
 
+			ws.onmessage = function(ev) {
+				var msg = JSON.parse(ev.data);
+				handleMessage(msg);
+			}
+
 			function sendMessage(msg) {
 				var msg = {
 					type: "message",
@@ -48,6 +54,20 @@
 				};
 				console.log("sending: ", msg);
 				ws.send(JSON.stringify(msg));
+			}
+
+			function loadHistory() {
+				var xhr = new XMLHttpRequest();
+				xhr.open('GET', location.href + "/../msgs.json");
+				xhr.onreadystatechange = function() {
+					if (xhr.readyState == XMLHttpRequest.DONE) {
+						var msgs = JSON.parse(xhr.responseText);
+						msgs.forEach(function(msg) {
+							handleMessage(msg);
+						});
+					}
+				}
+				xhr.send();
 			}
 		</script>
 	</body>
