@@ -42,10 +42,10 @@
 				}
 			}
 
-			ws.onmessage = function(ev) {
+			ws.addEventListener('message', function(ev) {
 				var msg = JSON.parse(ev.data);
 				handleMessage(msg);
-			}
+			});
 
 			function sendMessage(msg) {
 				var msg = {
