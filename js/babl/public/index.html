@@ -16,7 +16,7 @@
 
 			setTimeout(loadHistory, 0);
 
-			var ws = new WebSocket("ws://localhost:8080");
+			var ws = new WebSocket("ws://" + location.host);
 
 			inputEl.onkeyup = function(ev) {
 				if (ev.keyCode == 13) {
