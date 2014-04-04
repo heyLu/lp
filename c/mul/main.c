@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 
 #include <editline/readline.h>
@@ -9,6 +10,10 @@ long eval_op(long x, char* op, long y) {
 	if (strcmp(op, "-") == 0) { return x - y; }
 	if (strcmp(op, "*") == 0) { return x * y; }
 	if (strcmp(op, "/") == 0) { return x / y; }
+	if (strcmp(op, "%") == 0) { return x % y; }
+	if (strcmp(op, "^") == 0) { return pow(x, y); }
+	if (strcmp(op, "min") == 0) { return x < y ? x : y; }
+	if (strcmp(op, "max") == 0) { return x > y ? x : y; }
 	return 0;
 }
 
@@ -38,7 +43,7 @@ int main(int argc, char** argv) {
 	mpca_lang(MPC_LANG_DEFAULT,
 		"\
 number   : /-?[0-9]+(\\.[0-9]+)?/ ; \
-operator : '+' | '-' | '*' | '/' | /[a-zA-Z-]+/ ; \
+operator : '+' | '-' | '*' | '/' | '%' | '^' | /[a-zA-Z-]+/ ; \
 expr     : <number> | '(' <operator> <expr>+ ')' ; \
 lang     : /^/ <expr>+ /$/ ; \
 ",
