@@ -3,6 +3,13 @@
 	<head>
 		<title>babl</title>
 		<meta charset="utf-8" />
+
+		<style type="text/css">
+			#input {
+				float: left;
+				width: 100%;
+			}
+		</style>
 	</head>
 
 	<body>
@@ -30,6 +37,7 @@
 				var msgDate = new Date(msg.timestamp);
 				msgEl.textContent = msgDate.toLocaleTimeString() + " - " + msg.author + ": " + msg.content;
 				messagesEl.appendChild(msgEl);
+				msgEl.scrollIntoView();
 			}
 
 			function handleMessage(msg) {
