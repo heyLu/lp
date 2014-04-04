@@ -19,6 +19,15 @@ wss.on('connection', function(ws) {
 
 		wss.broadcast(msg);
 	});
+
+	ws.on('close', function() {
+		var msg = {
+			type: "disconnect",
+			author: name,
+			timestamp: Date.now()
+		};
+		wss.broadcast(msg);
+	});
 });
 
 function randomName() {
