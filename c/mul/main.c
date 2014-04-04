@@ -5,7 +5,7 @@
 
 #include "mpc.h"
 
-long eval_op(long x, char* op, long y) {
+long eval_binary_op(char* op, long x, long y) {
 	if (strcmp(op, "+") == 0) { return x + y; }
 	if (strcmp(op, "-") == 0) { return x - y; }
 	if (strcmp(op, "*") == 0) { return x * y; }
@@ -17,6 +17,11 @@ long eval_op(long x, char* op, long y) {
 	return 0;
 }
 
+long eval_unary_op(char* op, long x) {
+	if (strcmp(op, "-") == 0) { return -x; }
+	return x;
+}
+
 long eval(mpc_ast_t* t) {
 	if (strstr(t->tag, "number")) {
 		return atoi(t->contents);
@@ -25,13 +30,17 @@ long eval(mpc_ast_t* t) {
 	char* op = t->children[1]->contents;
 	long x = eval(t->children[2]);
 
-	int i = 3;
-	while (strstr(t->children[i]->tag, "expr")) {
-		x = eval_op(x, op, eval(t->children[i]));
-		i++;
-	}
+	if (t->children_num == 4) {
+		return eval_unary_op(op, x);
+	} else {
+		int i = 3;
+		while (strstr(t->children[i]->tag, "expr")) {
+			x = eval_binary_op(op, x, eval(t->children[i]));
+			i++;
+		}
 
-	return x;
+		return x;
+	}
 }
 
 int main(int argc, char** argv) {
