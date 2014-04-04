@@ -17,6 +17,11 @@ a simple, web-based chat server using websockets.
   hubot? (setup is quite complex, need to understand quite a few
   different parts)
 
+## wishlist
+
+* how do we websocket efficiently? should we batch (both client and
+  server), should/could we send binary?
+
 ## api playground
 
 here are some ideas how the api could look.
