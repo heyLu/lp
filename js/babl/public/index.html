@@ -58,7 +58,7 @@
 
 			function loadHistory() {
 				var xhr = new XMLHttpRequest();
-				xhr.open('GET', location.href + "/../msgs.json");
+				xhr.open('GET', "msgs");
 				xhr.onreadystatechange = function() {
 					if (xhr.readyState == XMLHttpRequest.DONE) {
 						var msgs = JSON.parse(xhr.responseText);

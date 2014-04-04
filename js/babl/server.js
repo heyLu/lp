@@ -1,6 +1,17 @@
 var ws = require('ws');
+var http = require('http');
+var express = require('express');
 
-var wss = new ws.Server({port: 8080});
+var app = express();
+app.use(express.static(__dirname + "/public"));
+
+var server = http.createServer(app);
+
+app.get('/msgs', function(req, res) {
+	res.sendfile('msgs.json');
+});
+
+var wss = new ws.Server({server: server});
 
 wss.broadcast = function(data) {
 	var msg = typeof data === "string" ? data : JSON.stringify(data);
@@ -35,3 +46,6 @@ function randomName() {
 	}
 	return name;
 }
+
+var port = parseInt(process.env.PORT || "8080");
+server.listen(port);
