@@ -2,6 +2,19 @@
 
 a simple, web-based chat server using websockets.
 
+## running it
+
+    $ npm install
+    $ PORT=10001 node server
+
+The server is now running on <http://localhost:10001>.
+
+You can also archive all messages ever sent:
+
+    $ HOST_URL=ws://localhost:10001 node archiver
+
+This allows clients to load the previous messages on initial load.
+
 ## ideas
 
 * starting out should be as easy as possible
