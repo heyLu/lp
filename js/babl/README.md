@@ -34,6 +34,12 @@ This allows clients to load the previous messages on initial load.
 
 * how do we websocket efficiently? should we batch (both client and
   server), should/could we send binary?
+* rooms. separate sockets or multiplex via one socket? then we'd need
+  some mechanism to list rooms, create them, optionally set a passphrase
+  or possibly other fancy things.
+* names. and maybe other "properties". we could handle this using a
+  separate service that has mappings from the generated name to the
+  properties. clients could then decide to use that if they so desire.
 
 ## api playground
 
