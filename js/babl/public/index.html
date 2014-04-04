@@ -37,7 +37,9 @@
 				var msgDate = new Date(msg.timestamp);
 				msgEl.textContent = msgDate.toLocaleTimeString() + " - " + msg.author + ": " + msg.content;
 				messagesEl.appendChild(msgEl);
-				msgEl.scrollIntoView();
+				if (window.scrollY >= window.scrollMaxY - 2 * inputEl.clientHeight) {
+					msgEl.scrollIntoView();
+				}
 			}
 
 			function handleMessage(msg) {
