@@ -12,6 +12,8 @@ wss.broadcast = function(data) {
 wss.on('connection', function(ws) {
 	var name = randomName();
 
+	wss.broadcast({type: "connect", author: name, timestamp: Date.now()});
+
 	ws.on('message', function(msg) {
 		var msg = JSON.parse(msg);
 		msg.author = name;
@@ -21,12 +23,7 @@ wss.on('connection', function(ws) {
 	});
 
 	ws.on('close', function() {
-		var msg = {
-			type: "disconnect",
-			author: name,
-			timestamp: Date.now()
-		};
-		wss.broadcast(msg);
+		wss.broadcast({type: "disconnect", author: name, timestamp: Date.now()});
 	});
 });
 
