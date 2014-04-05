@@ -37,6 +37,26 @@
 				}
 			}
 
+			function oembedElement(url, oembedEndpoint) {
+				var el = document.createElement('a');
+				el.href = url;
+				el.textContent = url;
+
+				var xhr = new XMLHttpRequest();
+				xhr.open('GET', oembedEndpoint + '?format=json&maxwidth=450&url=' + url);
+				xhr.onreadystatechange = function() {
+					if (xhr.readyState == XMLHttpRequest.DONE) {
+						console.log(url, xhr.status);
+						var tmpEl = document.createElement('div');
+						tmpEl.innerHTML = JSON.parse(xhr.responseText).html;
+						el.parentElement.replaceChild(tmpEl.firstChild, el);
+					}
+				};
+				xhr.send();
+
+				return el;
+			}
+
 			var word_matchers = [{
 				re: /https?:\/\/.*youtube.com\/watch\?v=([a-zA-Z0-9-]+).*/,
 				fn: function(match) {
@@ -49,38 +69,10 @@
 				}
 			}, {
 				re: /https?:\/\/.*soundcloud.com\/.*/,
-				fn: function(match, msgEl) {
-					var el = document.createElement('a');
-					el.href = match[0];
-					el.textContent = match[0];
-
-					var xhr = new XMLHttpRequest();
-					xhr.open('GET', 'https://soundcloud.com/oembed?format=json&maxwidth=450&maxheight=315&url=' + match[0]);
-					xhr.onreadystatechange = function() {
-						if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) {
-							var data = JSON.parse(xhr.responseText);
-
-							var tmpEl = document.createElement("div");
-							tmpEl.innerHTML = data.html;
-
-							msgEl.replaceChild(tmpEl.firstChild, el);
-						}
-					}
-					xhr.send();
-
-					return el;
-				}
+				fn: function(match) { return oembedElement(match[0], "https://soundcloud.com/oembed"); }
 			}, {
 				re: /https?:\/\/vimeo.com\/([0-9]+).*/,
-				fn: function(match) {
-					var el = document.createElement("iframe");
-					el.src = "//player.vimeo.com/video/" + match[1];
-					el.sandbox = "allow-same-origin allow-scripts allow-popups";
-					el.width = 420;
-					el.height = 315;
-					el.setAttribute("frameborder", 0);
-					return el;
-				}
+				fn: function(match) { return oembedElement(match[0], "http://vimeo.com/api/oembed.json"); }
 			}, {
 				re: /https?:\/\/.*(png|gif|jpg|jpeg)$/i,
 				fn: function(match) {
