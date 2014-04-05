@@ -84,12 +84,12 @@
 				}
 			}, { re: /.*/, fn: function(match) { return new Text(match[0]); }}];
 
-			function expandWord(word) {
+			function expandWord(word, msgEl) {
 				for (var i = 0; i < word_matchers.length; i++) {
 					var matcher = word_matchers[i];
 					var match = word.match(matcher.re);
 					if (match) {
-						return matcher.fn(match);
+						return matcher.fn(match, msgEl);
 					}
 				}
 			}
@@ -101,7 +101,7 @@
 				var words = msg.content.split(/\s/);
 				for (var i = 0; i < words.length; i++) {
 					msgEl.appendChild(new Text(" "));
-					msgEl.appendChild(expandWord(words[i]));
+					msgEl.appendChild(expandWord(words[i], msgEl));
 				}
 				messagesEl.appendChild(msgEl);
 				if (window.scrollY >= window.scrollMaxY - 2 * inputEl.clientHeight) {
