@@ -89,6 +89,23 @@
 					return el;
 				}
 			}, {
+				re: /https?:\/\/.*(mp3|ogg)$/i,
+				fn: function(match) {
+					var el = document.createElement("audio");
+					el.controls = "controls";
+					el.src = match[0];
+					return el;
+				}
+			}, {
+				re: /https?:\/\/.*(mp4|ogv|webm)/i,
+				fn: function(match) {
+					var el = document.createElement("video");
+					el.src = match[0];
+					el.controls = "controls";
+					el.width = 450;
+					return el;
+				}
+			}, {
 				re: /https?:\/\/.*/,
 				fn: function(match) {
 					var el = document.createElement("a");
