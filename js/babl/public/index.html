@@ -5,6 +5,11 @@
 		<meta charset="utf-8" />
 
 		<style type="text/css">
+			#messages img {
+				max-width: 500px;
+				max-height: 350px;
+			}
+
 			#input {
 				float: left;
 				width: 100%;
@@ -32,10 +37,54 @@
 				}
 			}
 
+			var word_matchers = [{
+				re: /https?:\/\/.*youtube.com\/watch\?v=([a-zA-Z0-9-]+).*/,
+				fn: function(match) {
+					var el = document.createElement("iframe");
+					el.src = "http://www.youtube.com/embed/" + match[1];
+					el.width = 420;
+					el.height = 315;
+					el.setAttribute("frameborder", 0);
+					return el;
+				}
+			}, {
+				re: /https?:\/\/vimeo.com\/([0-9]+).*/,
+				fn: function(match) {
+					var el = document.createElement("iframe");
+					el.src = "http://player.vimeo.com/video/" + match[1];
+					el.width = 420;
+					el.height = 315;
+					el.setAttribute("frameborder", 0);
+					return el;
+				}
+			}, {
+				re: /https?:\/\/.*(png|gif|jpg|jpeg)$/i,
+				fn: function(match) {
+					var el = document.createElement("img");
+					el.src = match[0];
+					return el;
+				}
+			}, { re: /.*/, fn: function(match) { return new Text(match[0]); }}];
+
+			function expandWord(word) {
+				for (var i = 0; i < word_matchers.length; i++) {
+					var matcher = word_matchers[i];
+					var match = word.match(matcher.re);
+					if (match) {
+						return matcher.fn(match);
+					}
+				}
+			}
+
 			function displayMessage(msg) {
 				var msgEl = document.createElement("pre");
 				var msgDate = new Date(msg.timestamp);
-				msgEl.textContent = msgDate.toLocaleTimeString() + " - " + msg.author + ": " + msg.content;
+				msgEl.textContent = msgDate.toLocaleTimeString() + " - " + msg.author + ": ";
+				var words = msg.content.split(/\s/);
+				for (var i = 0; i < words.length; i++) {
+					msgEl.appendChild(new Text(" "));
+					msgEl.appendChild(expandWord(words[i]));
+				}
 				messagesEl.appendChild(msgEl);
 				if (window.scrollY >= window.scrollMaxY - 2 * inputEl.clientHeight) {
 					msgEl.scrollIntoView();
