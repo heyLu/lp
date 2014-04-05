@@ -45,8 +45,7 @@
 				var xhr = new XMLHttpRequest();
 				xhr.open('GET', oembedEndpoint + '?format=json&maxwidth=450&url=' + url);
 				xhr.onreadystatechange = function() {
-					if (xhr.readyState == XMLHttpRequest.DONE) {
-						console.log(url, xhr.status);
+					if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) {
 						var tmpEl = document.createElement('div');
 						tmpEl.innerHTML = JSON.parse(xhr.responseText).html;
 						el.parentElement.replaceChild(tmpEl.firstChild, el);
