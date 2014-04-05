@@ -51,7 +51,8 @@
 				re: /https?:\/\/vimeo.com\/([0-9]+).*/,
 				fn: function(match) {
 					var el = document.createElement("iframe");
-					el.src = "http://player.vimeo.com/video/" + match[1];
+					el.src = "//player.vimeo.com/video/" + match[1];
+					el.sandbox = "allow-same-origin allow-scripts allow-popups";
 					el.width = 420;
 					el.height = 315;
 					el.setAttribute("frameborder", 0);
