@@ -73,6 +73,15 @@
 					el.textContent = match[0];
 					return el;
 				}
+			}, {
+				re: /^(\*\*?|__?)([^\s]+)\1$/,
+				fn: function(match) {
+					var highlight = {"*": "em", "**": "strong", "_": "em", "__": "strong"};
+					console.log(match.toString());
+					var el = document.createElement(highlight[match[1]]);
+					el.textContent = match[2];
+					return el;
+				}
 			}, { re: /.*/, fn: function(match) { return new Text(match[0]); }}];
 
 			function expandWord(word) {
