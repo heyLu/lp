@@ -5,3 +5,7 @@
 
 /hello_dynasm
 /hello_dynasm.c
+
+/bf
+/bf.c
+/mandelbrot.bf

@@ -1,0 +1,97 @@
+#include <stdint.h>
+
+|.arch x64
+|.actionlist actions
+|
+| // rbx is the pointer to the current cell
+| //   (and it's preserved across calls to functions)
+| .define PTR, rbx
+|
+| // macro for calling a function.
+|.macro callp, addr
+|  mov64 rax, (uintptr_t)addr
+|  call  rax
+|.endmacro
+
+#define Dst &state
+#define MAX_NESTING 256
+
+void error(const char *msg) {
+	fprintf(stderr, "%s\n", msg);
+	exit(1);
+}
+
+int main(int argc, char *argv[]) {
+	if (argc < 2) {
+		error("Usage: bf <program>");
+	}
+
+	dasm_State *state;
+	initjit(&state, actions);
+
+	unsigned int maxpc = 0;
+	int pcstack[MAX_NESTING];
+	int *top = pcstack, *limit = pcstack + MAX_NESTING;
+
+	// function prologue
+	| push PTR
+	| mov  PTR, rdi
+
+	for (char *p = argv[1]; *p; p++) {
+		switch (*p) {
+			case '>':
+				| inc PTR
+				break;
+			case '<':
+				| dec PTR
+				break;
+			case '+':
+				| inc byte [PTR]
+				break;
+			case '-':
+				| dec byte [PTR]
+				break;
+			case '.':
+				| movzx edi, byte [PTR]
+				| callp putchar
+				break;
+			case ',':
+				| callp getchar
+				| mov   byte [PTR], al
+				break;
+			case '[':
+				if (top == limit) {
+					error("Nesting too deep.");
+				}
+
+				maxpc += 2;
+				*top++ = maxpc;
+				dasm_growpc(&state, maxpc);
+				| cmp byte [PTR], 0
+				| je  =>(maxpc-2)
+				|=>(maxpc-1):
+				break;
+			case ']':
+				if (top == pcstack) {
+					error("Unmatched ']'");
+				}
+
+				top--;
+				| cmp byte [PTR], 0
+				| jne =>(*top-1)
+				|=>(*top-2):
+				break;
+		}
+	}
+
+	// function epilogue
+	| pop PTR
+	| ret
+
+	void (*bf_program)(char*) = jitcode(&state);
+	char *mem = calloc(30000, 1);
+	bf_program(mem);
+	free(mem);
+	free_jitcode(bf_program);
+	return 0;
+}
