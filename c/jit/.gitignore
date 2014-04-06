@@ -1,3 +1,7 @@
 /luajit
+/dynasm-driver.c
 
 /hello_jit
+
+/hello_dynasm
+/hello_dynasm.c

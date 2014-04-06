@@ -1,0 +1,27 @@
+|.arch x64
+|.actionlist actions
+
+#define Dst &state
+
+int main(int argc, char *argv[]) {
+	if (argc < 2) {
+		fprintf(stderr, "Usage: hello_dynasm <integer>\n");
+		return 1;
+	}
+
+	int num = atoi(argv[1]);
+	dasm_State *state;
+	initjit(&state, actions);
+
+	| mov eax, num
+	| ret
+
+	int (*func)() = jitcode(&state);
+
+	int ret = func();
+	assert(num == ret);
+
+	free_jitcode(func);
+
+	return ret;
+}

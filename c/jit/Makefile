@@ -1,3 +1,16 @@
+CFLAGS=-Iluajit
+
+hello_dynasm: hello_dynasm.c dynasm-driver.c
+	$(CC) $(CFLAGS) -o hello_dynasm dynasm-driver.c -DJIT=\"hello_dynasm.c\"
+
+%.c: %.dasc
+	./dynasm -o $@ $<
+
+%.dasc: dynasm
+
+dynasm-driver.c:
+	curl -O https://raw.githubusercontent.com/haberman/jitdemo/master/dynasm-driver.c
+
 dynasm: luajit
 
 luajit:
