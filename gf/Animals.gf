@@ -2,9 +2,10 @@ abstract Animals = {
 	flags startcat = Phrase;
 
 	cat
-		Phrase; Individual; Species; Quality;
+		FullPhrase; Phrase; Individual; Species; Quality;
 
 	fun
+		ExcuseMeBut: Phrase -> FullPhrase;
 		Q: Individual -> Quality -> Phrase;
 		Is: Individual -> Quality -> Phrase;
 		This, That: Species -> Individual;

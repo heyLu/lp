@@ -1,8 +1,10 @@
 concrete AnimalsEnglish of Animals = {
 	lincat
-		Phrase, Individual, Species, Quality = {s: Str};
+		FullPhrase, Phrase, Individual, Species, Quality = {s: Str};
 
 	lin
+		ExcuseMeBut phrase = {s = "excuse me but" ++ phrase.s};
+
 		Q individual quality = {s = "is" ++ individual.s ++ quality.s ++ "?"};
 
 		Is individual quality = {s = individual.s ++ "is" ++ quality.s};
