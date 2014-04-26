@@ -3,6 +3,8 @@ concrete AnimalsEnglish of Animals = {
 		Phrase, Individual, Species, Quality = {s: Str};
 
 	lin
+		Q individual quality = {s = "is" ++ individual.s ++ quality.s ++ "?"};
+
 		Is individual quality = {s = individual.s ++ "is" ++ quality.s};
 
 		This species = {s = "this" ++ species.s};

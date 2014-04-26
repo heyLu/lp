@@ -5,6 +5,7 @@ abstract Animals = {
 		Phrase; Individual; Species; Quality;
 
 	fun
+		Q: Individual -> Quality -> Phrase;
 		Is: Individual -> Quality -> Phrase;
 		This, That: Species -> Individual;
 		QSpecies: Quality -> Species -> Species;
