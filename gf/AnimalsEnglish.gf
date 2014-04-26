@@ -15,6 +15,7 @@ concrete AnimalsEnglish of Animals = {
 		Crocodile = {s = "crocodile"};
 		Camel = {s = "camel"};
 		Rhinoceros = {s = "rhinoceros"};
+		Pony = {s = "pony"};
 
 		Very quality = {s = "very" ++ quality.s};
 
@@ -27,4 +28,5 @@ concrete AnimalsEnglish of Animals = {
 		Fluffy = {s = "fluffy"};
 		Weird = {s = "weird"};
 		Extraordinary = {s = "extraordinary"};
+		Cute = {s = "cute"};
 }

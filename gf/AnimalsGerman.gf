@@ -15,6 +15,7 @@ concrete AnimalsGerman of Animals = {
 		Crocodile = {s = "Krokodil"};
 		Camel = {s = "Kamel"};
 		Rhinoceros = {s = "Rhinozeros"};
+		Pony = {s = "Pony"};
 
 		Very quality = {s = "sehr" ++ quality.s};
 
@@ -27,4 +28,5 @@ concrete AnimalsGerman of Animals = {
 		Fluffy = {s = "flauschig"};
 		Weird = {s = "seltsam"};
 		Extraordinary = {s = "außerordentlich"};
+		Cute = {s = "süß"};
 }
