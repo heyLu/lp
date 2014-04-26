@@ -31,4 +31,5 @@ concrete AnimalsEnglish of Animals = {
 		Weird = {s = "weird"};
 		Extraordinary = {s = "extraordinary"};
 		Cute = {s = "cute"};
+		Adorable = {s = "adorable"};
 }

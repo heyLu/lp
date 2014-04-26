@@ -31,4 +31,5 @@ concrete AnimalsGerman of Animals = {
 		Weird = {s = "seltsam"};
 		Extraordinary = {s = "außerordentlich"};
 		Cute = {s = "süß"};
+		Adorable = {s = "bezaubernd"};
 }

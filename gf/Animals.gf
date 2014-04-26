@@ -11,5 +11,5 @@ abstract Animals = {
 		QSpecies: Quality -> Species -> Species;
 		Cat, Dog, Crocodile, Camel, Rhinoceros, Pony: Species;
 		Very: Quality -> Quality;
-		Furry, Big, Small, Tiny, Interesting, Friendly, Fluffy, Weird, Extraordinary, Cute: Quality;
+		Furry, Big, Small, Tiny, Interesting, Friendly, Fluffy, Weird, Extraordinary, Cute, Adorable: Quality;
 }
