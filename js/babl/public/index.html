@@ -176,6 +176,15 @@
 				}
 				xhr.send();
 			}
+
+			function makeListener(fn) {
+				return function(ev) {
+					var msg = JSON.parse(ev.data);
+					if (msg.type == "message") {
+						fn(msg);
+					}
+				}
+			}
 		</script>
 	</body>
 </html>
