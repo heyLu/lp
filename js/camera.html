@@ -1,0 +1,31 @@
+<p>(Intentionally left blank, take a look at the console.)</p>
+
+<script>
+  navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+
+  window.video = document.createElement("video");
+  window.canvas = document.createElement("canvas");
+  window.ctx = canvas.getContext("2d");
+
+  navigator.getUserMedia(
+    {video: true},
+    function(lms) {
+      window.lms = lms;
+
+      video.src = URL.createObjectURL(lms);
+      video.onplaying = function() {
+        console.log("recording ...");
+        // this is a hack, there's probably an event that we could use instead
+        setTimeout(getImage, 1000); };
+      video.play();
+    },
+    function(err) { console.error(err); }
+  );
+
+  function getImage() {
+    console.log("taking image");
+    ctx.drawImage(video, 0, 0);
+    window.img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    return img;
+  }
+</script>
