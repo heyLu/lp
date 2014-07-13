@@ -75,6 +75,20 @@ reverse s = rev s nil
                   Nothing -> nil
                   Just x -> rev (rest l) $ cons x r
 
+instance Seq [] where
+    first [] = Nothing
+    first (x:_) = Just x
+
+    cons x xs = x:xs
+
+    nil = []
+
+    rest [] = []
+    rest (_:xs) = xs
+
+    isEmpty [] = True
+    isEmpty _ = False
+
 data List a = Nil | Cons a (List a) deriving Show
 
 -- first and cons are O(1), everything else is O(n)
