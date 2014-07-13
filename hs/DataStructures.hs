@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 {-|
     Module: DataStructures
     Description: Having fun with (functional) data structures
@@ -268,7 +269,7 @@ instance Queue FingerTree where
         case last ft of
             Just x -> Just (x, rest ft) -- broken, we'd need a different version of rest
 
-class Associative as where
+class Associative as k where
     get :: (Ord k) => k -> as k v -> Maybe v
 
     insert :: (Ord k) => k -> v -> as k v -> as k v
@@ -283,7 +284,7 @@ class Associative as where
 -- examples
 rb = fromPairs $ zip [1..10] [2..11] :: RBTree Int Int
 
-fromPairs :: (Associative as, Ord k) => [(k, v)] -> as k v
+fromPairs :: (Associative as k, Ord k) => [(k, v)] -> as k v
 fromPairs [] = empty
 fromPairs ((k, v):kvs) = insert k v $ fromPairs kvs
 
@@ -309,7 +310,7 @@ balance Black a xk xv (RBNode Red b yk yv (RBNode Red c zk zv d)) =
     RBNode Black (RBNode Red a xk xv b) yk yv (RBNode Black c zk zv d)
 balance c l k v r = RBNode c l k v r
 
-instance Associative RBTree where
+instance Associative RBTree k where
     get ik (RBLeaf _) = Nothing
     get ik (RBNode c l k v r) | k == ik = Just v
     get ik (RBNode c l k v r) =
