@@ -156,3 +156,9 @@ instance Seq BankersQueue where
 -- examples
 sl = fromList [1..10] :: List Integer
 bq = fromList [1..10] :: BankersQueue Integer
+
+-- properties
+
+-- rest nil == nil
+-- (reverse . reverse) s == s
+-- first [s] == last [s]
