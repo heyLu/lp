@@ -1,3 +1,12 @@
+{-|
+    Module: DataStructures
+    Description: Having fun with (functional) data structures
+
+    Inspired by:
+
+      * Purely Functional Data Structures, by Chris Okasaki
+      * <http://www.infoq.com/presentations/Functional-Data-Structures-in-Scala Functional Data Structures in Scala>, by Daniel Spiewak
+-}
 module DataStructures where
 
 import Prelude hiding (concat, drop, last, length, reverse, take)
