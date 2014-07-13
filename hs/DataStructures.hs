@@ -11,6 +11,17 @@ module DataStructures where
 
 import Prelude hiding (concat, drop, last, length, reverse, take)
 
+-- examples
+sl = fromList [1..10] :: List Integer
+bq = fromList [1..10] :: BankersQueue Integer
+ft = fromList [1..10] :: FingerTree Integer
+
+-- properties
+
+-- rest nil == nil
+-- (reverse . reverse) s == s
+-- first [s] == last [s]
+
 class Seq s where
     first :: s a -> Maybe a
 
@@ -256,13 +267,3 @@ instance Queue FingerTree where
     dequeue ft =
         case last ft of
             Just x -> Just (x, rest ft) -- broken, we'd need a different version of rest
--- examples
-sl = fromList [1..10] :: List Integer
-bq = fromList [1..10] :: BankersQueue Integer
-ft = fromList [1..10] :: FingerTree Integer
-
--- properties
-
--- rest nil == nil
--- (reverse . reverse) s == s
--- first [s] == last [s]
