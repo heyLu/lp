@@ -32,6 +32,14 @@ class Seq s where
 
     isEmpty  :: s a -> Bool
 
+    -- additional interfaces
+
+    append :: (Seq s) => a -> s a -> s a
+    append x s | isEmpty s = cons x nil
+    append x s =
+        case first s of
+             Just x -> cons x $ append x (rest s)
+
 fromList :: (Seq s) => [a] -> s a
 fromList [] = nil
 fromList (x:xs) = cons x $ fromList xs
@@ -59,12 +67,6 @@ take n s =
     case first s of
         Nothing -> nil
         Just x -> cons x $ take (n-1) (rest s)
-
-append :: (Seq s) => a -> s a -> s a
-append x s | isEmpty s = cons x nil
-append x s =
-    case first s of
-        Just x -> cons x $ append x (rest s)
 
 concat :: (Seq s) => s a -> s a -> s a
 concat l r | isEmpty l = r
