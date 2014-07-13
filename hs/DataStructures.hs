@@ -36,6 +36,12 @@ fromList :: (Seq s) => [a] -> s a
 fromList [] = nil
 fromList (x:xs) = cons x $ fromList xs
 
+toList :: (Seq s) => s a -> [a]
+toList s | isEmpty s = []
+toList s =
+    case first s of
+        Just x -> x : toList (rest s)
+
 butLast :: (Seq s) => s a -> s a
 butLast s | isEmpty s = nil
 butLast s =
