@@ -113,6 +113,11 @@ instance Seq List where
     isEmpty Nil = True
     isEmpty _ = False
 
+class Queue q where
+    enqueue :: a -> q a -> q a
+
+    dequeue :: q a -> Maybe (a, q a)
+
 -- fifo, remove from front, insert into rear
 data BankersQueue a = BankersQueue {
                           frontSize :: Integer,
@@ -121,18 +126,20 @@ data BankersQueue a = BankersQueue {
                           rear :: List a
                       } deriving (Show)
 
-enqueue x (BankersQueue fs f rs r) = check $ BankersQueue fs f (rs + 1) (cons x r)
+instance Queue BankersQueue where
+    enqueue x (BankersQueue fs f rs r) = check $ BankersQueue fs f (rs + 1) (cons x r)
 
-dequeue (BankersQueue fs Nil         rs Nil) = Nothing
--- not needed because of `check` invariant?
---dequeue (BankersQueue fs Nil         rs r) = Just (x, check $ BankersQueue fs Nil (rs - 1) r')
---    where (Just x) = last r
---          r' = butLast r
-dequeue (BankersQueue fs (Cons x fr) rs r) =
-    Just (x, check $ BankersQueue (fs - 1) fr rs r)
+    dequeue (BankersQueue fs Nil         rs Nil) = Nothing
+    -- not needed because of `check` invariant?
+    --dequeue (BankersQueue fs Nil         rs r) = Just (x, check $ BankersQueue fs Nil (rs - 1) r')
+    --    where (Just x) = last r
+    --          r' = butLast r
+    dequeue (BankersQueue fs (Cons x fr) rs r) =
+        Just (x, check $ BankersQueue (fs - 1) fr rs r)
 
+dequeueN :: Queue q => Integer -> q a -> Maybe (a, q a)
 dequeueN 0 q = Nothing
-dequeueN 1 q = dequeue q >>= \(x, _) -> return x
+dequeueN 1 q = dequeue q >>= \(x, q) -> return (x, q)
 dequeueN n q = dequeue q >>= \(_, q') -> dequeueN (n-1) q'
 
 check q@(BankersQueue fs f rs r) =
