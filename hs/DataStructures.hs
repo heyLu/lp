@@ -267,3 +267,61 @@ instance Queue FingerTree where
     dequeue ft =
         case last ft of
             Just x -> Just (x, rest ft) -- broken, we'd need a different version of rest
+
+class Associative as where
+    get :: (Ord k) => k -> as k v -> Maybe v
+
+    insert :: (Ord k) => k -> v -> as k v -> as k v
+
+    --update :: k -> v -> as k v -> as k v
+
+    -- intersect :: as k v -> as k v -> as k v
+    -- union :: as k v -> as k v
+
+    empty :: as k v
+
+-- examples
+rb = fromPairs $ zip [1..10] [2..11] :: RBTree Int Int
+
+fromPairs :: (Associative as, Ord k) => [(k, v)] -> as k v
+fromPairs [] = empty
+fromPairs ((k, v):kvs) = insert k v $ fromPairs kvs
+
+data RBTree k v =
+      RBLeaf Color -- always Black
+    | RBNode {
+          color :: Color,
+          left :: RBTree k v,
+          key :: k, value :: v,
+          right :: RBTree k v
+      } deriving Show
+
+data Color = Red | Black deriving Show
+
+balance :: (Ord k) => Color -> RBTree k v -> k -> v -> RBTree k v -> RBTree k v
+balance Black (RBNode Red (RBNode Red a xk xv b) yk yv c) zk zv d =
+    RBNode Red (RBNode Black a xk xv b) yk yv (RBNode Black c zk zv d)
+balance Black (RBNode Red a xk xv (RBNode Red b yk yv c)) zk zv d =
+    RBNode Black (RBNode Red a xk xv b) yk yv (RBNode Black c zk zv d)
+balance Black a xk xv (RBNode Red (RBNode Red b yk yv c) zk zv d) =
+    RBNode Black (RBNode Red a xk xv b) yk yv (RBNode Black c zk zv d)
+balance Black a xk xv (RBNode Red b yk yv (RBNode Red c zk zv d)) =
+    RBNode Black (RBNode Red a xk xv b) yk yv (RBNode Black c zk zv d)
+balance c l k v r = RBNode c l k v r
+
+instance Associative RBTree where
+    get ik (RBLeaf _) = Nothing
+    get ik (RBNode c l k v r) | k == ik = Just v
+    get ik (RBNode c l k v r) =
+        if k > ik
+        then get ik l
+        else get ik r
+
+    insert ik iv (RBLeaf c) =
+        RBNode Red (RBLeaf Black) ik iv (RBLeaf Black)
+    insert ik iv (RBNode c l k v r) =
+        if k > ik
+        then balance c (insert ik iv l) k v r
+        else balance c l k v (insert ik iv r)
+
+    empty = RBLeaf Black
