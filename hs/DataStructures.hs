@@ -122,9 +122,10 @@ data BankersQueue a = BankersQueue {
 enqueue x (BankersQueue fs f rs r) = check $ BankersQueue fs f (rs + 1) (cons x r)
 
 dequeue (BankersQueue fs Nil         rs Nil) = Nothing
-dequeue (BankersQueue fs Nil         rs r) = Just (x, check $ BankersQueue fs Nil (rs - 1) r')
-    where (Just x) = last r
-          r' = butLast r
+-- not needed because of `check` invariant?
+--dequeue (BankersQueue fs Nil         rs r) = Just (x, check $ BankersQueue fs Nil (rs - 1) r')
+--    where (Just x) = last r
+--          r' = butLast r
 dequeue (BankersQueue fs (Cons x fr) rs r) =
     Just (x, check $ BankersQueue (fs - 1) fr rs r)
 
