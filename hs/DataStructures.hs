@@ -248,6 +248,14 @@ instance Seq FingerTree where
         Deep p (append (Node3 a b c) t) (Two d x)
     append x (Deep p t s) = Deep p t (append x s)
 
+instance Queue FingerTree where
+    enqueue x ft = append x ft
+
+    dequeue Empty = Nothing
+    dequeue (Single x) = Just (x, Empty)
+    dequeue ft =
+        case last ft of
+            Just x -> Just (x, rest ft) -- broken, we'd need a different version of rest
 -- examples
 sl = fromList [1..10] :: List Integer
 bq = fromList [1..10] :: BankersQueue Integer
