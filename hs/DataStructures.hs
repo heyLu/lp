@@ -11,6 +11,7 @@
 module DataStructures where
 
 import Prelude hiding (concat, drop, last, length, reverse, take)
+import Data.Bits (Bits, (.&.), zeroBits)
 
 -- examples
 sl = fromList [1..10] :: List Integer
@@ -326,3 +327,25 @@ instance Associative RBTree k where
         else balance c l k v (insert ik iv r)
 
     empty = RBLeaf Black
+
+data PatriciaTrie k v =
+      PTEmpty
+    | PTLeaf k v
+    | PTBranch { ptPrefix :: k, ptMask :: k, ptLeft :: PatriciaTrie k v, ptRight :: PatriciaTrie k v } deriving Show
+
+instance Associative PatriciaTrie Int where
+    get ik PTEmpty = Nothing
+    get ik (PTLeaf k v) = if ik == k then Just v else Nothing
+    get ik (PTBranch p m l r) = if (ik .&. m) == zeroBits then get ik l else get ik r
+
+    insert ik iv b@(PTBranch p m l r) =
+        if ptMatchPrefix ik p m
+        then if (ik .&. m) == zeroBits
+             then PTBranch p m (insert ik iv l) r
+             else PTBranch p m l (insert ik iv r)
+        else ptMerge ik (PTLeaf ik iv) p b
+
+    empty = PTEmpty
+
+ptMatchPrefix = undefined
+ptMerge = undefined
