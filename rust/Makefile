@@ -1,3 +1,6 @@
+diff_code: diff_code.c
+	gcc -std=c99 -o diff_code diff_code.c
+
 keylog: keylog.rs libkeylog_xlib.so
 	rustc -L rust-xlib -L . keylog.rs
 
