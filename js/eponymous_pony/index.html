@@ -1,0 +1,18 @@
+<head>
+  <title>eponymous_pony: Usernames as a Service</title>
+</head>
+
+<body>
+  <h1>Usernames as a Service</h1>
+
+  {{> names}}
+</body>
+
+<template name="names">
+  <ul>
+  	{{#each names}}
+  	  <li>{{name}}</li>
+  	{{/each}}
+	</ul>
+	<label>Add name: </label><input type="text" />
+</template>
