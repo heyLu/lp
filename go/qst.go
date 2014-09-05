@@ -98,6 +98,8 @@ func ShellCmd(cmd string) RestartableCommand {
 
 func (c *RestartableCommand) Start() {
 	c.Cmd = exec.Command(c.Name, c.Args...)
+	c.Cmd.Stderr = os.Stderr
+	c.Cmd.Stdout = os.Stdout
 	c.Lock.Lock()
 	go func() {
 		c.Cmd.Run()
