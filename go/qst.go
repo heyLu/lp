@@ -61,10 +61,22 @@ func main() {
 
 func runAndWatch(file string, cmd string) {
 	// run command, if file changes (mtime) restart command
-	// for now: run command until it exits, wait a bit, run again
-	runShellCmd(cmd)
-	time.Sleep(1 * time.Second)
-	runAndWatch(file, cmd)
+	lastMtime := time.Unix(0, 0)
+	for {
+		info, err := os.Stat(file)
+		if err != nil {
+			log.Fatalf("Error: %s disappeared, exiting.", file)
+		}
+
+		mtime := info.ModTime()
+		if mtime.After(lastMtime) {
+			log.Printf("%s changed, rerunning", file)
+			runShellCmd(cmd)
+		}
+
+		lastMtime = mtime
+		time.Sleep(1 * time.Second)
+	}
 }
 
 func runShellCmd(cmd string) {
