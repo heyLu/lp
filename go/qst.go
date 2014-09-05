@@ -7,6 +7,7 @@ import "os"
 import "os/exec"
 import "path"
 import "strings"
+import "sync"
 import "time"
 
 /*
@@ -30,6 +31,8 @@ var mappings = map[string]func(string) string{
 }
 
 func main() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s <file>\n", os.Args[0])
 		flag.PrintDefaults()
@@ -59,9 +62,12 @@ func main() {
 	}
 }
 
-func runAndWatch(file string, cmd string) {
+func runAndWatch(file string, cmdLine string) {
 	// run command, if file changes (mtime) restart command
-	lastMtime := time.Unix(0, 0)
+	lastMtime := time.Now()
+	cmd := ShellCmd(cmdLine)
+	cmd.Start()
+
 	for {
 		info, err := os.Stat(file)
 		if err != nil {
@@ -71,12 +77,37 @@ func runAndWatch(file string, cmd string) {
 		mtime := info.ModTime()
 		if mtime.After(lastMtime) {
 			log.Printf("%s changed, rerunning", file)
-			runShellCmd(cmd)
+			cmd.Restart()
 		}
 
 		lastMtime = mtime
 		time.Sleep(1 * time.Second)
 	}
+}
+
+type RestartableCommand struct {
+	Cmd  *exec.Cmd
+	Lock sync.Mutex
+	Name string
+	Args []string
+}
+
+func ShellCmd(cmd string) RestartableCommand {
+	return RestartableCommand{nil, sync.Mutex{}, "sh", []string{"-c", cmd}}
+}
+
+func (c *RestartableCommand) Start() {
+	c.Cmd = exec.Command(c.Name, c.Args...)
+	c.Lock.Lock()
+	go func() {
+		c.Cmd.Run()
+		c.Lock.Unlock()
+	}()
+}
+
+func (c *RestartableCommand) Restart() {
+	c.Cmd.Process.Kill()
+	c.Start()
 }
 
 func runShellCmd(cmd string) {
