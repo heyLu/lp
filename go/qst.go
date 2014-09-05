@@ -28,6 +28,12 @@ var mappings = map[string]func(string) string{
 	".go": func(name string) string {
 		return fmt.Sprintf("go build %s && ./%s", name, strings.TrimSuffix(name, path.Ext(name)))
 	},
+	".rb": func(name string) string {
+		return fmt.Sprintf("ruby %s", name)
+	},
+	".py": func(name string) string {
+		return fmt.Sprintf("python %s", name)
+	},
 }
 
 func main() {
