@@ -120,7 +120,13 @@ func (r *Runner) Start() error {
 			r.cmd.Stdout = os.Stdout
 			r.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 			err := r.cmd.Run()
-			log.Printf("%s finished: %s", r.shellCmd, err)
+			var result interface{}
+			if err != nil {
+				result = err
+			} else {
+				result = r.cmd.ProcessState
+			}
+			log.Printf("%s finished: %s", r.shellCmd, result)
 
 			time.Sleep(*delay)
 			if !r.restart {
