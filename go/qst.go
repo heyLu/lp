@@ -6,6 +6,7 @@ import "fmt"
 import "log"
 import "os"
 import "os/exec"
+import "os/signal"
 import "path"
 import "strings"
 import "syscall"
@@ -66,6 +67,16 @@ func main() {
 	}
 
 	runner := MakeRunner(fn(file))
+	go runCmd(file, runner)
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	s := <-c
+	log.Printf("got signal: %s, exiting...", s)
+	runner.Stop()
+}
+
+func runCmd(file string, runner *Runner) {
 	runner.Start()
 	lastMtime := time.Now()
 	for {
@@ -89,10 +100,11 @@ type Runner struct {
 	cmd      *exec.Cmd
 	shellCmd string
 	started  bool
+	restart  bool
 }
 
 func MakeRunner(shellCmd string) *Runner {
-	return &Runner{nil, shellCmd, false}
+	return &Runner{nil, shellCmd, false, true}
 }
 
 func (r *Runner) Start() error {
@@ -110,18 +122,30 @@ func (r *Runner) Start() error {
 			log.Printf("%s finished: %s", r.shellCmd, err)
 
 			time.Sleep(1 * time.Second)
+			if !r.restart {
+				break
+			}
 		}
 	}()
 
 	return nil
 }
 
-func (r *Runner) Restart() error {
+func (r *Runner) Kill() error {
 	pgid, err := syscall.Getpgid(r.cmd.Process.Pid)
 	if err == nil {
 		syscall.Kill(-pgid, syscall.SIGTERM)
 	}
 	return err
+}
+
+func (r *Runner) Restart() error {
+	return r.Kill()
+}
+
+func (r *Runner) Stop() {
+	r.restart = false
+	r.Kill()
 }
 
 func isFile(file string) bool {
