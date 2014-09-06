@@ -81,7 +81,7 @@ func main() {
 	}
 	log.Printf("command to run: `%s'", cmd)
 
-	runner := &Runner{nil, cmd, false, *autoRestart}
+	runner := MakeRunner(cmd, *autoRestart)
 	go runCmd(file, runner)
 
 	c := make(chan os.Signal, 1)
@@ -116,6 +116,10 @@ type Runner struct {
 	shellCmd string
 	started  bool
 	restart  bool
+}
+
+func MakeRunner(shellCmd string, restart bool) *Runner {
+	return &Runner{nil, shellCmd, false, restart}
 }
 
 func (r *Runner) Start() error {
