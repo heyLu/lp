@@ -112,14 +112,15 @@ func runCmd(file string, runner *Runner) {
 }
 
 type Runner struct {
-	cmd      *exec.Cmd
-	shellCmd string
-	started  bool
-	restart  bool
+	cmd        *exec.Cmd
+	shellCmd   string
+	started    bool
+	restart    bool
+	restarting bool
 }
 
 func MakeRunner(shellCmd string, restart bool) *Runner {
-	return &Runner{nil, shellCmd, false, restart}
+	return &Runner{nil, shellCmd, false, restart, false}
 }
 
 func (r *Runner) Start() error {
@@ -145,10 +146,12 @@ func (r *Runner) Start() error {
 			log.Printf("%s finished: %s", r.shellCmd, result)
 
 			time.Sleep(*delay)
-			if !r.restart {
+			if !r.restarting && !r.restart {
 				r.started = false
 				break
 			}
+
+			r.restarting = false
 		}
 	}()
 
@@ -164,6 +167,7 @@ func (r *Runner) Kill() error {
 }
 
 func (r *Runner) Restart() error {
+	r.restarting = true
 	if r.started {
 		return r.Kill()
 	} else {
