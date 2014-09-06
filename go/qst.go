@@ -1,5 +1,6 @@
 package main
 
+import "errors"
 import "flag"
 import "fmt"
 import "log"
@@ -7,7 +8,7 @@ import "os"
 import "os/exec"
 import "path"
 import "strings"
-import "sync"
+import "syscall"
 import "time"
 
 /*
@@ -60,30 +61,23 @@ func main() {
 
 	ext := path.Ext(file)
 	fn, found := mappings[ext]
-	if found {
-		runAndWatch(file, fn(file))
-	} else {
-		fmt.Fprintf(os.Stderr, "Error: No command defined for %s files", ext)
-		os.Exit(1)
+	if !found {
+		log.Fatalf("error: no mapping found for `%s'", file)
 	}
-}
 
-func runAndWatch(file string, cmdLine string) {
-	// run command, if file changes (mtime) restart command
+	runner := MakeRunner(fn(file))
+	runner.Start()
 	lastMtime := time.Now()
-	cmd := ShellCmd(cmdLine)
-	cmd.Start()
-
 	for {
 		info, err := os.Stat(file)
-		if err != nil {
-			log.Fatalf("Error: %s disappeared, exiting.", file)
+		if os.IsNotExist(err) {
+			log.Fatalf("`%s' disappeared, exiting")
 		}
 
 		mtime := info.ModTime()
 		if mtime.After(lastMtime) {
-			log.Printf("%s changed, rerunning", file)
-			cmd.Restart()
+			log.Printf("`%s' changed, trying to restart", file)
+			runner.Restart()
 		}
 
 		lastMtime = mtime
@@ -91,38 +85,43 @@ func runAndWatch(file string, cmdLine string) {
 	}
 }
 
-type RestartableCommand struct {
-	Cmd  *exec.Cmd
-	Lock sync.Mutex
-	Name string
-	Args []string
+type Runner struct {
+	cmd      *exec.Cmd
+	shellCmd string
+	started  bool
 }
 
-func ShellCmd(cmd string) RestartableCommand {
-	return RestartableCommand{nil, sync.Mutex{}, "sh", []string{"-c", cmd}}
+func MakeRunner(shellCmd string) *Runner {
+	return &Runner{nil, shellCmd, false}
 }
 
-func (c *RestartableCommand) Start() {
-	c.Cmd = exec.Command(c.Name, c.Args...)
-	c.Cmd.Stderr = os.Stderr
-	c.Cmd.Stdout = os.Stdout
-	c.Lock.Lock()
+func (r *Runner) Start() error {
+	if r.started {
+		return errors.New("already started, use Restart()")
+	}
+
+	r.started = true
 	go func() {
-		c.Cmd.Run()
-		c.Lock.Unlock()
+		for {
+			log.Printf("running %s", r.shellCmd)
+			r.cmd = exec.Command("sh", "-c", r.shellCmd)
+			r.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+			err := r.cmd.Run()
+			log.Printf("%s finished: %s", r.shellCmd, err)
+
+			time.Sleep(1 * time.Second)
+		}
 	}()
+
+	return nil
 }
 
-func (c *RestartableCommand) Restart() {
-	c.Cmd.Process.Kill()
-	c.Start()
-}
-
-func runShellCmd(cmd string) {
-	log.Printf("Running: `%s'", cmd)
-	output, err := exec.Command("sh", "-c", cmd).CombinedOutput()
-	os.Stderr.Write(output)
-	log.Printf("Error running command: %s\n", err.Error())
+func (r *Runner) Restart() error {
+	pgid, err := syscall.Getpgid(r.cmd.Process.Pid)
+	if err == nil {
+		syscall.Kill(-pgid, syscall.SIGTERM)
+	}
+	return err
 }
 
 func isFile(file string) bool {
