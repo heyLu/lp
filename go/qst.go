@@ -85,7 +85,7 @@ func main() {
 	go runCmd(file, runner)
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGTERM)
 	s := <-c
 	log.Printf("got signal: %s, exiting...", s)
 	runner.Stop()
