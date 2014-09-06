@@ -38,6 +38,8 @@ var mappings = map[string]func(string) string{
 	},
 }
 
+var delay = flag.Duration("delay", 1*time.Second, "time to wait until restart")
+
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
@@ -54,7 +56,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	file := os.Args[1]
+	file := args[0]
 	if !isFile(file) {
 		fmt.Fprintf(os.Stderr, "Error: %s is not a file.\n", file)
 		os.Exit(1)
@@ -119,9 +121,9 @@ func (r *Runner) Start() error {
 			r.cmd = exec.Command("sh", "-c", r.shellCmd)
 			r.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 			err := r.cmd.Run()
-			log.Printf("%s finished: %s", r.shellCmd, err)
+			log.Printf("%s finished: %s, restarting in %s", r.shellCmd, err, delay)
 
-			time.Sleep(1 * time.Second)
+			time.Sleep(*delay)
 			if !r.restart {
 				break
 			}
