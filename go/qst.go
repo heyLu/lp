@@ -39,6 +39,7 @@ var mappings = map[string]func(string) string{
 }
 
 var delay = flag.Duration("delay", 1*time.Second, "time to wait until restart")
+var autoRestart = flag.Bool("autorestart", true, "restart after command exists")
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
@@ -68,7 +69,7 @@ func main() {
 		log.Fatalf("error: no mapping found for `%s'", file)
 	}
 
-	runner := MakeRunner(fn(file))
+	runner := &Runner{nil, fn(file), false, *autoRestart}
 	go runCmd(file, runner)
 
 	c := make(chan os.Signal, 1)
@@ -105,10 +106,6 @@ type Runner struct {
 	restart  bool
 }
 
-func MakeRunner(shellCmd string) *Runner {
-	return &Runner{nil, shellCmd, false, true}
-}
-
 func (r *Runner) Start() error {
 	if r.started {
 		return errors.New("already started, use Restart()")
@@ -125,6 +122,7 @@ func (r *Runner) Start() error {
 
 			time.Sleep(*delay)
 			if !r.restart {
+				r.started = false
 				break
 			}
 		}
@@ -142,7 +140,11 @@ func (r *Runner) Kill() error {
 }
 
 func (r *Runner) Restart() error {
-	return r.Kill()
+	if r.started {
+		return r.Kill()
+	} else {
+		return r.Start()
+	}
 }
 
 func (r *Runner) Stop() {
