@@ -43,7 +43,7 @@ var mappings = map[string]func(string) string{
 }
 
 var delay = flag.Duration("delay", 1*time.Second, "time to wait until restart")
-var autoRestart = flag.Bool("autorestart", true, "restart after command exists")
+var autoRestart = flag.Bool("autorestart", true, "automatically restart after command exists")
 var command = flag.String("command", "", "command to run ({file} will be substituted)")
 
 func main() {
@@ -112,15 +112,15 @@ func runCmd(file string, runner *Runner) {
 }
 
 type Runner struct {
-	cmd        *exec.Cmd
-	shellCmd   string
-	started    bool
-	restart    bool
-	restarting bool
+	cmd         *exec.Cmd
+	shellCmd    string
+	started     bool
+	autoRestart bool
+	restarting  bool
 }
 
-func MakeRunner(shellCmd string, restart bool) *Runner {
-	return &Runner{nil, shellCmd, false, restart, false}
+func MakeRunner(shellCmd string, autoRestart bool) *Runner {
+	return &Runner{nil, shellCmd, false, autoRestart, false}
 }
 
 func (r *Runner) Start() error {
@@ -146,7 +146,7 @@ func (r *Runner) Start() error {
 			log.Printf("%s finished: %s", r.shellCmd, result)
 
 			time.Sleep(*delay)
-			if !r.restarting && !r.restart {
+			if !r.restarting && !r.autoRestart {
 				r.started = false
 				break
 			}
@@ -176,7 +176,7 @@ func (r *Runner) Restart() error {
 }
 
 func (r *Runner) Stop() {
-	r.restart = false
+	r.autoRestart = false
 	r.Kill()
 }
 
