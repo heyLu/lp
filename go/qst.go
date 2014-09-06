@@ -1,16 +1,18 @@
 package main
 
-import "errors"
-import "flag"
-import "fmt"
-import "log"
-import "os"
-import "os/exec"
-import "os/signal"
-import "path"
-import "strings"
-import "syscall"
-import "time"
+import (
+	"errors"
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"os/signal"
+	"path"
+	"strings"
+	"syscall"
+	"time"
+)
 
 /*
 
