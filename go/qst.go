@@ -22,8 +22,6 @@ qst - detects the current project type and runs it
 qst hello.rb - runs `ruby hello.rb`
 qst hello.go - compiles & runs hello.go
 
-qst -watch hello.go - watches changes to hello.go and recompiles and runs it on changes
-
 */
 
 var mappings = map[string]func(string) string{
