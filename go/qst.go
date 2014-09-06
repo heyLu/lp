@@ -118,7 +118,7 @@ func (r *Runner) Start() error {
 			r.cmd = exec.Command("sh", "-c", r.shellCmd)
 			r.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 			err := r.cmd.Run()
-			log.Printf("%s finished: %s, restarting in %s", r.shellCmd, err, delay)
+			log.Printf("%s finished: %s", r.shellCmd, err)
 
 			time.Sleep(*delay)
 			if !r.restart {
