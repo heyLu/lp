@@ -116,6 +116,8 @@ func (r *Runner) Start() error {
 		for {
 			log.Printf("running %s", r.shellCmd)
 			r.cmd = exec.Command("sh", "-c", r.shellCmd)
+			r.cmd.Stderr = os.Stderr
+			r.cmd.Stdout = os.Stdout
 			r.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 			err := r.cmd.Run()
 			log.Printf("%s finished: %s", r.shellCmd, err)
