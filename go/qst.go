@@ -38,6 +38,7 @@ var mappings = map[string]func(string) string{
 
 var delay = flag.Duration("delay", 1*time.Second, "time to wait until restart")
 var autoRestart = flag.Bool("autorestart", true, "restart after command exists")
+var command = flag.String("command", "", "command to run ({file} will be substituted)")
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
@@ -61,13 +62,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	ext := path.Ext(file)
-	fn, found := mappings[ext]
-	if !found {
-		log.Fatalf("error: no mapping found for `%s'", file)
+	var cmd string
+	if command != nil && strings.TrimSpace(*command) != "" {
+		cmd = strings.Replace(*command, "{file}", file, -1)
+	} else {
+		ext := path.Ext(file)
+		fn, found := mappings[ext]
+		if !found {
+			log.Fatalf("error: no mapping found for `%s'", file)
+		}
+		cmd = fn(file)
 	}
+	log.Printf("command to run: `%s'", cmd)
 
-	runner := &Runner{nil, fn(file), false, *autoRestart}
+	runner := &Runner{nil, cmd, false, *autoRestart}
 	go runCmd(file, runner)
 
 	c := make(chan os.Signal, 1)
