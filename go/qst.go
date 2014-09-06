@@ -28,7 +28,8 @@ qst hello.go - compiles & runs hello.go
 
 var mappings = map[string]func(string) string{
 	".go": func(name string) string {
-		return fmt.Sprintf("go build %s && ./%s", name, strings.TrimSuffix(name, path.Ext(name)))
+		outpath := strings.TrimSuffix(name, path.Ext(name))
+		return fmt.Sprintf("go build -o %s %s && ./%s", outpath, name, outpath)
 	},
 	".rb": func(name string) string {
 		return fmt.Sprintf("ruby %s", name)
