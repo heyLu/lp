@@ -1,4 +1,4 @@
-package main
+package detect
 
 import (
 	"fmt"
@@ -38,20 +38,6 @@ var ProjectTypes = []Project{
 	Project{"ruby/rails", Commands{"run": "rails server", "test": "bundle exec rake test"}, rubyRails},
 	Project{"ruby/rake", Commands{"run": "rake"}, rubyRake},
 	Project{"ruby/default", Commands{"run": "ruby {file}"}, rubyDefault},
-}
-
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Printf("Usage: %s <file>\n", os.Args[0])
-		os.Exit(1)
-	}
-
-	file := os.Args[1]
-
-	for _, project := range ProjectTypes {
-		runCmd := project.Commands["run"]
-		fmt.Printf("%v (%v): %v\n", project.Id, runCmd, project.Detect(file))
-	}
 }
 
 func matchingFileOrDir(file string, pattern string) bool {
