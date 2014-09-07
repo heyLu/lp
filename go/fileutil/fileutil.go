@@ -34,3 +34,13 @@ func Join(fileOrDir string, elem ...string) string {
 	}
 	return path.Join(dir, path.Join(elem...))
 }
+
+func IsExecutable(file string) bool {
+	info, err := os.Stat(file)
+	if err != nil {
+		return false
+	}
+
+	isExecutable := info.Mode() & 0111
+	return isExecutable != 0 && !info.IsDir()
+}
