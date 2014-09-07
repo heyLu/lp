@@ -24,7 +24,7 @@ var ProjectTypes = []*Project{
 	&Project{"docker/fig", Commands{"run": "fig up"}, dockerFig},
 	&Project{"docker/default", Commands{}, dockerDefault},
 	&Project{"executable", Commands{"run": "{file}"}, executableDefault},
-	&Project{"go/default", Commands{"build": "go build {file}", "run": "go build {file} && $(basename {file} .go)"},
+	&Project{"go/default", Commands{"build": "go build {file}", "run": "go build $(basename {file}) && ./$(basename {file} .go)"},
 		goDefault},
 	&Project{"java/maven", Commands{"build": "mvn compile", "test": "mvn compile test"}, javaMaven},
 	&Project{"javascript/npm", Commands{}, javascriptNpm},
