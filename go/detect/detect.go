@@ -38,7 +38,8 @@ var ProjectTypes = []*Project{
 	&Project{"idris/default", Commands{"run": "idris -o $(basename {file} .idr) {file} && ./$(basename {file} .idr)"},
 		matchPattern("*.idr")},
 	&Project{"java/maven", Commands{"build": "mvn compile", "test": "mvn compile test"}, matchFile("pom.xml")},
-	&Project{"javascript/npm", Commands{"build": "npm install", "test": "npm test"}, matchFile("package.json")},
+	&Project{"javascript/npm", Commands{"build": "npm install", "run": "npm start", "test": "npm test"},
+		matchFile("package.json")},
 	&Project{"javascript/meteor", Commands{"run": "meteor"}, matchFile(".meteor/.id")},
 	&Project{"javascript/default", Commands{"run": "node {file}"}, matchPattern("*.js")},
 	&Project{"julia/default", Commands{"run": "julia {file}"}, matchPattern("*.jl")},
@@ -54,7 +55,7 @@ var ProjectTypes = []*Project{
 	&Project{"rust/default", Commands{"run": "rustc {file} && ./$(basename {file} .rs)"}, matchPattern("*.rs")},
 	&Project{"cmake", Commands{"build": "mkdir .build && cd .build && cmake .. && make"}, matchFile("CMakeLists.txt")},
 	&Project{"make", Commands{"run": "make", "test": "make test"}, matchFile("Makefile")},
-	&Project{"procfile", Commands{}, matchFile("Procfile")},
+	&Project{"procfile", Commands{"run": "$(sed -n 's/^web: //p' Procfile)"}, matchFile("Procfile")},
 }
 
 func Detect(file string) (*Project, error) {
