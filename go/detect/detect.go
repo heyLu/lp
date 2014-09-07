@@ -65,7 +65,7 @@ func Detect(file string) (*Project, error) {
 		}
 	}
 
-	return nil, errors.New("no project matches")
+	return nil, errors.New("no project type matches")
 }
 
 func DetectAll(file string) []*Project {
