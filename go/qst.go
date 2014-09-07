@@ -34,6 +34,7 @@ var autoRestart = flag.Bool("autorestart", true, "automatically restart after co
 var command = flag.String("command", "", "command to run ({file} will be substituted)")
 var projectType = flag.String("type", "", "project type to use (autodetected if not present)")
 var phase = flag.String("phase", "run", "which phase to run (build, run or test)")
+var justDetect = flag.Bool("detect", false, "detect the project type and exit")
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
@@ -57,6 +58,17 @@ func main() {
 	}
 
 	file := args[0]
+
+	if *justDetect {
+		projects := detect.DetectAll(file)
+		if len(projects) == 0 {
+			log.Fatal("unkown project type")
+		}
+		for _, project := range projects {
+			fmt.Println(project.Id)
+		}
+		os.Exit(0)
+	}
 
 	var cmd string
 	if !flagEmpty(command) {
