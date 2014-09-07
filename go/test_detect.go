@@ -15,8 +15,8 @@ func main() {
 
 	file := os.Args[1]
 
-	for _, project := range detect.ProjectTypes {
+	for _, project := range detect.DetectAll(file) {
 		runCmd := project.Commands["run"]
-		fmt.Printf("%v (%v): %v\n", project.Id, runCmd, project.Detect(file))
+		fmt.Printf("%v (%v)\n", project.Id, runCmd)
 	}
 }

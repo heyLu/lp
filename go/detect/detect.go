@@ -1,6 +1,7 @@
 package detect
 
 import (
+	"errors"
 	"path"
 
 	"../fileutil"
@@ -18,24 +19,48 @@ type Project struct {
 
 type Commands map[string]string
 
-var ProjectTypes = []Project{
-	Project{"clojure/leiningen", Commands{"run": "lein run", "test": "lein test"}, clojureLeiningen},
-	Project{"docker/fig", Commands{"run": "fig up"}, dockerFig},
-	Project{"docker/default", Commands{}, dockerDefault},
-	Project{"executable/default", Commands{"run": "{file}"}, executableDefault},
-	Project{"go/default", Commands{"build": "go build {file}", "run": "go build {file} && $(basename {file} .go)"},
+var ProjectTypes = []*Project{
+	&Project{"clojure/leiningen", Commands{"run": "lein run", "test": "lein test"}, clojureLeiningen},
+	&Project{"docker/fig", Commands{"run": "fig up"}, dockerFig},
+	&Project{"docker/default", Commands{}, dockerDefault},
+	&Project{"executable/default", Commands{"run": "{file}"}, executableDefault},
+	&Project{"go/default", Commands{"build": "go build {file}", "run": "go build {file} && $(basename {file} .go)"},
 		goDefault},
-	Project{"java/maven", Commands{"build": "mvn compile", "test": "mvn compile test"}, javaMaven},
-	Project{"javascript/npm", Commands{}, javascriptNpm},
-	Project{"javascript/meteor", Commands{"run": "meteor"}, javascriptMeteor},
-	Project{"javascript/default", Commands{"run": "node {file}"}, javascriptDefault},
-	Project{"make/default", Commands{"run": "make"}, makeDefault},
-	Project{"procfile/default", Commands{}, procfileDefault},
-	Project{"python/django", Commands{}, pythonDjango},
-	Project{"python/default", Commands{"run": "python {file}"}, pythonDefault},
-	Project{"ruby/rails", Commands{"run": "rails server", "test": "bundle exec rake test"}, rubyRails},
-	Project{"ruby/rake", Commands{"run": "rake"}, rubyRake},
-	Project{"ruby/default", Commands{"run": "ruby {file}"}, rubyDefault},
+	&Project{"java/maven", Commands{"build": "mvn compile", "test": "mvn compile test"}, javaMaven},
+	&Project{"javascript/npm", Commands{}, javascriptNpm},
+	&Project{"javascript/meteor", Commands{"run": "meteor"}, javascriptMeteor},
+	&Project{"javascript/default", Commands{"run": "node {file}"}, javascriptDefault},
+	&Project{"make/default", Commands{"run": "make"}, makeDefault},
+	&Project{"procfile/default", Commands{}, procfileDefault},
+	&Project{"python/django", Commands{}, pythonDjango},
+	&Project{"python/default", Commands{"run": "python {file}"}, pythonDefault},
+	&Project{"ruby/rails", Commands{"run": "rails server", "test": "bundle exec rake test"}, rubyRails},
+	&Project{"ruby/rake", Commands{"run": "rake"}, rubyRake},
+	&Project{"ruby/default", Commands{"run": "ruby {file}"}, rubyDefault},
+}
+
+func Detect(file string) (*Project, error) {
+	for _, project := range ProjectTypes {
+		if project.Detect(file) {
+			return project, nil
+		}
+	}
+
+	return nil, errors.New("no project matches")
+}
+
+func DetectAll(file string) []*Project {
+	projects := make([]*Project, 0, len(ProjectTypes))
+
+	for _, project := range ProjectTypes {
+		if project.Detect(file) {
+			n := len(projects)
+			projects = projects[0 : n+1]
+			projects[n] = project
+		}
+	}
+
+	return projects
 }
 
 func matchingFileOrDir(file string, pattern string) bool {
