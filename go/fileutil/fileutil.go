@@ -44,3 +44,10 @@ func IsExecutable(file string) bool {
 	isExecutable := info.Mode() & 0111
 	return isExecutable != 0 && !info.IsDir()
 }
+
+func Dir(file string) string {
+	if IsDir(file) {
+		return file
+	}
+	return path.Dir(file)
+}

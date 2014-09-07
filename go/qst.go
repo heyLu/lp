@@ -12,6 +12,9 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"./detect"
+	"./fileutil"
 )
 
 /*
@@ -63,21 +66,29 @@ func main() {
 	}
 
 	file := args[0]
-	if !isFile(file) {
-		fmt.Fprintf(os.Stderr, "Error: %s is not a file.\n", file)
-		os.Exit(1)
-	}
+	// if !isFile(file) {
+	// 	fmt.Fprintf(os.Stderr, "Error: %s is not a file.\n", file)
+	// 	os.Exit(1)
+	// }
 
 	var cmd string
 	if command != nil && strings.TrimSpace(*command) != "" {
-		cmd = strings.Replace(*command, "{file}", file, -1)
+		cmd = *command
 	} else {
-		ext := path.Ext(file)
-		fn, found := mappings[ext]
-		if !found {
-			log.Fatalf("error: no mapping found for `%s'", file)
+		project, err := detect.Detect(file)
+		if err != nil {
+			log.Fatal("error: ", err)
 		}
-		cmd = fn(file)
+		log.Printf("detected a %s project", project.Id)
+		projectCmd, found := project.Commands["run"]
+		if !found {
+			log.Fatalf("%s doesn't support `run'", project.Id)
+		}
+		cmd = projectCmd
+	}
+	cmd = strings.Replace(cmd, "{file}", file, -1)
+	if err := os.Chdir(fileutil.Dir(file)); err != nil {
+		log.Fatal(err)
 	}
 	log.Printf("command to run: `%s'", cmd)
 
