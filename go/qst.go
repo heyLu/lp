@@ -91,7 +91,7 @@ func runCmd(file string, runner *Runner) {
 	for {
 		info, err := os.Stat(file)
 		if os.IsNotExist(err) {
-			log.Fatalf("`%s' disappeared, exiting")
+			log.Fatalf("`%s' disappeared, exiting", file)
 		}
 
 		mtime := info.ModTime()
