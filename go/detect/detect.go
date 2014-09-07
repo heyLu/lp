@@ -42,6 +42,8 @@ var ProjectTypes = []*Project{
 		"test": "bundle exec rake test"}, rubyRails},
 	&Project{"ruby/rake", Commands{"run": "rake", "test": "rake test"}, rubyRake},
 	&Project{"ruby/default", Commands{"run": "ruby {file}"}, rubyDefault},
+	&Project{"rust/cargo", Commands{"build": "cargo build", "run": "cargo run", "test": "cargo test"}, rustCargo},
+	&Project{"rust/default", Commands{"run": "rustc {file} && ./$(basename {file} .rs)"}, rustDefault},
 	&Project{"make", Commands{"run": "make", "test": "make test"}, makeDefault},
 	&Project{"procfile", Commands{}, procfileDefault},
 }
@@ -171,4 +173,12 @@ func rubyRake(file string) bool {
 
 func rubyDefault(file string) bool {
 	return matchingFileOrDir(file, "*.rb")
+}
+
+func rustCargo(file string) bool {
+	return hasFile(file, "Cargo.toml")
+}
+
+func rustDefault(file string) bool {
+	return matchingFileOrDir(file, "*.rs")
 }
