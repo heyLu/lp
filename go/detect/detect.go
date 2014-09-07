@@ -20,22 +20,24 @@ type Project struct {
 type Commands map[string]string
 
 var ProjectTypes = []*Project{
-	&Project{"clojure/leiningen", Commands{"run": "lein run", "test": "lein test"}, clojureLeiningen},
-	&Project{"docker/fig", Commands{"run": "fig up"}, dockerFig},
-	&Project{"docker/default", Commands{}, dockerDefault},
+	&Project{"clojure/leiningen", Commands{"build": "lein uberjar", "run": "lein run", "test": "lein test"},
+		clojureLeiningen},
+	&Project{"docker/fig", Commands{"build": "fig build", "run": "fig up"}, dockerFig},
+	&Project{"docker/default", Commands{"build": "docker build ."}, dockerDefault},
 	&Project{"executable", Commands{"run": "{file}"}, executableDefault},
 	&Project{"go/default", Commands{"build": "go build {file}", "run": "go build $(basename {file}) && ./$(basename {file} .go)"},
 		goDefault},
 	&Project{"java/maven", Commands{"build": "mvn compile", "test": "mvn compile test"}, javaMaven},
-	&Project{"javascript/npm", Commands{}, javascriptNpm},
+	&Project{"javascript/npm", Commands{"build": "npm install", "test": "npm test"}, javascriptNpm},
 	&Project{"javascript/meteor", Commands{"run": "meteor"}, javascriptMeteor},
 	&Project{"javascript/default", Commands{"run": "node {file}"}, javascriptDefault},
-	&Project{"python/django", Commands{}, pythonDjango},
+	&Project{"python/django", Commands{"build": "python manage.py syncdb", "run": "python manage.py runserver",
+		"test": "python manage.py test"}, pythonDjango},
 	&Project{"python/default", Commands{"run": "python {file}"}, pythonDefault},
 	&Project{"ruby/rails", Commands{"run": "rails server", "test": "bundle exec rake test"}, rubyRails},
-	&Project{"ruby/rake", Commands{"run": "rake"}, rubyRake},
+	&Project{"ruby/rake", Commands{"run": "rake", "test": "rake test"}, rubyRake},
 	&Project{"ruby/default", Commands{"run": "ruby {file}"}, rubyDefault},
-	&Project{"make", Commands{"run": "make"}, makeDefault},
+	&Project{"make", Commands{"run": "make", "test": "make test"}, makeDefault},
 	&Project{"procfile", Commands{}, procfileDefault},
 }
 
