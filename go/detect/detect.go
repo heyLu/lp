@@ -31,10 +31,13 @@ var ProjectTypes = []*Project{
 		goDefault},
 	&Project{"haskell/cabal", Commands{"build": "cabal build", "run": "cabal run", "test": "cabal test"}, haskellCabal},
 	&Project{"haskell/default", Commands{"run": "runhaskell {file}"}, haskellDefault},
+	&Project{"idris/default", Commands{"run": "idris -o $(basename {file} .idr) {file} && ./$(basename {file} .idr)"},
+		idrisDefault},
 	&Project{"java/maven", Commands{"build": "mvn compile", "test": "mvn compile test"}, javaMaven},
 	&Project{"javascript/npm", Commands{"build": "npm install", "test": "npm test"}, javascriptNpm},
 	&Project{"javascript/meteor", Commands{"run": "meteor"}, javascriptMeteor},
 	&Project{"javascript/default", Commands{"run": "node {file}"}, javascriptDefault},
+	&Project{"julia/default", Commands{"run": "julia {file}"}, juliaDefault},
 	&Project{"python/django", Commands{"build": "python manage.py syncdb", "run": "python manage.py runserver",
 		"test": "python manage.py test"}, pythonDjango},
 	&Project{"python/default", Commands{"run": "python {file}"}, pythonDefault},
@@ -44,6 +47,7 @@ var ProjectTypes = []*Project{
 	&Project{"ruby/default", Commands{"run": "ruby {file}"}, rubyDefault},
 	&Project{"rust/cargo", Commands{"build": "cargo build", "run": "cargo run", "test": "cargo test"}, rustCargo},
 	&Project{"rust/default", Commands{"run": "rustc {file} && ./$(basename {file} .rs)"}, rustDefault},
+	&Project{"cmake", Commands{"build": "mkdir .build && cd .build && cmake .. && make"}, cmakeDefault},
 	&Project{"make", Commands{"run": "make", "test": "make test"}, makeDefault},
 	&Project{"procfile", Commands{}, procfileDefault},
 }
@@ -103,6 +107,10 @@ func clojureLeiningen(file string) bool {
 	return hasFile(file, "project.clj")
 }
 
+func cmakeDefault(file string) bool {
+	return hasFile(file, "CMakeLists.txt")
+}
+
 func coffeescriptDefault(file string) bool {
 	return matchingFileOrDir(file, "*.coffee")
 }
@@ -131,6 +139,10 @@ func haskellDefault(file string) bool {
 	return matchingFileOrDir(file, "*.hs") || matchingFileOrDir(file, "*.lhs")
 }
 
+func idrisDefault(file string) bool {
+	return matchingFileOrDir(file, "*.idr")
+}
+
 func javaMaven(file string) bool {
 	return hasFile(file, "pom.xml")
 }
@@ -145,6 +157,10 @@ func javascriptMeteor(file string) bool {
 
 func javascriptDefault(file string) bool {
 	return matchingFileOrDir(file, "*.js")
+}
+
+func juliaDefault(file string) bool {
+	return matchingFileOrDir(file, "*.jl")
 }
 
 func makeDefault(file string) bool {
