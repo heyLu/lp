@@ -20,6 +20,7 @@ type Project struct {
 type Commands map[string]string
 
 var ProjectTypes = []*Project{
+	&Project{"c/default", Commands{"run": "gcc -o $(basename {file} .c) {file} && ./$(basename {file} .c)"}, cDefault},
 	&Project{"clojure/leiningen", Commands{"build": "lein uberjar", "run": "lein run", "test": "lein test"},
 		clojureLeiningen},
 	&Project{"docker/fig", Commands{"build": "fig build", "run": "fig up"}, dockerFig},
@@ -27,6 +28,8 @@ var ProjectTypes = []*Project{
 	&Project{"executable", Commands{"run": "{file}"}, executableDefault},
 	&Project{"go/default", Commands{"build": "go build {file}", "run": "go build $(basename {file}) && ./$(basename {file} .go)"},
 		goDefault},
+	&Project{"haskell/cabal", Commands{"build": "cabal build", "run": "cabal run", "test": "cabal test"}, haskellCabal},
+	&Project{"haskell/default", Commands{"run": "runhaskell {file}"}, haskellDefault},
 	&Project{"java/maven", Commands{"build": "mvn compile", "test": "mvn compile test"}, javaMaven},
 	&Project{"javascript/npm", Commands{"build": "npm install", "test": "npm test"}, javascriptNpm},
 	&Project{"javascript/meteor", Commands{"run": "meteor"}, javascriptMeteor},
@@ -89,6 +92,10 @@ func hasFile(fileOrDir string, file string) bool {
 	return fileutil.IsFile(fileutil.Join(fileOrDir, file))
 }
 
+func cDefault(file string) bool {
+	return matchingFileOrDir(file, "*.c")
+}
+
 func clojureLeiningen(file string) bool {
 	return hasFile(file, "project.clj")
 }
@@ -107,6 +114,14 @@ func executableDefault(file string) bool {
 
 func goDefault(file string) bool {
 	return matchingFileOrDir(file, "*.go")
+}
+
+func haskellCabal(file string) bool {
+	return matchingFileOrDir(file, "*.cabal")
+}
+
+func haskellDefault(file string) bool {
+	return matchingFileOrDir(file, "*.hs") || matchingFileOrDir(file, "*.lhs")
 }
 
 func javaMaven(file string) bool {
