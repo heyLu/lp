@@ -1,6 +1,7 @@
 .go
 
 qst
+test_detect
 
 examples/hello
 examples/hello_web

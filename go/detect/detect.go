@@ -1,11 +1,9 @@
 package detect
 
 import (
-	"fmt"
-	"os"
 	"path"
 
-	"./fileutil"
+	"../fileutil"
 )
 
 /*
