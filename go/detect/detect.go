@@ -23,6 +23,7 @@ var ProjectTypes = []*Project{
 	&Project{"c/default", Commands{"run": "gcc -o $(basename {file} .c) {file} && ./$(basename {file} .c)"}, cDefault},
 	&Project{"clojure/leiningen", Commands{"build": "lein uberjar", "run": "lein run", "test": "lein test"},
 		clojureLeiningen},
+	&Project{"coffeescript/default", Commands{"run": "coffee {file}"}, coffeescriptDefault},
 	&Project{"docker/fig", Commands{"build": "fig build", "run": "fig up"}, dockerFig},
 	&Project{"docker/default", Commands{"build": "docker build ."}, dockerDefault},
 	&Project{"executable", Commands{"run": "{file}"}, executableDefault},
@@ -98,6 +99,10 @@ func cDefault(file string) bool {
 
 func clojureLeiningen(file string) bool {
 	return hasFile(file, "project.clj")
+}
+
+func coffeescriptDefault(file string) bool {
+	return matchingFileOrDir(file, "*.coffee")
 }
 
 func dockerFig(file string) bool {
