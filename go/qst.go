@@ -39,8 +39,13 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s <file>\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s <file>\n\n", os.Args[0])
 		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\nSupported project types: \n")
+		for _, project := range detect.ProjectTypes {
+			paddedId := fmt.Sprintf("%s%s", project.Id, strings.Repeat(" ", 30-len(project.Id)))
+			fmt.Fprintf(os.Stderr, "\t%s- %v\n", paddedId, project.Commands[*phase])
+		}
 	}
 
 	flag.Parse()
