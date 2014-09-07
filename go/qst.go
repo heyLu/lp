@@ -37,8 +37,6 @@ var phase = flag.String("phase", "run", "which phase to run (build, run or test)
 var justDetect = flag.Bool("detect", false, "detect the project type and exit")
 
 func main() {
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s <file>\n\n", os.Args[0])
 		flag.PrintDefaults()
@@ -154,7 +152,7 @@ func (r *Runner) Start() error {
 	r.started = true
 	go func() {
 		for {
-			log.Printf("running %s", r.shellCmd)
+			log.Printf("[runner] starting command")
 			r.cmd = exec.Command("sh", "-c", r.shellCmd)
 			r.cmd.Stderr = os.Stderr
 			r.cmd.Stdout = os.Stdout
@@ -166,7 +164,7 @@ func (r *Runner) Start() error {
 			} else {
 				result = r.cmd.ProcessState
 			}
-			log.Printf("%s finished: %s", r.shellCmd, result)
+			log.Printf("[runner] finished: %s", result)
 
 			time.Sleep(*delay)
 			if !r.restarting && !r.autoRestart {
