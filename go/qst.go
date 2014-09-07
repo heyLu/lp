@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"path"
 	"strings"
 	"syscall"
 	"time"
@@ -28,22 +27,6 @@ qst hello.rb - runs `ruby hello.rb`
 qst hello.go - compiles & runs hello.go
 
 */
-
-var mappings = map[string]func(string) string{
-	".go": func(name string) string {
-		outpath := strings.TrimSuffix(name, path.Ext(name))
-		if !path.IsAbs(outpath) {
-			outpath = fmt.Sprintf("./%s", outpath)
-		}
-		return fmt.Sprintf("go build -o %s %s && %s", outpath, name, outpath)
-	},
-	".rb": func(name string) string {
-		return fmt.Sprintf("ruby %s", name)
-	},
-	".py": func(name string) string {
-		return fmt.Sprintf("python %s", name)
-	},
-}
 
 var delay = flag.Duration("delay", 1*time.Second, "time to wait until restart")
 var autoRestart = flag.Bool("autorestart", true, "automatically restart after command exists")
