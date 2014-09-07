@@ -12,35 +12,32 @@ import (
 	detect - guess the project type from files present
 */
 
-type Detection struct {
-	Language string
-	Type     string
+type Project struct {
+	Id       string
+	Commands Commands
+	Detect   func(string) bool
 }
 
-type detectorFunc func(string) bool
+type Commands map[string]string
 
-type Detector struct {
-	Detection Detection
-	Detector  detectorFunc
-}
-
-var Detectors = []Detector{
-	{Detection{"clojure", "leiningen"}, clojureLeiningen},
-	{Detection{"docker", "fig"}, dockerFig},
-	{Detection{"docker", "default"}, dockerDefault},
-	{Detection{"executable", "default"}, executableDefault},
-	{Detection{"go", "default"}, goDefault},
-	{Detection{"java", "maven"}, javaMaven},
-	{Detection{"javascript", "npm"}, javascriptNpm},
-	{Detection{"javascript", "meteor"}, javascriptMeteor},
-	{Detection{"javascript", "default"}, javascriptDefault},
-	{Detection{"make", "default"}, makeDefault},
-	{Detection{"procfile", "default"}, procfileDefault},
-	{Detection{"python", "django"}, pythonDjango},
-	{Detection{"python", "default"}, pythonDefault},
-	{Detection{"ruby", "rails"}, rubyRails},
-	{Detection{"ruby", "rake"}, rubyRake},
-	{Detection{"ruby", "default"}, rubyDefault},
+var ProjectTypes = []Project{
+	Project{"clojure/leiningen", Commands{"run": "lein run", "test": "lein test"}, clojureLeiningen},
+	Project{"docker/fig", Commands{"run": "fig up"}, dockerFig},
+	Project{"docker/default", Commands{}, dockerDefault},
+	Project{"executable/default", Commands{"run": "{file}"}, executableDefault},
+	Project{"go/default", Commands{"build": "go build {file}", "run": "go build {file} && $(basename {file} .go)"},
+		goDefault},
+	Project{"java/maven", Commands{"build": "mvn compile", "test": "mvn compile test"}, javaMaven},
+	Project{"javascript/npm", Commands{}, javascriptNpm},
+	Project{"javascript/meteor", Commands{"run": "meteor"}, javascriptMeteor},
+	Project{"javascript/default", Commands{"run": "node {file}"}, javascriptDefault},
+	Project{"make/default", Commands{"run": "make"}, makeDefault},
+	Project{"procfile/default", Commands{}, procfileDefault},
+	Project{"python/django", Commands{}, pythonDjango},
+	Project{"python/default", Commands{"run": "python {file}"}, pythonDefault},
+	Project{"ruby/rails", Commands{"run": "rails server", "test": "bundle exec rake test"}, rubyRails},
+	Project{"ruby/rake", Commands{"run": "rake"}, rubyRake},
+	Project{"ruby/default", Commands{"run": "ruby {file}"}, rubyDefault},
 }
 
 func main() {
@@ -51,8 +48,9 @@ func main() {
 
 	file := os.Args[1]
 
-	for _, detector := range Detectors {
-		fmt.Println(detector.Detection, detector.Detector(file))
+	for _, project := range ProjectTypes {
+		runCmd := project.Commands["run"]
+		fmt.Printf("%v (%v): %v\n", project.Id, runCmd, project.Detect(file))
 	}
 }
 
