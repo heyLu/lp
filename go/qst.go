@@ -1,3 +1,8 @@
+// qst - run things quickly
+//
+// Given a file or directory, guesses the project type and runs
+// it for you. Restarts on changes. Intended for small experiments
+// and working with unfamilar build systems.
 package main
 
 import (
@@ -16,18 +21,6 @@ import (
 	"./detect"
 	"./fileutil"
 )
-
-/*
-
-# the plan
-
-qst: run things quickly
-
-qst - detects the current project type and runs it
-qst hello.rb - runs `ruby hello.rb`
-qst hello.go - compiles & runs hello.go
-
-*/
 
 var delay = flag.Duration("delay", 1*time.Second, "time to wait until restart")
 var autoRestart = flag.Bool("autorestart", true, "automatically restart after command exists")

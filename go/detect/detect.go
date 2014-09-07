@@ -1,3 +1,4 @@
+// Guess project "type" from the files present.
 package detect
 
 import (
@@ -6,10 +7,6 @@ import (
 
 	"../fileutil"
 )
-
-/*
-	detect - guess the project type from files present
-*/
 
 type Project struct {
 	Id       string
