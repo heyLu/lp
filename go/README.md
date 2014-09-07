@@ -41,3 +41,11 @@ directory and it tries to detect what it is and how to run it.
 	...
 
 Try changing something in the files, it's fun. :)
+
+### Ideas/todo
+
+- watch many files (select by globbing)
+- sometimes restarts twice after one save?
+- more project types
+- tests (how? lots of shellscripts could do it, but would be very
+	cumbersome. current "architecture" doesn't allow mocking.)
