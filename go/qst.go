@@ -52,10 +52,6 @@ func main() {
 	}
 
 	file := args[0]
-	// if !isFile(file) {
-	// 	fmt.Fprintf(os.Stderr, "Error: %s is not a file.\n", file)
-	// 	os.Exit(1)
-	// }
 
 	var cmd string
 	if !flagEmpty(command) {
