@@ -32,6 +32,7 @@ qst hello.go - compiles & runs hello.go
 var delay = flag.Duration("delay", 1*time.Second, "time to wait until restart")
 var autoRestart = flag.Bool("autorestart", true, "automatically restart after command exists")
 var command = flag.String("command", "", "command to run ({file} will be substituted)")
+var projectType = flag.String("type", "", "project type to use (autodetected if not present)")
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
@@ -56,10 +57,18 @@ func main() {
 	// }
 
 	var cmd string
-	if command != nil && strings.TrimSpace(*command) != "" {
+	if !flagEmpty(command) {
 		cmd = *command
 	} else {
 		project, err := detect.Detect(file)
+		if !flagEmpty(projectType) {
+			project = detect.GetById(*projectType)
+			if project == nil {
+				log.Fatalf("unknown type: `%s'", *projectType)
+			} else if !project.Detect(file) {
+				log.Fatalf("%s doesn't match type %s!", file, *projectType)
+			}
+		}
 		if err != nil {
 			log.Fatal("error: ", err)
 		}
@@ -85,6 +94,10 @@ func main() {
 	s := <-c
 	log.Printf("got signal: %s, exiting...", s)
 	runner.Stop()
+}
+
+func flagEmpty(stringFlag *string) bool {
+	return stringFlag == nil || strings.TrimSpace(*stringFlag) == ""
 }
 
 func runCmd(file string, runner *Runner) {

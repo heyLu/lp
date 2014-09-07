@@ -63,6 +63,15 @@ func DetectAll(file string) []*Project {
 	return projects
 }
 
+func GetById(id string) *Project {
+	for _, project := range ProjectTypes {
+		if project.Id == id {
+			return project
+		}
+	}
+	return nil
+}
+
 func matchingFileOrDir(file string, pattern string) bool {
 	if fileutil.IsFile(file) {
 		_, f := path.Split(file)
