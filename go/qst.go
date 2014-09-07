@@ -33,6 +33,7 @@ var delay = flag.Duration("delay", 1*time.Second, "time to wait until restart")
 var autoRestart = flag.Bool("autorestart", true, "automatically restart after command exists")
 var command = flag.String("command", "", "command to run ({file} will be substituted)")
 var projectType = flag.String("type", "", "project type to use (autodetected if not present)")
+var phase = flag.String("phase", "run", "which phase to run (build, run or test)")
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
@@ -73,9 +74,9 @@ func main() {
 			log.Fatal("error: ", err)
 		}
 		log.Printf("detected a %s project", project.Id)
-		projectCmd, found := project.Commands["run"]
+		projectCmd, found := project.Commands[*phase]
 		if !found {
-			log.Fatalf("%s doesn't support `run'", project.Id)
+			log.Fatalf("%s doesn't support `%s'", project.Id, *phase)
 		}
 		cmd = projectCmd
 	}
