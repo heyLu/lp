@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -69,6 +70,7 @@ func main() {
 		}
 		cmd = projectCmd
 	}
+	file, _ = filepath.Abs(file)
 	cmd = strings.Replace(cmd, "{file}", file, -1)
 	if err := os.Chdir(fileutil.Dir(file)); err != nil {
 		log.Fatal(err)
