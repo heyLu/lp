@@ -11,6 +11,12 @@ I think.
 	fetching libraries built-in, though versioning is missing)
 - *simple* (mostly, goroutines + no proper sync will bite you,
 	thinking helps, as always)
+- *pragmatic*, possibly similar to clojure in this respect (which is
+    somewhat surprising to me)
+- misc
+    * [cross compilation][] is surprisingly painless
+
+[cross compilation]: http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
 
 ## qst - run things quickly (and easily)
 
