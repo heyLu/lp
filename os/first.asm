@@ -17,10 +17,26 @@ start:
         mov si, text_string     ; put string position into si
         call print_string
 
-        ;; jump here, infinite loop!
-        jmp $
+run:
+        ;; sleep a bit
+        mov cx, 10
+        mov dx, 0
+        call sleep
+
+        ;; say something so we notice it happened
+        mov si, sleepy_string   ; could be done earlier, but maybe we'll print different messages later
+        call print_string
+
+        ;; go back to sleep
+        jmp run
 
         text_string db 'This is my very first OS!', 0
+        sleepy_string db ' Waking up again...', 0
+
+sleep:
+        mov ah, 0x86            ; "wait", specify length in `cx` and `dx` in microseconds (10^-6s)
+        int 0x15
+        ret
 
 clear_screen:
         mov ah, 0x00            ; "set video mode"
