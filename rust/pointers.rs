@@ -27,7 +27,7 @@ mod wrapped {
 }
 
 mod list_with_box {
-    #[deriving(Show)]
+    #[deriving(Clone, Show)]
     pub enum List<A> {
         Nil,
         Cons(A, Box<List<A>>)
@@ -53,9 +53,12 @@ mod list_with_box {
         println!("\nlist_with_box:");
 
         let l: List<int> = cons(1, cons(2, Nil));
+        // must be cloned before use as parameter to cons, which moves it
+        let l2 = l.clone();
 
         println!("l = {}", l);
-        println!("cons(3, l) = {:?}", cons(3, l));
+        println!("cons(3, l)  = {:?}", cons(3, l));
+        println!("cons(4, l2) = {:?}", cons(4, l2));
 
         // println!("cons_with_ref(3, &l) = {:?}", cons_with_ref(3, &l));
         //                                                        // ^    "use of moved value: `l`"
