@@ -114,9 +114,33 @@ mod list_with_ref {
     }
 }
 
+mod list_with_ref_box {
+    #[deriving(Show)]
+    enum List<'a, A: 'a> {
+        Nil,
+        Cons(A, &'a Box<List<'a A>>)
+    }
+
+    pub fn cons<'a, A>(x: A, xs: &'a Box<List<'a A>>) -> List<'a A> {
+        Cons(x, xs)
+    }
+
+    pub fn run() {
+        println!("\nlist_with_ref_box:");
+
+        let nil = &box Nil;
+        let l: &Box<List<int>> = &box cons(1, nil);
+
+        println!("l = {:?}", l);
+        println!("cons(2, l) = {:?}", cons(2, l));
+        println!("cons(3, l) = {:?}", cons(3, l));
+    }
+}
+
 pub fn main() {
     wrapped::run();
 
     list_with_box::run();
     list_with_ref::run();
+    list_with_ref_box::run();
 }
