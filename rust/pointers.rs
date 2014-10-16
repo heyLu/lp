@@ -46,6 +46,7 @@ mod list_with_box {
     //         Nil => Cons(x, box Nil),
     //         _ => Cons(x, box *xs)
     //                       // ^    "cannot move out of dereference of `&`-pointer"
+    //                       // same with `ref l => Cons(x, box *l)`
     //     }
     // }
 
