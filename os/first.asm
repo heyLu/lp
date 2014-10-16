@@ -11,8 +11,7 @@ start:
         mov ax, 0x07c0
         mov ds, ax
 
-        ;; put string position into si
-        mov si, text_string
+        mov si, text_string     ; put string position into si
         call print_string
 
         ;; jump here, infinite loop!
