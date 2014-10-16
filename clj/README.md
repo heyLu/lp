@@ -42,7 +42,15 @@
         what are the arguments to this function, what does this map mean;
         maybe clojure wants me to think differently)
     * the jvm overhead is bad for my little computer (too slow, too much
-      memory consumed)
+        memory consumed)
+
+        it also makes it difficult to quickly explore some ideas without
+        creating a new project (in most cases, mostly to get libraries),
+        starting a jvm... etc.
+
+        i'd really love a version of clojure without this overhead, even
+        if it is a lot slower. maybe [clojure-scheme](https://github.com/takeoutweight/clojure-scheme)
+        could be that.
 
 ## Hickups
 
