@@ -47,7 +47,7 @@ mod list_with_box {
         let l: List<int> = cons(1, cons(2, Nil));
 
         println!("l = {}", l);
-        println!("cons(3, box l) = {:?}", cons(3, l));
+        println!("cons(3, l) = {:?}", cons(3, l));
     }
 }
 
@@ -74,7 +74,7 @@ mod list_with_ref {
         let l: &List<int> = &cons(1, nil);
 
         println!("l = {:?}", l);
-        println!("lwr_cons_with_ref(1, l) = {:?}", cons(1, l));
+        println!("cons(1, l) = {:?}", cons(1, l));
     }
 }
 
