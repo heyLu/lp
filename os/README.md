@@ -4,6 +4,8 @@ inspired by [Julia Evan's blog post](http://jvns.ca/blog/2013/11/26/day-34-the-t
 
 it clears the screen and then prints some text. exciting!
 
+![screenshot of it running](./screenshot.png)
+
 ## How to run it
 
 1. install `nasm` and `qemu`
