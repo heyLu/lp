@@ -20,6 +20,7 @@ it clears the screen and then prints some text. exciting!
 
 ## Ideas
 
+- print more messages (numbers? e.g. sleep, print, ...)
 - print typed keys to the screen
 - port to C
 - port to a real language (scheme?!)
