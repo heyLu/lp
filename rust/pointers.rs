@@ -41,6 +41,14 @@ mod list_with_box {
         }
     }
 
+    // pub fn cons_with_ref<A>(x: A, xs: &List<A>) -> List<A> {
+    //     match *xs {
+    //         Nil => Cons(x, box Nil),
+    //         _ => Cons(x, box *xs)
+    //                       // ^    "cannot move out of dereference of `&`-pointer"
+    //     }
+    // }
+
     pub fn run() {
         println!("\nlist_with_box:");
 
@@ -48,6 +56,9 @@ mod list_with_box {
 
         println!("l = {}", l);
         println!("cons(3, l) = {:?}", cons(3, l));
+
+        // println!("cons_with_ref(3, &l) = {:?}", cons_with_ref(3, &l));
+        //                                                        // ^    "use of moved value: `l`"
     }
 }
 
