@@ -102,6 +102,22 @@ mod list_with_ref {
         }
     }
 
+    pub fn first<'a, A>(xs: &'a List<A>) -> Option<&'a A> {
+        match *xs {
+            Nil => None,
+            // note the `ref x` here, the default would again be moving the value
+            Cons(ref x, _) => Some(x)
+        }
+    }
+
+    pub fn last<'a, A>(xs: &'a List<A>) -> Option<&'a A> {
+        match *xs {
+            Nil => None,
+            Cons(ref x, &Nil) => Some(x),
+            Cons(_, xs) => last(xs)
+        }
+    }
+
     pub fn run() {
         println!("\nlist_with_ref:");
 
@@ -111,6 +127,11 @@ mod list_with_ref {
 
         println!("l = {:?}", l);
         println!("cons(1, l) = {:?}", cons(1, l));
+
+        let l2: &List<int> = &cons(2, l);
+        println!("l2 = {:?}", l2);
+        println!("first(l2) = {:?}", first(l2));
+        println!("last(l2)  = {:?}", last(l2));
     }
 }
 
