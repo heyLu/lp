@@ -2,6 +2,7 @@ help:
 	@echo "make help  - display this message"
 	@echo "make build - build the os"
 	@echo "make run   - run the os in qemu"
+	@echo "make clean - clean up"
 
 build: first.flp
 
@@ -13,3 +14,6 @@ first.bin: first.asm
 
 run: first.flp
 	qemu-system-i386 -fda first.flp
+
+clean:
+	rm -f *.flp *.bin mikeos*.zip
