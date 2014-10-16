@@ -50,6 +50,20 @@ mod list_with_box {
     //     }
     // }
 
+    pub fn cons_with_box<A>(x: A, xs: Box<List<A>>) -> List<A> {
+        match *xs {
+            Nil => Cons(x, xs),
+            _   => Cons(x, xs)
+        }
+    }
+
+    // pub fn cons_with_referenced_box<A>(x: A, xs: &Box<List<A>>) -> List<A> {
+    //     match **xs {
+    //         Nil     => Cons(x, box Nil),
+    //         ref l   => Cons(x, box *l) // "cannot move ...", again
+    //     }
+    // }
+
     pub fn run() {
         println!("\nlist_with_box:");
 
@@ -60,9 +74,16 @@ mod list_with_box {
         println!("l = {}", l);
         println!("cons(3, l)  = {:?}", cons(3, l));
         println!("cons(4, l2) = {:?}", cons(4, l2));
+        println!("");
 
         // println!("cons_with_ref(3, &l) = {:?}", cons_with_ref(3, &l));
         //                                                        // ^    "use of moved value: `l`"
+
+        let lb: Box<List<int>> = box cons_with_box(1, box cons_with_box(2, box Nil));
+        println!("lb = {:?}", lb);
+        println!("cons_with_box(3, lb) = {:?}", cons_with_box(3, lb));
+        // println!("cons_with_box(4, lb) = {:?}", cons_with_box(4, lb));
+        //                                                       // ^     "use of moved value: `l`"
     }
 }
 
