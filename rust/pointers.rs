@@ -119,11 +119,7 @@ mod list_with_ref {
     }
 
     // pub fn from_iterator<'a, I: Iterator<A>, A: 'a>(mut i: I) -> &'a List<'a A> {
-    //     let mut xs = &Nil;
-    //     for x in i {
-    //         xs = &cons(x, xs);
-    //     }
-    //     xs
+    //     i.fold(&Nil, |xs, x| &cons(x, xs))
     // }
 
     pub fn run() {
