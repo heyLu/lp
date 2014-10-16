@@ -11,6 +11,9 @@ start:
         mov ax, 0x07c0
         mov ds, ax
 
+        ;; clear the screen
+        call clear_screen
+
         mov si, text_string     ; put string position into si
         call print_string
 
@@ -18,6 +21,12 @@ start:
         jmp $
 
         text_string db 'This is my very first OS!', 0
+
+clear_screen:
+        mov ah, 0x00            ; "set video mode"
+        mov al, 0x03            ; 80x25
+        int 0x10
+        ret
 
 print_string:                   ; output string in `si` to screen
         mov ah, 0x0e            ; int 0x10 'print char' function
