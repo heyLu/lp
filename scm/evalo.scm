@@ -14,6 +14,16 @@
        [(== x y) (== v val)]
        [(=/= x y) (lookupo x rest val)]))))
 
+(define evalmanyo
+  (lambda (l env r)
+    (conde
+     [(== l '()) (== l r)]
+     [(fresh (h t h^ t^)
+        (== l `(,h  . ,t))
+        (== r `(,h^ . ,t^))
+        (evalo h env h^)
+        (evalmanyo t env t^))])))
+
 (define evalo
   (lambda (expr env val)
     (conde
@@ -22,6 +32,9 @@
      [(fresh (e)
         (== `(quote ,e) expr)
         (== e val))]
+     [(fresh (els)
+        (== `(list . ,els) expr)
+        (evalmanyo els env val))]
      [(fresh (x body)
         (== `(lambda (,x) ,body) expr)
         (== `(closure ,x ,body ,env) val))]
