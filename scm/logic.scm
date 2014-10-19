@@ -21,3 +21,12 @@
 (define cons-o
   (lambda (x l r)
     (== r (cons x l))))
+
+(define append-o
+  (lambda (l s r)
+    (conde
+     ((== l '()) (== s r))
+     ((fresh (a d res)
+             (== `(,a . ,d) l)
+             (== `(,a . ,res) r)
+             (append-o d s res))))))
