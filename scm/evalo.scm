@@ -19,6 +19,9 @@
     (conde
      [(symbolo expr)
       (lookupo expr env val)]
+     [(fresh (e)
+        (== `(quote ,e) expr)
+        (== e val))]
      [(fresh (x body)
         (== `(lambda (,x) ,body) expr)
         (== `(closure ,x ,body ,env) val))]
