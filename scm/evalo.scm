@@ -37,9 +37,9 @@
         (evalmanyo els env val))]
      [(fresh (x body)
         (== `(lambda (,x) ,body) expr)
-        (== `(closure ,x ,body ,env) val))]
+        (== `(,expr in ,env) val))]
      [(fresh (e1 e2 x body env^ arg)
         (== `(,e1 ,e2) expr)
-        (evalo e1 env `(closure ,x ,body ,env^))
+        (evalo e1 env `((lambda (,x) ,body) in ,env^))
         (evalo e2 env arg)
         (evalo body `((,x . ,arg) . ,env^) val))])))
