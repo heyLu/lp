@@ -43,3 +43,13 @@
         (evalo e1 env `((lambda (,x) ,body) in ,env^))
         (evalo e2 env arg)
         (evalo body `((,x . ,arg) . ,env^) val))])))
+
+(define quineo
+  (lambda (q)
+    (evalo q '() q)))
+
+(define twineo
+  (lambda (p q)
+    (=/= p q)
+    (evalo p '() q)
+    (evalo q '() p)))
