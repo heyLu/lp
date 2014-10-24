@@ -13,12 +13,18 @@ import (
 	"github.com/golang/groupcache/lru"
 )
 
+var port = "8080"
+
 var faviconCache = lru.New(10000)
 var lock sync.RWMutex
 
 func main() {
 	http.HandleFunc("/favicon", HandleGetFavicon)
-	err := http.ListenAndServe(":8080", nil)
+	if p := os.Getenv("PORT"); p != "" {
+		port = p
+	}
+	fmt.Printf("listening on :%s\n", port)
+	err := http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 
 	if err != nil {
 		fmt.Println("error: ", err)
