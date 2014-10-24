@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -13,19 +14,24 @@ import (
 	"github.com/golang/groupcache/lru"
 )
 
-var port = "8080"
+var port = flag.Int("p", 8080, "port [8080]")
+var cacheSize = flag.Int("s", 10000, "cache size [10000]")
 
-var faviconCache = lru.New(10000)
+var faviconCache *lru.Cache
 var lock sync.RWMutex
 
 func main() {
+	flag.Parse()
+
+	faviconCache = lru.New(*cacheSize)
+
 	http.HandleFunc("/favicon", HandleGetFavicon)
 	if p := os.Getenv("PORT"); p != "" {
-		port = p
+		flag.Set("p", p)
 	}
-	fmt.Printf("listening on :%s\n", port)
-	err := http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 
+	fmt.Printf("listening on :%d\n", *port)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 	if err != nil {
 		fmt.Println("error: ", err)
 		os.Exit(1)
