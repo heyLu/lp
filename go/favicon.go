@@ -1,13 +1,13 @@
 package main
 
 import (
+	"code.google.com/p/cascadia"
+	"code.google.com/p/go.net/html"
 	"errors"
-	"os"
+	"fmt"
 	"net/http"
 	"net/url"
-	"fmt"
-	"code.google.com/p/go.net/html"
-	"code.google.com/p/cascadia"
+	"os"
 )
 
 var faviconCache = make(map[string]string)
@@ -22,7 +22,7 @@ func main() {
 	}
 }
 
-func HandleGetFavicon (w http.ResponseWriter, r *http.Request) {
+func HandleGetFavicon(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.Query()["url"][0]
 	favicon, err := GetFaviconCached(url)
 	if err != nil {
@@ -99,7 +99,7 @@ func GetCanonicalFavicon(u string) (string, error) {
 		return "", err
 	}
 	faviconUrl := fmt.Sprintf("%s://%s/favicon.ico", parsed.Scheme, parsed.Host)
-	
+
 	resp, err := http.Get(faviconUrl)
 	fmt.Println("get favicon.ico", resp, err)
 	if err != nil {
