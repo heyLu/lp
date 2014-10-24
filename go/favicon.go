@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 )
 
 var faviconCache = make(map[string]string)
+var lock sync.RWMutex
 
 func main() {
 	http.HandleFunc("/favicon", HandleGetFavicon)
@@ -47,7 +49,9 @@ func GetFaviconCached(u string) (string, error) {
 	} else {
 		host = parsed.Host
 	}
+	lock.RLock()
 	faviconUrl, cached := faviconCache[host]
+	lock.RUnlock()
 
 	if cached {
 		return faviconUrl, nil
@@ -58,7 +62,9 @@ func GetFaviconCached(u string) (string, error) {
 		return faviconUrl, err
 	}
 
+	lock.Lock()
 	faviconCache[host] = faviconUrl
+	lock.Unlock()
 	return faviconUrl, nil
 }
 
