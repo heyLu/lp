@@ -1,17 +1,19 @@
 package main
 
 import (
-	"code.google.com/p/cascadia"
-	"code.google.com/p/go.net/html"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"sync"
+
+	"code.google.com/p/cascadia"
+	"code.google.com/p/go.net/html"
+	"github.com/golang/groupcache/lru"
 )
 
-var faviconCache = make(map[string]string)
+var faviconCache = lru.New(10000)
 var lock sync.RWMutex
 
 func main() {
@@ -50,20 +52,20 @@ func GetFaviconCached(u string) (string, error) {
 		host = parsed.Host
 	}
 	lock.RLock()
-	faviconUrl, cached := faviconCache[host]
+	fu, cached := faviconCache.Get(host)
 	lock.RUnlock()
 
 	if cached {
-		return faviconUrl, nil
+		return fu.(string), nil
 	}
 
-	faviconUrl, err = GetFavicon(u)
+	faviconUrl, err := GetFavicon(u)
 	if err != nil {
 		return faviconUrl, err
 	}
 
 	lock.Lock()
-	faviconCache[host] = faviconUrl
+	faviconCache.Add(host, faviconUrl)
 	lock.Unlock()
 	return faviconUrl, nil
 }
