@@ -50,10 +50,12 @@ func main() {
 			continue
 		}
 
-		fmt.Printf("%s: %d entries\n", fn, len(f.Items))
-		//for _, item := range f.Items {
-		//	fmt.Println(item.Title)
-		//}
+		fmt.Printf("%s: %s - %s (%d entries)\n", fn, f.Title, f.Description, len(f.Items))
+		for i, item := range f.Items {
+			if i < 10 {
+				fmt.Printf("%s: %s\n", fn, item.Title)
+			}
+		}
 	}
 }
 
