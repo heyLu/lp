@@ -28,6 +28,10 @@ import (
 // test (see feeds_test.go)
 
 func main() {
+	FetchAll()
+}
+
+func FetchAll() {
 	feeds, err := ReadConfig("config.txt")
 	if err != nil {
 		fmt.Println(err)
