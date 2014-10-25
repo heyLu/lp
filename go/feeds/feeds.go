@@ -42,6 +42,13 @@ func main() {
 	switch cmd {
 	case "fetch-all":
 		FetchAll()
+	case "fetch-one":
+		if len(flag.Args()) != 1 {
+			fmt.Printf("Usage: %s [<options>] fetch-one <url>\n", os.Args[0])
+			os.Exit(1)
+		}
+
+		FetchOne(flag.Args()[0])
 	case "help":
 		printUsage()
 		flag.PrintDefaults()
@@ -58,6 +65,23 @@ func main() {
 
 func printUsage() {
 	fmt.Printf("Usage: %s [<options>] <cmd> [<args>]\n", os.Args[0])
+}
+
+func FetchOne(u string) {
+	f, err := Fetch(u)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("%s: %s", u, f.Title)
+	if strings.TrimSpace(f.Description) != "" {
+		fmt.Printf(" - %s", f.Description)
+	}
+	fmt.Printf(" (%d entries)\n", len(f.Items))
+	for _, item := range f.Items {
+		fmt.Printf("\t%s\n", item.Title)
+	}
 }
 
 func FetchAll() {
