@@ -37,10 +37,11 @@ func main() {
 			continue
 		}
 
+		fmt.Printf("%s: %s - %s\n", fn, f.Title, f.Description)
 		fmt.Printf("%s: %d entries\n", fn, len(f.Items))
-		//for _, item := range f.Items {
-		//	fmt.Println(item.Title)
-		//}
+		for _, item := range f.Items[0:10] {
+			fmt.Printf("%s: %s\n", fn, item.Title)
+		}
 	}
 }
 
