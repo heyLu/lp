@@ -70,14 +70,7 @@ func FetchAll() {
 	fmt.Printf("fetching %d feeds...\n", len(*feeds))
 	for _, fn := range *feeds {
 		fmt.Printf("fetching %s\n", fn)
-		fu, err := GetFeedUrl(fn)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		fn = fu
-
-		f, err :=  feed.Fetch(fn)
+		f, err := Fetch(fn)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -90,6 +83,21 @@ func FetchAll() {
 			}
 		}
 	}
+}
+
+func Fetch(fn string) (*feed.Feed, error) {
+	fu, err := GetFeedUrl(fn)
+	if err != nil {
+		return nil, err
+	}
+	fn = fu
+
+	f, err :=  feed.Fetch(fn)
+	if err != nil {
+		return nil, err
+	}
+
+	return f, nil
 }
 
 func GetFeedUrl(u string) (string, error) {
