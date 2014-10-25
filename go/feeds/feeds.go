@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"errors"
+	"flag"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -27,8 +28,36 @@ import (
 // - support json and edn output (and transit?)
 // test (see feeds_test.go)
 
+var commands = []string{"fetch-all", "help"}
+
 func main() {
-	FetchAll()
+	if len(os.Args) == 1 {
+		printUsage()
+		os.Exit(1)
+	}
+
+	cmd := os.Args[1]
+	flag.CommandLine.Parse(os.Args[2:])
+
+	switch cmd {
+	case "fetch-all":
+		FetchAll()
+	case "help":
+		printUsage()
+		flag.PrintDefaults()
+		fmt.Println("\nAvaillable commands:")
+		for _, command := range commands {
+			fmt.Println("\t", command)
+		}
+		os.Exit(0)
+	default:
+		printUsage()
+		os.Exit(1)
+	}
+}
+
+func printUsage() {
+	fmt.Printf("Usage: %s [<options>] <cmd> [<args>]\n", os.Args[0])
 }
 
 func FetchAll() {
