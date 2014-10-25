@@ -14,6 +14,19 @@ import (
 	feed "github.com/SlyMarbo/rss"
 )
 
+// store posts somewhere (reverse chronical ordering, text file)
+// - title, url, timestamp, via
+// - periodically (or triggered if fetches get new posts, but with a delay?)
+// periodic fetching
+// - once per hour
+// - at most n connections at a time
+// web frontend
+// - simple list with links
+// - filterable with query params
+// - support "live" search if i want to be fancy (not right now)
+// - support json and edn output (and transit?)
+// test (see feeds_test.go)
+
 func main() {
 	feeds, err := ReadConfig("config.txt")
 	if err != nil {
