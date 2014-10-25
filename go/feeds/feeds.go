@@ -28,7 +28,7 @@ import (
 // - support json and edn output (and transit?)
 // test (see feeds_test.go)
 
-var commands = []string{"fetch-all", "help"}
+var commands = []string{"fetch-all", "fetch-one", "help"}
 
 func main() {
 	if len(os.Args) == 1 {
