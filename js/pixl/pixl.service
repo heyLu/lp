@@ -1,0 +1,11 @@
+[Unit]
+Description=Draw pixls together!
+
+[Service]
+User=pixl
+Group=pixl
+ExecStart=node server.js
+WorkingDirectory=/srv/http/pixl
+
+[Install]
+WantedBy=multi-user.target
