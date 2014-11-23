@@ -1,0 +1,10 @@
+[Unit]
+Description=A tiny favicon resolving service
+
+[Service]
+User=nobody
+Group=nobody
+ExecStart=/srv/http/favicon -p 6767
+
+[Install]
+WantedBy=multi-user.target
