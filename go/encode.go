@@ -39,8 +39,50 @@ func base64encode(b []byte) []byte {
 	return res
 }
 
+func decode(b byte) byte {
+	if 'A' <= b && b <= 'Z' {
+		return b - 'A'
+	} else if 'a' <= b && b <= 'z' {
+		return 26 + b - 'a'
+	} else if '0' <= b && b <= '9' {
+		return 52 + b - '0'
+	} else if b == '+' {
+		return 62
+	} else if b == '/' {
+		return 63
+	} else {
+		fmt.Println("oops")
+		return ' '
+	}
+}
+
+func base64decode(b []byte) []byte {
+	res := make([]byte, len(b) / 4 * 3)
+	//fmt.Println(len(b), "->", len(res))
+	for i := 0; i < len(b); i += 4 {
+		c1, c2, c3, c4 := decode(b[i]), decode(b[i+1]), decode(b[i+2]), decode(b[i+3])
+		r1 := (c1 << 2) + (c2 >> 4)
+		r2 := ((c2 ^ ((c2 >> 4) << 4)) << 4) + (c3 >> 2)
+		r3 := ((c3 ^ ((c3 >> 2) << 2)) << 6) + c4
+		base := i - i / 4
+		//fmt.Print(i, base, c1, c2, c3, c4, "\t", string(b[i]), string(b[i+1]), string(b[i+2]), string(b[i+3]))
+		//fmt.Printf("\t -> '%s' '%s' '%s'\n", string(r1), string(r2), string(r3))
+		res[base + 0] = r1
+		res[base + 1] = r2
+		res[base + 2] = r3
+	}
+	return res
+}
+
 func main() {
 	base64 := base64encode([]byte("Hello, World!  "))
 	//                                          ^^     (padded to a multiple of three)
 	fmt.Println(string(base64))
+	plain := base64decode(base64)
+	fmt.Println(string(plain))
+
+	secret := []byte("SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t")
+	fmt.Println(string(secret))
+	decoded := base64decode(secret)
+	fmt.Println(string(decoded))
 }
