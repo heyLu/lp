@@ -1,0 +1,5 @@
+#!/bin/sh
+
+result=/tmp/`basename $1 .c`
+cc $1 -o $result && $result
+rm -f $result

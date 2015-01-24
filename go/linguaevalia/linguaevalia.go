@@ -45,6 +45,7 @@ var Haskell = LanguageGeneral{"Haskell", "hs", "runhaskell", []string{}}
 var Rust = LanguageGeneral{"Rust", "rs", "./bin/run-rust", []string{}}
 var Julia = LanguageGeneral{"Julia", "jl", "julia", []string{}}
 var Pixie = LanguageGeneral{"Pixie", "pxi", "pixie-vm", []string{}}
+var C = LanguageGeneral{"C", "c", "./bin/run-c", []string{}}
 
 var languageMappings = map[string]Language{
 	"go":         Go,
@@ -55,6 +56,7 @@ var languageMappings = map[string]Language{
 	"rust":       Rust,
 	"julia":      Julia,
 	"pixie":      Pixie,
+	"c":          C,
 }
 
 func writeCode(code string, extension string) (*os.File, error) {
