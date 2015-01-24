@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -73,14 +74,75 @@ func runCodeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(res)
 }
 
+func homePageHandler(w http.ResponseWriter, r *http.Request) {
+	homePageTemplate.Execute(w, nil)
+}
+
+var homePageTemplate = template.Must(template.New("homepage").Parse(homePageTemplateStr))
+
 func main() {
 	addr, port := "localhost", 8000
 	fmt.Printf("running on %s:%d\n", addr, port)
 
 	http.HandleFunc("/run", runCodeHandler)
+	http.HandleFunc("/", homePageHandler)
 
 	err := http.ListenAndServe(fmt.Sprintf("%s:%d", addr, port), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
+
+const homePageTemplateStr = `
+<!doctype html>
+<html>
+  <head>
+    <title>lingua evalia</title>
+    <meta charset="utf-8" />
+    <style type="text/css">
+    #code {
+      border: none;
+    }
+    </style>
+  </head>
+
+  <body>
+    <textarea id="code" rows="20" cols="80">package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Println("Hello, World!")
+}
+</textarea>
+    <pre id="result"></pre>
+
+    <script>
+      var codeEl = document.getElementById("code");
+      var resultEl = document.getElementById("result");
+
+      codeEl.onkeydown = function(ev) {
+        if (ev.ctrlKey && ev.keyCode == 13) {
+          resultEl.textContent = "";
+          sendCode(codeEl.value, function(result) {
+            resultEl.textContent = result;
+          });
+        }
+      }
+
+      function sendCode(code, cb) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/run");
+        xhr.onreadystatechange = function(ev) {
+          if (xhr.readyState == XMLHttpRequest.DONE) {
+            cb(xhr.response);
+          }
+        };
+        xhr.send(code);
+      }
+    </script>
+  </body>
+</html>
+`
