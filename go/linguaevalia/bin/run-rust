@@ -1,3 +1,5 @@
 #!/bin/sh
 
-rustc $1 && ./`basename $1 .rs`
+result=/tmp/`basename $1 .rs`
+rustc $1 -o $result && $result
+rm -f $result
