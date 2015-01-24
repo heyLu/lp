@@ -5,13 +5,16 @@ package main
 // try it with `curl -i localhost:8000/run --data-binary @hello-world.go`
 
 import (
+	"crypto/rand"
 	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 )
 
 type Language interface {
@@ -65,7 +68,7 @@ var languageMappings = map[string]Language{
 
 func writeCode(code string, extension string) (*os.File, error) {
 	// create tmp file
-	f, err := os.Create(fmt.Sprintf("/tmp/linguaevalia-%s.%s", extension, extension)) // FIXME: actually create a tmpfile
+	f, err := tempFile("/tmp", "linguaevalia", extension)
 	if err != nil {
 		return f, err
 	}
@@ -75,6 +78,12 @@ func writeCode(code string, extension string) (*os.File, error) {
 		return f, err
 	}
 	return f, nil
+}
+
+func tempFile(dir, prefix, suffix string) (*os.File, error) {
+	rnd, _ := rand.Int(rand.Reader, big.NewInt(999999))
+	f, err := os.Create(path.Join(dir, fmt.Sprintf("%s%d.%s", prefix, rnd, suffix)))
+	return f, err
 }
 
 func Eval(lang Language, code string) ([]byte, error) {
