@@ -128,8 +128,19 @@ const homePageTemplateStr = `
     <title>lingua evalia</title>
     <meta charset="utf-8" />
     <style type="text/css">
+    #codeContainer {
+      position: relative;
+      display: inline-block;
+    }
+
     #code {
       border: none;
+    }
+
+    #language {
+      position: absolute;
+      right: 0;
+      top: 0;
     }
 
     .error { color: red; }
@@ -137,7 +148,8 @@ const homePageTemplateStr = `
   </head>
 
   <body>
-    <textarea id="code" rows="20" cols="80">package main
+    <div id="codeContainer">
+      <textarea id="code" rows="20" cols="80">package main
 
 import (
 	"fmt"
@@ -147,25 +159,31 @@ func main() {
 	fmt.Println("Hello, World!")
 }
 </textarea>
+      <select id="language">
+        <option value="go">Go</option>
+        <option value="python">Python</option>
+      </select>
+    </div>
     <pre id="result"></pre>
 
     <script>
       var codeEl = document.getElementById("code");
+      var languageEl = document.getElementById("language");
       var resultEl = document.getElementById("result");
 
       codeEl.onkeydown = function(ev) {
         if (ev.ctrlKey && ev.keyCode == 13) {
           resultEl.textContent = "";
-          sendCode(codeEl.value, function(xhr) {
+          sendCode(codeEl.value, languageEl.value, function(xhr) {
             resultEl.className = xhr.status == 200 ? "success" : "error";
             resultEl.textContent = xhr.response;
           });
         }
       }
 
-      function sendCode(code, cb) {
+      function sendCode(code, language, cb) {
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/run");
+        xhr.open("POST", "/run?language=" + language);
         xhr.onreadystatechange = function(ev) {
           if (xhr.readyState == XMLHttpRequest.DONE) {
             cb(xhr);
