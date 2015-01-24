@@ -16,23 +16,26 @@ import (
 
 type Language interface {
 	RunFile(f *os.File) (result []byte, err error)
+	Name() string
 	Extension() string
 }
 
 type LanguageGeneral struct {
-	Name    string
-	Ext     string
-	Command string
-	Args    []string
+	name    string
+	ext     string
+	command string
+	args    []string
 }
 
 func (l LanguageGeneral) RunFile(f *os.File) ([]byte, error) {
-	args := append(l.Args, f.Name())
-	cmd := exec.Command(l.Command, args...)
+	args := append(l.args, f.Name())
+	cmd := exec.Command(l.command, args...)
 	return cmd.CombinedOutput()
 }
 
-func (l LanguageGeneral) Extension() string { return l.Ext }
+func (l LanguageGeneral) Name() string { return l.name }
+
+func (l LanguageGeneral) Extension() string { return l.ext }
 
 var Go = LanguageGeneral{"Go", "go", "go", []string{"run"}}
 var Python = LanguageGeneral{"Python", "py", "python", []string{}}
@@ -107,7 +110,10 @@ func getLanguage(r *http.Request) Language {
 }
 
 func homePageHandler(w http.ResponseWriter, r *http.Request) {
-	homePageTemplate.Execute(w, nil)
+	bindings := map[string]interface{}{
+		"languages": languageMappings,
+	}
+	homePageTemplate.Execute(w, bindings)
 }
 
 var homePageTemplate = template.Must(template.New("homepage").Parse(homePageTemplateStr))
@@ -164,8 +170,9 @@ func main() {
 }
 </textarea>
       <select id="language">
-        <option value="go">Go</option>
-        <option value="python">Python</option>
+        {{ range $short, $name := .languages }}
+        <option value="{{ $short }}">{{ $name.Name }}</option>
+        {{ end }}
       </select>
     </div>
     <pre id="result"></pre>
