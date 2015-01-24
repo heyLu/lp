@@ -135,6 +135,12 @@ func main() {
 	fmt.Printf("running on %s:%d\n", addr, port)
 
 	http.HandleFunc("/run", runCodeHandler)
+	http.HandleFunc("/codemirror.js", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "lib/codemirror.js")
+	})
+	http.HandleFunc("/codemirror.css", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "lib/codemirror.css")
+	})
 	http.HandleFunc("/", homePageHandler)
 
 	err := http.ListenAndServe(fmt.Sprintf("%s:%d", addr, port), nil)
@@ -163,9 +169,16 @@ const homePageTemplateStr = `
       position: absolute;
       right: 0;
       top: 0;
+      z-index: 10; /* above codemirror */
     }
 
     .error { color: red; }
+    </style>
+    <link rel="stylesheet" type="text/css" href="/codemirror.css" />
+    <style type="text/css">
+    .CodeMirror {
+      min-width: 80ex;
+    }
     </style>
   </head>
 
@@ -204,6 +217,7 @@ func main() {
         }
       }
 
+
       function sendCode(code, language, cb) {
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/run?language=" + language);
@@ -213,6 +227,36 @@ func main() {
           }
         };
         xhr.send(code);
+      }
+    </script>
+
+    <script src="/codemirror.js"></script>
+    <script>
+      var cm = CodeMirror.fromTextArea(codeEl, {mode: languageToMode(languageEl.value)});
+
+      cm.on("changes", function(cm) { codeEl.value = cm.getValue(); });
+
+      cm.setOption("extraKeys", {
+        "Ctrl-Enter": function(cm) {
+          resultEl.textContent = "";
+          sendCode(cm.getValue(), languageEl.value, function(xhr) {
+            resultEl.className = xhr.status == 200 ? "success" : "error";
+            resultEl.textContent = xhr.response;
+          });
+        }
+      });
+
+      languageEl.onchange = function(ev) {
+        cm.setOption("mode", languageToMode(languageEl.value));
+      };
+
+      function languageToMode(language) {
+        switch(language) {
+        case "bash": return "shell";
+        case "pixie": return "clojure";
+        case "c": return "text/x-csrc";
+        default: return language;
+        }
       }
     </script>
   </body>
