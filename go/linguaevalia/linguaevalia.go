@@ -36,10 +36,16 @@ func (l LanguageGeneral) Extension() string { return l.Ext }
 
 var Go = LanguageGeneral{"Go", "go", "go", []string{"run"}}
 var Python = LanguageGeneral{"Python", "py", "python", []string{}}
+var Ruby = LanguageGeneral{"Ruby", "rb", "ruby", []string{}}
+var JavaScript = LanguageGeneral{"JavaScript", "js", "node", []string{}}
+var Haskell = LanguageGeneral{"Haskell", "hs", "runhaskell", []string{}}
 
 var languageMappings = map[string]Language{
-	"go":     Go,
-	"python": Python,
+	"go":         Go,
+	"python":     Python,
+	"ruby":       Ruby,
+	"javascript": JavaScript,
+	"haskell":    Haskell,
 }
 
 func writeCode(code string, extension string) (*os.File, error) {
