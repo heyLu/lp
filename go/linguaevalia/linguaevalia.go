@@ -221,6 +221,21 @@ func runOnce(args []string) {
 	}
 }
 
+func runHelp() {
+	fmt.Printf(`Usage: %s [cmd] [options]
+
+Availlable commands:
+
+server		- Starts a web server. (Default.)
+run		- Runs code from a file or from stdin.
+		  (If running from stdin, you must pass the language
+		   using the -l flag.)
+help		- Display this help message.
+
+`,
+		os.Args[0])
+}
+
 func parseCommand() (string, []string) {
 	if len(os.Args) == 1 {
 		return "server", []string{}
@@ -240,6 +255,8 @@ func main() {
 		runServer()
 	case "run":
 		runOnce(flag.Args())
+	case "help":
+		runHelp()
 	default:
 		fmt.Println("Error: Unknown command:", cmd)
 		os.Exit(1)

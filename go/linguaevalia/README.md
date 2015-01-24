@@ -40,6 +40,23 @@ If there isn't, you can either write a wrapper to do that (similar to the
 [one for rust](./bin/run-rust)) or you can implement the `Language`
 interface.
 
+## Additional commands
+
+`linguaevalia` can also be used to run programs directly, instead of using the
+server:
+
+```
+$ linguaevalia run hello-world.rb
+Hello, World!
+# or alternatively:
+$ cat hello-world.rb | linguaevalia run -l ruby
+Hello, World!
+```
+
+When passing code to the `run` command via stdin, you *must* set the language
+to be used using the `-l` flag as well. If a file name is passed, the type is
+inferred from the extension, but you can override it with `-l` if you want.
+
 ## Development setup
 
 ```
