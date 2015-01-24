@@ -54,6 +54,7 @@ var Pixie = LanguageGeneral{"Pixie", "pxi", "pixie-vm", []string{}}
 var C = LanguageGeneral{"C", "c", "./bin/run-c", []string{}}
 var Bash = LanguageGeneral{"Bash", "bash", "bash", []string{}}
 var Lua = LanguageGeneral{"Lua", "lua", "lua", []string{}}
+var CPlusPlus = LanguageGeneral{"C++", "cpp", "./bin/run-c++", []string{}}
 
 var languageMappings = map[string]Language{
 	"go":         Go,
@@ -67,6 +68,7 @@ var languageMappings = map[string]Language{
 	"c":          C,
 	"bash":       Bash,
 	"lua":        Lua,
+	"cpp":        CPlusPlus,
 }
 
 func writeCode(code string, extension string) (*os.File, error) {
@@ -371,6 +373,7 @@ func main() {
         case "bash": return "shell";
         case "pixie": return "clojure";
         case "c": return "text/x-csrc";
+        case "cpp": return "text/x-c++src";
         default: return language;
         }
       }
