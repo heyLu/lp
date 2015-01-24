@@ -15,34 +15,24 @@ import (
 )
 
 type Language interface {
-	Eval(code string) (result []byte, err error)
+	RunFile(f *os.File) (result []byte, err error)
+	Extension() string
 }
 
 type LanguageGo struct{}
+type LanguagePython struct{}
 
 var Go = LanguageGo{}
+var Python = LanguagePython{}
 
-func (g LanguageGo) Eval(code string) ([]byte, error) {
-	// write code to temp file
-	f, err := writeCode(code)
-	defer f.Close()
-	if err != nil {
-		return nil, err
-	}
-	// `go run` it
-	res, err := runCode(f)
-	if err != nil {
-		return res, err
-	}
-	// remove the file
-	os.Remove(f.Name())
-	// return output
-	return res, nil
+var languageMappings = map[string]Language{
+	"go":     Go,
+	"python": Python,
 }
 
-func writeCode(code string) (*os.File, error) {
+func writeCode(code string, extension string) (*os.File, error) {
 	// create tmp file
-	f, err := os.Create("/tmp/linguaevalia-go.go") // FIXME: actually create a tmpfile
+	f, err := os.Create(fmt.Sprintf("/tmp/linguaevalia-%s.%s", extension, extension)) // FIXME: actually create a tmpfile
 	if err != nil {
 		return f, err
 	}
@@ -54,9 +44,36 @@ func writeCode(code string) (*os.File, error) {
 	return f, nil
 }
 
-func runCode(f *os.File) ([]byte, error) {
+func (l LanguageGo) RunFile(f *os.File) ([]byte, error) {
 	cmd := exec.Command("go", "run", f.Name())
 	return cmd.CombinedOutput()
+}
+
+func (l LanguageGo) Extension() string { return "go" }
+
+func (l LanguagePython) RunFile(f *os.File) ([]byte, error) {
+	cmd := exec.Command("python", f.Name())
+	return cmd.CombinedOutput()
+}
+
+func (l LanguagePython) Extension() string { return "py" }
+
+func Eval(lang Language, code string) ([]byte, error) {
+	// write code to temp file
+	f, err := writeCode(code, lang.Extension())
+	defer f.Close()
+	if err != nil {
+		return nil, err
+	}
+	// `go run` it
+	res, err := lang.RunFile(f)
+	if err != nil {
+		return res, err
+	}
+	// remove the file
+	os.Remove(f.Name())
+	// return output
+	return res, nil
 }
 
 func runCodeHandler(w http.ResponseWriter, r *http.Request) {
@@ -65,13 +82,24 @@ func runCodeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	//fmt.Println(string(code))
-	res, err := Go.Eval(string(code))
+	lang := getLanguage(r)
+	res, err := Eval(lang, string(code))
 	if err != nil {
 		http.Error(w, string(res), http.StatusNotAcceptable)
 		return
 	}
 	w.Write(res)
+}
+
+func getLanguage(r *http.Request) Language {
+	langName := r.URL.Query().Get("language")
+	if langName != "" {
+		lang, ok := languageMappings[langName]
+		if ok {
+			return lang
+		}
+	}
+	return Go
 }
 
 func homePageHandler(w http.ResponseWriter, r *http.Request) {
