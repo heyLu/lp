@@ -161,7 +161,7 @@ const homePageTemplateStr = `
 
   <body>
     <div id="codeContainer">
-      <textarea id="code" rows="20" cols="80">package main
+      <textarea id="code" autofocus rows="20" cols="80">package main
 
 import (
 	"fmt"
