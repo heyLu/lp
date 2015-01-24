@@ -10,7 +10,8 @@ Just write the code.
 
 * `go get github.com/heyLu/lp/go/linguaevalia`
 * `$GOPATH/bin/linguaevalia`
-* visit <http://localhost:8000> and start writing code
+* visit <http://localhost:8000> and start writing code (press `ctrl-enter`
+    to run the code)
 
 Essentially just need `go`, but to run code in other languages, you need
 to have them installed as well.
