@@ -142,7 +142,8 @@ func homePageHandler(w http.ResponseWriter, r *http.Request) {
 var homePageTemplate = template.Must(template.New("homepage").Parse(homePageTemplateStr))
 
 func runServer() {
-	fmt.Printf("running on %s\n", *address)
+	address := fmt.Sprintf("%s:%d", *host, *port)
+	fmt.Printf("running on %s\n", address)
 
 	http.HandleFunc("/run", runCodeHandler)
 	http.HandleFunc("/codemirror.js", func(w http.ResponseWriter, r *http.Request) {
@@ -153,7 +154,7 @@ func runServer() {
 	})
 	http.HandleFunc("/", homePageHandler)
 
-	err := http.ListenAndServe(*address, nil)
+	err := http.ListenAndServe(address, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -244,7 +245,8 @@ func parseCommand() (string, []string) {
 }
 
 var language = flag.String("l", "", "The language to use for code passed via stdin.")
-var address = flag.String("addr", "localhost:8000", "The host and port to listen on.")
+var host = flag.String("h", "localhost", "The host to listen on.")
+var port = flag.Int("p", 8000, "The port to listen on.")
 
 func main() {
 	cmd, args := parseCommand()
