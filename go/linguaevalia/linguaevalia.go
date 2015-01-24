@@ -47,6 +47,7 @@ var Julia = LanguageGeneral{"Julia", "jl", "julia", []string{}}
 var Pixie = LanguageGeneral{"Pixie", "pxi", "pixie-vm", []string{}}
 var C = LanguageGeneral{"C", "c", "./bin/run-c", []string{}}
 var Bash = LanguageGeneral{"Bash", "bash", "bash", []string{}}
+var Lua = LanguageGeneral{"Lua", "lua", "lua", []string{}}
 
 var languageMappings = map[string]Language{
 	"go":         Go,
@@ -59,6 +60,7 @@ var languageMappings = map[string]Language{
 	"pixie":      Pixie,
 	"c":          C,
 	"bash":       Bash,
+	"lua":        Lua,
 }
 
 func writeCode(code string, extension string) (*os.File, error) {

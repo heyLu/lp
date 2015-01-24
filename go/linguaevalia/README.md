@@ -30,6 +30,7 @@ to have them installed as well.
 - `pixie`
 - `c`
 - `bash`
+- `lua`
 
 Adding more is relatively simple: If there is a command that runs code in
 a language given a file, just add [the appropriate line](./linguaevalia.go#L40-L47)
