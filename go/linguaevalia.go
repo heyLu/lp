@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
 	"os"
 	"os/exec"
 )
@@ -51,10 +54,29 @@ func runCode(f *os.File) ([]byte, error) {
 	return cmd.CombinedOutput()
 }
 
-func main() {
-	res, err := Go.Eval("package main\n\nimport (\n\t\"fmt\"\n)\n\nfunc main() {\n\tfmt.Println(\"Hello, World!\")\n}\n")
+func runCodeHandler(w http.ResponseWriter, r *http.Request) {
+	code, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("Error evaluating: ", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
-	os.Stdout.Write(res)
+	//fmt.Println(string(code))
+	res, err := Go.Eval(string(code))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotAcceptable)
+		return
+	}
+	w.Write(res)
+}
+
+func main() {
+	addr, port := "localhost", 8000
+	fmt.Printf("running on %s:%d\n", addr, port)
+
+	http.HandleFunc("/run", runCodeHandler)
+
+	err := http.ListenAndServe(fmt.Sprintf("%s:%d", addr, port), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
