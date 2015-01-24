@@ -19,11 +19,23 @@ type Language interface {
 	Extension() string
 }
 
-type LanguageGo struct{}
-type LanguagePython struct{}
+type LanguageGeneral struct {
+	Name    string
+	Ext     string
+	Command string
+	Args    []string
+}
 
-var Go = LanguageGo{}
-var Python = LanguagePython{}
+func (l LanguageGeneral) RunFile(f *os.File) ([]byte, error) {
+	args := append(l.Args, f.Name())
+	cmd := exec.Command(l.Command, args...)
+	return cmd.CombinedOutput()
+}
+
+func (l LanguageGeneral) Extension() string { return l.Ext }
+
+var Go = LanguageGeneral{"Go", "go", "go", []string{"run"}}
+var Python = LanguageGeneral{"Python", "py", "python", []string{}}
 
 var languageMappings = map[string]Language{
 	"go":     Go,
@@ -43,20 +55,6 @@ func writeCode(code string, extension string) (*os.File, error) {
 	}
 	return f, nil
 }
-
-func (l LanguageGo) RunFile(f *os.File) ([]byte, error) {
-	cmd := exec.Command("go", "run", f.Name())
-	return cmd.CombinedOutput()
-}
-
-func (l LanguageGo) Extension() string { return "go" }
-
-func (l LanguagePython) RunFile(f *os.File) ([]byte, error) {
-	cmd := exec.Command("python", f.Name())
-	return cmd.CombinedOutput()
-}
-
-func (l LanguagePython) Extension() string { return "py" }
 
 func Eval(lang Language, code string) ([]byte, error) {
 	// write code to temp file
