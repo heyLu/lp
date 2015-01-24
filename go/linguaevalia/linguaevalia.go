@@ -6,8 +6,10 @@ package main
 
 import (
 	"crypto/rand"
+	"flag"
 	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -15,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 )
 
 type Language interface {
@@ -138,7 +141,7 @@ func homePageHandler(w http.ResponseWriter, r *http.Request) {
 
 var homePageTemplate = template.Must(template.New("homepage").Parse(homePageTemplateStr))
 
-func main() {
+func runServer() {
 	addr, port := "localhost", 8000
 	fmt.Printf("running on %s:%d\n", addr, port)
 
@@ -154,6 +157,92 @@ func main() {
 	err := http.ListenAndServe(fmt.Sprintf("%s:%d", addr, port), nil)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func languageForExtension(extension string) *Language {
+	var language *Language = nil
+	for _, lang := range languageMappings {
+		if "."+lang.Extension() == extension {
+			return &lang
+		}
+	}
+	return language
+}
+
+func runOnce(args []string) {
+	var (
+		f        *os.File
+		err      error
+		langName string = *language
+	)
+
+	if len(args) > 0 {
+		if *language == "" {
+			l := languageForExtension(path.Ext(args[0]))
+			if l == nil {
+				fmt.Printf("Error: Don't know how to handle '%s' files\n", path.Ext(args[0]))
+				os.Exit(1)
+			}
+			langName = (*l).Name()
+		}
+		f, err = os.Open(args[0])
+	} else {
+		f, err = os.Stdin, nil
+	}
+	defer f.Close()
+
+	if err != nil {
+		fmt.Println("Error: ", err)
+		os.Exit(1)
+	}
+
+	langName = strings.ToLower(langName)
+	lang, ok := languageMappings[langName]
+	if !ok {
+		fmt.Printf("Error: Unknown language '%s'\n", langName)
+		os.Exit(1)
+	}
+
+	if f == os.Stdin {
+		f, err = tempFile("/tmp", "linguaevalia", lang.Extension())
+		_, err = io.Copy(f, os.Stdin)
+		if err != nil {
+			fmt.Printf("Error: ", err)
+			os.Exit(1)
+		}
+		defer os.Remove(f.Name())
+	}
+
+	res, err := lang.RunFile(f)
+	os.Stdout.Write(res)
+	if err != nil {
+		os.Exit(1)
+	}
+}
+
+func parseCommand() (string, []string) {
+	if len(os.Args) == 1 {
+		return "server", []string{}
+	} else {
+		return os.Args[1], os.Args[2:]
+	}
+}
+
+var language = flag.String("l", "", "The language to use for code passed via stdin.")
+
+func main() {
+	cmd, args := parseCommand()
+	flag.CommandLine.Parse(args)
+
+	switch cmd {
+	case "server":
+		runServer()
+	case "run":
+		runOnce(flag.Args())
+	default:
+		fmt.Println("Error: Unknown command:", cmd)
+		os.Exit(1)
 	}
 }
 
