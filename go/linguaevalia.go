@@ -32,7 +32,7 @@ func (g LanguageGo) Eval(code string) ([]byte, error) {
 	// `go run` it
 	res, err := runCode(f)
 	if err != nil {
-		return nil, err
+		return res, err
 	}
 	// remove the file
 	os.Remove(f.Name())
@@ -68,7 +68,7 @@ func runCodeHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Println(string(code))
 	res, err := Go.Eval(string(code))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotAcceptable)
+		http.Error(w, string(res), http.StatusNotAcceptable)
 		return
 	}
 	w.Write(res)
