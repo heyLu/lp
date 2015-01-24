@@ -40,6 +40,18 @@ If there isn't, you can either write a wrapper to do that (similar to the
 [one for rust](./bin/run-rust)) or you can implement the `Language`
 interface.
 
+## Development setup
+
+```
+~ $ git clone git://github.com/heyLu/lp
+~ $ cd lp/go/linguaevalia
+~/lp/go/linguaevalia $ make               # download codemirror
+~/lp/go/linguaevalia $ go run
+```
+
+Alternatively, replace `go run` with `qst linguaevalia.go`, to restart
+the server automatically if `linguaevalia.go` changes.
+
 ## Contributions and feedback welcome!
 
 Tell me what you do with it, when it helped you, what you're missing.
