@@ -90,6 +90,7 @@ func Eval(lang Language, code string) ([]byte, error) {
 	// write code to temp file
 	f, err := writeCode(code, lang.Extension())
 	defer f.Close()
+	defer os.Remove(f.Name())
 	if err != nil {
 		return nil, err
 	}
@@ -98,8 +99,6 @@ func Eval(lang Language, code string) ([]byte, error) {
 	if err != nil {
 		return res, err
 	}
-	// remove the file
-	os.Remove(f.Name())
 	// return output
 	return res, nil
 }
