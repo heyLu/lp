@@ -103,6 +103,8 @@ const homePageTemplateStr = `
     #code {
       border: none;
     }
+
+    .error { color: red; }
     </style>
   </head>
 
@@ -126,8 +128,9 @@ func main() {
       codeEl.onkeydown = function(ev) {
         if (ev.ctrlKey && ev.keyCode == 13) {
           resultEl.textContent = "";
-          sendCode(codeEl.value, function(result) {
-            resultEl.textContent = result;
+          sendCode(codeEl.value, function(xhr) {
+            resultEl.className = xhr.status == 200 ? "success" : "error";
+            resultEl.textContent = xhr.response;
           });
         }
       }
@@ -137,7 +140,7 @@ func main() {
         xhr.open("POST", "/run");
         xhr.onreadystatechange = function(ev) {
           if (xhr.readyState == XMLHttpRequest.DONE) {
-            cb(xhr.response);
+            cb(xhr);
           }
         };
         xhr.send(code);
