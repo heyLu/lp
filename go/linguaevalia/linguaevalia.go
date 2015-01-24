@@ -43,6 +43,7 @@ var Ruby = LanguageGeneral{"Ruby", "rb", "ruby", []string{}}
 var JavaScript = LanguageGeneral{"JavaScript", "js", "node", []string{}}
 var Haskell = LanguageGeneral{"Haskell", "hs", "runhaskell", []string{}}
 var Rust = LanguageGeneral{"Rust", "rs", "./bin/run-rust", []string{}}
+var Julia = LanguageGeneral{"Julia", "jl", "julia", []string{}}
 
 var languageMappings = map[string]Language{
 	"go":         Go,
@@ -51,6 +52,7 @@ var languageMappings = map[string]Language{
 	"javascript": JavaScript,
 	"haskell":    Haskell,
 	"rust":       Rust,
+	"julia":      Julia,
 }
 
 func writeCode(code string, extension string) (*os.File, error) {
