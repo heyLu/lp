@@ -1,5 +1,9 @@
 package main
 
+// lingua evalia
+//
+// try it with `curl -i localhost:8000/run --data-binary @hello-world.go`
+
 import (
 	"fmt"
 	"io/ioutil"
