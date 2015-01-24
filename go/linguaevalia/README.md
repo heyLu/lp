@@ -18,6 +18,8 @@ to have them installed as well.
 
 ## Languages
 
+(In order of adding them.)
+
 - `go`
 - `python`
 - `ruby`
