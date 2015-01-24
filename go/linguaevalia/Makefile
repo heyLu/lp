@@ -11,6 +11,7 @@ lib/codemirror.js: lib
 		--data 'code_url=http://codemirror.net/mode/go/go.js'\
 		--data 'code_url=http://codemirror.net/mode/haskell/haskell.js'\
 		--data 'code_url=http://codemirror.net/mode/javascript/javascript.js'\
+		--data 'code_url=http://codemirror.net/mode/julia/julia.js'\
 		--data 'code_url=http://codemirror.net/mode/lua/lua.js'\
 		--data 'code_url=http://codemirror.net/mode/python/python.js'\
 		--data 'code_url=http://codemirror.net/mode/ruby/ruby.js'\
