@@ -5,6 +5,7 @@ Description=Lingua evalia
 User=nobody
 Group=nobody
 ExecStart=/home/lu/k/lp/go/linguaevalia/linguaevalia server -p 8042
+WorkingDirectory=/home/lu/k/lp/go/linguaevalia
 
 [Install]
 WantedBy=multi-user.target
