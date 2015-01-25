@@ -1,0 +1,10 @@
+[Unit]
+Description=Lingua evalia
+
+[Service]
+User=nobody
+Group=nobody
+ExecStart=/home/lu/k/lp/go/linguaevalia/linguaevalia server -p 8042
+
+[Install]
+WantedBy=multi-user.target
