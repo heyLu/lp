@@ -18,6 +18,13 @@ I think.
 
 [cross compilation]: http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go
 
+## links
+
+- Andreas Linz has written a [handy reference](https://github.com/KLINGTdotNET/get-go-ing)
+    while going through [the Go tour][go tour], that I like to use.
+
+[go tour]: https://tour.golang.org/welcome/1
+
 ## qst - run things quickly (and easily)
 
 `qst` has already grown up, it now lives [in it's own place](https://github.com/heyLu/qst).
