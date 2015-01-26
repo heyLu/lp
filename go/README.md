@@ -27,3 +27,14 @@ intended to be run in unfamilar environments, you pass it a file or a
 directory and it tries to detect what it is and how to run it.
 
 run `qst .` to run anything.
+
+## Lingua evalia - evaluate anything!
+
+Lingua evalia has also grown up recently, it now lives [on it's own](https://github.com/heyLu/linguaevalia)
+as well. You can get it using `go get github.com/heyLu/linguaevalia` and
+then start it by running `$GOPATH/bin/linguaevalia`.
+
+Lingua evalia is a web service and a command line tool that allows you
+to run code in any language quickly and easily. Using the web server
+is simple: you open the site, start writing code and then press
+`ctrl-enter` to evaluate it.
