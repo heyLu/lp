@@ -1,16 +1,54 @@
+// following along http://facebook.github.io/react/docs/tutorial.html
+
 import React from "react";
 
 require('./style.css');
 
-class Greeter {
-	greet(name = "World", suffix = "!") {
-		console.log(`Hello, ${name}${suffix}`);
+class CommentForm extends React.Component {
+	render() {
+		return (
+			<div className="comment-form">
+				I might be an actual form someday...
+			</div>
+		);
 	}
 }
 
-new Greeter().greet("Alice");
+class CommentList extends React.Component {
+	render() {
+		return (
+			<div className="comment-list">
+				<Comment author="Alice">Down the... halfpipe!</Comment>
+				<Comment author="PP">Alice, what blasphemy!</Comment>
+				<Comment author="Maybe Not Lewis">Let her be herself, Peter,
+					we let you jump around all the time as well...
+				</Comment>
+			</div>
+		);
+	}
+}
 
-var container = document.createElement("div");
-document.body.appendChild(container);
+class CommentBox extends React.Component {
+	render() {
+		return (
+			<div className="comment-box">
+				<h1>Comments</h1>
+				<CommentList />
+				<CommentForm />
+			</div>
+		);
+	}
+}
 
-React.render(<h1>???</h1>, container);
+class Comment extends React.Component {
+	render() {
+		return (
+			<div className="comment">
+				<h2 className="comment-author">{this.props.author}</h2>
+				{this.props.children}
+			</div>
+		);
+	}
+}
+
+React.render(<CommentBox />, document.getElementById("content"));
