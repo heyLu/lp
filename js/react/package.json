@@ -1,0 +1,23 @@
+{
+  "name": "hello-react",
+  "version": "0.0.1",
+  "description": "Trying out react and related tooling.",
+  "dependencies": {
+    "6to5-core": "^3.5.3",
+    "6to5-loader": "^3.0.0",
+    "css-loader": "^0.9.1",
+    "style-loader": "^0.8.3",
+    "webpack": "^1.5.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/heyLu/lp"
+  },
+  "author": "Lucas Stadler",
+  "license": "MIT",
+  "homepage": "https://github.com/heyLu/lp"
+}
