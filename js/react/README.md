@@ -36,3 +36,7 @@ $ vi entry.js      # change something!
     Clojure ;)
 
 [hype]: https://www.youtube.com/watch?v=z5e7kWSHWTg
+
+## Misc
+
+- `npm config set prefix $HOME/.local --global`
