@@ -6,11 +6,30 @@ import marked from "marked";
 require('./style.css');
 
 class CommentForm extends React.Component {
+	constructor() {
+		this.handleSubmit = this.handleSubmit.bind(this);
+	}
+
+	handleSubmit(ev) {
+		ev.preventDefault();
+		let author = this.refs.author.getDOMNode().value.trim();
+		let text = this.refs.text.getDOMNode().value.trim();
+		if (!text || !author) {
+			return;
+		}
+
+		this.props.onCommentSubmit({author, text});
+		this.refs.author.getDOMNode().value = '';
+		this.refs.text.getDOMNode().value = '';
+	}
+
 	render() {
 		return (
-			<div className="comment-form">
-				I might be an actual form someday...
-			</div>
+			<form className="comment-form" onSubmit={this.handleSubmit}>
+				<input type="text" placeholder="Your name" ref="author" />
+				<input type="text" placeholder="Say something..." ref="text" />
+				<input type="submit" value="Say it!" />
+			</form>
 		);
 	}
 }
@@ -39,6 +58,11 @@ class CommentBox extends React.Component {
 		this.state = {data: []}
 	}
 
+	handleCommentSubmit(comment) {
+		// TODO: Send to server and rerender
+		console.log("Got a comment: ", comment);
+	}
+
 	componentDidMount() {
 		let xhr = new XMLHttpRequest();
 		xhr.open('GET', this.props.url);
@@ -58,7 +82,7 @@ class CommentBox extends React.Component {
 			<div className="comment-box">
 				<h1>Comments</h1>
 				<CommentList data={this.state.data} />
-				<CommentForm />
+				<CommentForm onCommentSubmit={this.handleCommentSubmit} />
 			</div>
 		);
 	}
