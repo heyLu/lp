@@ -6,6 +6,7 @@ Opinions/impressions coming later, when I have played with this more.
 
 ```
 $ npm install -g webpack
+$ npm install
 $ webpack --watch
 
 # visit index.html in your browser
