@@ -34,11 +34,30 @@ class CommentList extends React.Component {
 }
 
 class CommentBox extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {data: []}
+	}
+
+	componentDidMount() {
+		let xhr = new XMLHttpRequest();
+		xhr.open('GET', this.props.url);
+		xhr.onreadystatechange = function() {
+			if (xhr.readyState == XMLHttpRequest.DONE) {
+				this.setState({data: JSON.parse(xhr.responseText)});
+			}
+		}.bind(this);
+		xhr.onerror = function(err) {
+			console.error(this.props.url, xhr.status, err);
+		}.bind(this);
+		xhr.send();
+	}
+
 	render() {
 		return (
 			<div className="comment-box">
 				<h1>Comments</h1>
-				<CommentList data={this.props.data} />
+				<CommentList data={this.state.data} />
 				<CommentForm />
 			</div>
 		);
@@ -57,10 +76,4 @@ class Comment extends React.Component {
 	}
 }
 
-var data = [
-	{author: "Alice", text: "Down the... halfpipe!"},
-	{author: "PP", text: "Alice, what **blasphemy**!"},
-	{author: "Maybe Not Lewis", text: "Let her be herself, Peter, we let *you* jump around all the time as well..."}
-];
-
-React.render(<CommentBox data={data} />, document.getElementById("content"));
+React.render(<CommentBox url="comments.json" />, document.getElementById("content"));
