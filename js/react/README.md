@@ -1,6 +1,21 @@
 # Playing with React
 
-Opinions/impressions coming later, when I have played with this more.
+More opinions/impressions coming later, when I have played with this more.
+
+## Impressions
+
+* ES6 is quite cool, especially if you wrote just plain JS before (using
+    [6to5](http://6to5.org))
+
+    Some things: `import React from "react";`, template strings, `() => ...`,
+* `webpack` is fun/convenient/surprisingly fast (and has support for
+    all the things we use here, e.g. react/jsx, 6to5, css)
+* JSX works well, even though I'd prefer doing it in Clojure (`hiccup`
+    syntax, e.g. nested vectors & collections. has someone written a library
+    for that already?)
+* showdown, which was suggested by the tutorial, doesn't work with module
+    loaders and it was a pain to figure out how to fix it. (the fix was
+    using a different library.)
 
 ## How to run this thing
 
@@ -27,6 +42,7 @@ $ vi entry.js      # change something!
     - make the filter dynamic (optional/difficult)
 * in the future:
     - try out immutable.js & reimplement the above
+    - try out `css-layout` and/or `styles` in js
 
 ## Resources
 
