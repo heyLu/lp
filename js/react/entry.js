@@ -1,3 +1,5 @@
+import React from "react";
+
 require('./style.css');
 
 class Greeter {
@@ -7,3 +9,8 @@ class Greeter {
 }
 
 new Greeter().greet("Alice");
+
+var container = document.createElement("div");
+document.body.appendChild(container);
+
+React.render(<h1>???</h1>, container);
