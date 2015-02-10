@@ -56,11 +56,16 @@ class CommentBox extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {data: []}
+
+		this.handleCommentSubmit = this.handleCommentSubmit.bind(this);
 	}
 
 	handleCommentSubmit(comment) {
-		// TODO: Send to server and rerender
-		console.log("Got a comment: ", comment);
+		let comments = this.state.data;
+		let newComments = comments.concat([comment]);
+		this.setState({data: newComments});
+
+		// TODO: Send to server
 	}
 
 	componentDidMount() {
