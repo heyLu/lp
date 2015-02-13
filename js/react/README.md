@@ -26,7 +26,7 @@ $ webpack --watch
 
 # visit index.html in your browser
 
-$ vi entry.js      # change something!
+$ vi index.js      # change something!
 ```
 
 ## Ideas
