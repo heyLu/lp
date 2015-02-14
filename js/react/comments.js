@@ -51,7 +51,11 @@ export class CommentList extends React.Component {
 export class CommentBox extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {data: []}
+		if (props.initialData) {
+			this.state = {data: props.initialData}
+		} else {
+			this.state = {data: []}
+		}
 
 		this.handleCommentSubmit = this.handleCommentSubmit.bind(this);
 	}

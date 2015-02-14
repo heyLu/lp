@@ -3,7 +3,8 @@ import React from "react";
 
 import {CommentBox} from "./comments.js";
 
-let commentsHtml = React.renderToString(<CommentBox url="comments.json" />);
+let comments = JSON.parse(fs.readFileSync("comments.json"));
+let commentsHtml = React.renderToString(<CommentBox initialData={comments} url="comments.json" />);
 
 let html = `<!doctype html>
 <html>
