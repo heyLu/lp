@@ -7,6 +7,7 @@ import Html (..)
 import Html.Attributes as Attr
 import List
 import String
+import PrettyDate (prettyDate)
 
 type alias Post = { title:String, content:String, created:Date }
 
@@ -25,8 +26,9 @@ posts = [{title = "Something else", content = "Well, I can say more than \"Hello
 referenceDate = date "2015-03-01T14:09"
 
 viewDate : Date -> Html
-viewDate d = let isoDate = formatDate "%Y-%m-%dT%H:%M:%SZ" d
-             in time [Attr.title isoDate, Attr.datetime isoDate] [(text isoDate)]
+viewDate d = let dateString = prettyDate referenceDate d
+                 isoDate = formatDate "%Y-%m-%dT%H:%M:%SZ" d
+             in time [Attr.title isoDate, Attr.datetime isoDate] [(text dateString)]
 
 viewPost : Post -> Html
 viewPost post = div [] [
