@@ -8,10 +8,44 @@ prettyDate reference date =
     let referenceSeconds = Date.toTime reference
         dateSeconds = Date.toTime date
         diffSeconds = referenceSeconds - dateSeconds
-    in format diffSeconds
+    in format << toRelativeTime <| diffSeconds
 
-format : Float -> String
-format diff =
+type RelativeUnit = JustNow
+                  | Minute
+                  | Hour
+                  | Day
+                  | Week
+                  | Month
+                  | Year
+
+type RelativeTime = Past RelativeUnit Int
+                  | Future RelativeUnit Int
+
+stringForm relativeUnit =
+    case relativeUnit of
+      Minute  -> ("a minute", "minutes")
+      Hour    -> ("an hour", "hours")
+      Day     -> ("a day", "days")
+      Week    -> ("a week", "weeks")
+      Month   -> ("a month", "months")
+      Year    -> ("a year", "years")
+
+format : RelativeTime -> String
+format relativeTime =
+    case relativeTime of
+      Past   JustNow _ -> "moments ago"
+      Future JustNow _ -> "in a moment"
+      Past   unit n    -> format' ""    " ago" unit n
+      Future unit n    -> format' "in " ""     unit n
+
+format' prefix suffix unit n =
+    let (singular, plural) = stringForm unit
+    in if n == 1
+       then prefix ++ singular
+       else prefix ++ toString n ++ " " ++ plural ++ suffix
+
+toRelativeTime : Float -> RelativeTime
+toRelativeTime origDiff =
     let minute = 60 * 1000
         hour = 60 * minute
         day = 24 * hour
@@ -19,10 +53,16 @@ format diff =
         month = 31 * day
         year = 365 * day
         roundToString = toString << ceiling
-    in if | diff < minute -> "moments ago"
-          | diff < hour   -> roundToString (diff / minute) ++ " minutes ago"
-          | diff < day    -> roundToString (diff / hour)   ++ " hours ago"
-          | diff < week   -> roundToString (diff / day)    ++ " days ago"
-          | diff < month  -> roundToString (diff / week)   ++ " weeks ago"
-          | diff < year   -> roundToString (diff / month)  ++ " months ago"
-          | otherwise     -> roundToString (diff / year)   ++ " years ago"
+        inThePast = origDiff > 0
+        diff = abs origDiff
+        (relativeUnit, n) =
+            if | diff < minute -> (JustNow, 0)
+               | diff < hour   -> (Minute, round (diff / minute))
+               | diff < day    -> (Hour, round (diff / hour))
+               | diff < week   -> (Day, round (diff / day))
+               | diff < month  -> (Week, round (diff / week))
+               | diff < year   -> (Month, round (diff / month))
+               | otherwise     -> (Year, round (diff / year))
+    in if inThePast
+       then Past relativeUnit n
+       else Future relativeUnit n
