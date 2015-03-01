@@ -24,21 +24,6 @@ posts = [{title = "Something else", content = "Well, I can say more than \"Hello
          {title = "Ancient history", content = "Teenage angst!!!!", created = date "2009-06-07T02:54:29"}
         ]
 
-flipOrder : Order -> Order
-flipOrder o = case o of
-                LT -> GT
-                EQ -> EQ
-                GT -> LT
-
-flipCompare : (a -> a -> Order) -> a -> a -> Order
-flipCompare compare' a b = flipOrder <| compare' a b
-
-compareBy : (a -> comparable) -> a -> a -> Order
-compareBy f a b = compare (f a) (f b)
-
-sortByDate = List.sortBy (.created >> Date.toTime)
-sortByDateReverse = List.sortWith (flipCompare <| compareBy (.created >> Date.toTime))
-
 referenceDate = date "2015-03-01T14:09"
 
-main = div [] (List.map (Post.view referenceDate) (sortByDateReverse posts))
+main = div [] (List.map (Post.view referenceDate) (List.sortWith Post.compareByDateReverse posts))
