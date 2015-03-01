@@ -47,7 +47,7 @@ format relativeTime =
 format' prefix suffix unit n =
     let (singular, plural) = stringForm unit
     in if n == 1
-       then prefix ++ singular
+       then prefix ++ singular ++ suffix
        else prefix ++ toString n ++ " " ++ plural ++ suffix
 
 toRelativeTime : Float -> RelativeTime
