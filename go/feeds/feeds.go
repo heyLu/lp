@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"code.google.com/p/cascadia"
 	"code.google.com/p/go.net/html"
@@ -28,7 +30,7 @@ import (
 // - support json and edn output (and transit?)
 // test (see feeds_test.go)
 
-var commands = []string{"fetch-all", "fetch-one", "help"}
+var commands = []string{"fetch-all", "fetch-one", "fetch-background", "help"}
 
 func main() {
 	if len(os.Args) == 1 {
@@ -49,6 +51,14 @@ func main() {
 		}
 
 		FetchOne(flag.Args()[0])
+	case "fetch-background":
+		feeds, err := ReadConfig("config.txt")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		FetchBackground(feeds)
 	case "help":
 		printUsage()
 		flag.PrintDefaults()
@@ -106,6 +116,71 @@ func FetchAll() {
 				fmt.Printf("%s: %s\n", fn, item.Title)
 			}
 		}
+	}
+}
+
+type FeedResult struct {
+	*feed.Feed
+	URL string
+}
+
+func FetchBackground(us *[]string) {
+	canFetchCh := make(chan bool, 10)
+	for i := 0; i < 10; i++ {
+		canFetchCh <- true
+	}
+
+	resultCh := make(chan FeedResult, 10)
+	for _, u := range *us {
+		go Fetcher(u, canFetchCh, resultCh)
+	}
+
+	feeds := make(map[string](*feed.Feed))
+	go func() {
+		for {
+			fmt.Printf("storing %d feeds\n", len(feeds))
+			StoreFeeds("feeds.json", feeds)
+			time.Sleep(1 * time.Minute)
+		}
+	}()
+
+	for {
+		f := <-resultCh
+		canFetchCh <- true
+
+		if f.Feed == nil {
+			fmt.Printf("%s: empty feed\n", f.URL)
+		} else {
+			fmt.Printf("%s - %d entries\n", f.UpdateURL, len(f.Items))
+			feeds[f.URL] = f.Feed
+		}
+	}
+}
+
+func StoreFeeds(n string, feeds map[string](*feed.Feed)) {
+	f, err := os.Create(n)
+	defer f.Close()
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	enc := json.NewEncoder(f)
+	if err = enc.Encode(feeds); err != nil {
+		fmt.Println(err)
+	}
+}
+
+func Fetcher(u string, canFetchCh chan bool, resultCh chan FeedResult) {
+	for {
+		<- canFetchCh
+
+		fmt.Printf("fetching %s\n", u)
+		f, _ := Fetch(u)
+		resultCh <- FeedResult{f, u}
+
+		time.Sleep(1 * time.Minute)
 	}
 }
 
