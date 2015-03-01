@@ -4,6 +4,8 @@ import Date
 import Html (..)
 import List
 import String
+import Time
+import Signal
 
 import Post
 import Post (Post)
@@ -21,6 +23,9 @@ posts = [{title = "Fancy post", content = "Post may have multiple lines now.\nWh
          {title = "Ancient history", content = "Teenage angst!!!!", created = date "2009-06-07T02:54:29"}
         ]
 
-referenceDate = date "2015-03-01T15:20"
+currentDate = Signal.map Date.fromTime <| Time.every Time.minute
 
-main = div [] (List.map (Post.view referenceDate) (List.sortWith Post.compareByDateReverse posts))
+view referenceDate =
+    div [] (List.map (Post.view referenceDate) (List.sortWith Post.compareByDateReverse posts))
+
+main = Signal.map view currentDate
