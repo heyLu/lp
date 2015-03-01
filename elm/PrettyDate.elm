@@ -1,8 +1,14 @@
 module PrettyDate (prettyDate) where
 
+{-| Relative time formatting.
+
+Supports both dates in the past and in the future.
+ -}
+
 import Date
 import Date (Date)
 
+{-| Format the second date relative to the first one. -}
 prettyDate : Date -> Date -> String
 prettyDate reference date =
     let referenceSeconds = Date.toTime reference
