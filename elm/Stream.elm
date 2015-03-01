@@ -1,13 +1,9 @@
 module Stream where
 
 import Date
-import Date (Date)
-import FormatDate (formatDate)
 import Html (..)
-import Html.Attributes as Attr
 import List
 import String
-import PrettyDate (prettyDate)
 
 import Post
 import Post (Post)
