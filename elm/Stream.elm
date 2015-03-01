@@ -9,16 +9,23 @@ import List
 import String
 import Time
 import Signal
+import LocalChannel
 
 import Post
 import Post (Post)
 
 type alias Model =
-    { posts         : List Post
+    { isEditing     : Bool
+    , newPost       : Post.Model
+    , posts         : List Post
     , referenceDate : Date
     }
 
 type Action = NoOp
+            | CreatePost
+            | AddPost ()
+            | CancelPost
+            | EditPost Post.Action
             | UpdateDate Date
 
 date s = case (Date.fromString s) of
@@ -36,18 +43,36 @@ posts = [{title = "Fancy post", content = "Post may have multiple lines now.\nWh
 
 -- view
 
-view model = div [] (List.map (Post.view model.referenceDate) (List.sortWith Post.compareByDateReverse model.posts))
+view model = div [] [
+              if model.isEditing
+              then Post.editingView (Post.Context
+                                             (LocalChannel.create EditPost updates)
+                                             (LocalChannel.create AddPost updates)) Post.empty
+              else button [onClick (Signal.send updates CreatePost)] [text "create new post"],
+              div [] (List.map (Post.view model.referenceDate) (List.sortWith Post.compareByDateReverse model.posts))
+             ]
 
 -- wiring it all up
 
-initialModel = { posts = posts, referenceDate = date "0" }
+initialModel = { isEditing = False, newPost = Post.empty, posts = posts, referenceDate = date "0" }
 
 update : Action -> Model -> Model
 update action model =
     case action of
       NoOp -> model
 
+      CreatePost -> { model | isEditing <- True }
+
+      AddPost _ -> { model |
+                      isEditing <- False,
+                      posts <- let p = model.newPost
+                               in { p | created <- model.referenceDate } :: posts }
+
+      CancelPost -> { model | isEditing <- False, newPost <- Post.empty }
+
       UpdateDate d -> { model | referenceDate <- d }
+
+      EditPost action' -> { model | newPost <- Post.update action' model.newPost }
 
 model : Signal Model
 model = Signal.foldp update initialModel <| Signal.merge (Signal.subscribe updates) (Signal.map UpdateDate currentDate)
