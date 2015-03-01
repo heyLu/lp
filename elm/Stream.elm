@@ -9,7 +9,8 @@ import List
 import String
 import PrettyDate (prettyDate)
 
-type alias Post = { title:String, content:String, created:Date }
+import Post
+import Post (Post)
 
 date s = case (Date.fromString s) of
     Ok  d -> d
@@ -22,20 +23,6 @@ posts = [{title = "Something else", content = "Well, I can say more than \"Hello
          {title = "Blog setup", content = "I guess I should post something now?", created = date "2014-12-24T10:57:03"},
          {title = "Ancient history", content = "Teenage angst!!!!", created = date "2009-06-07T02:54:29"}
         ]
-
-referenceDate = date "2015-03-01T14:09"
-
-viewDate : Date -> Html
-viewDate d = let dateString = prettyDate referenceDate d
-                 isoDate = formatDate "%Y-%m-%dT%H:%M:%SZ" d
-             in time [Attr.title isoDate, Attr.datetime isoDate] [(text dateString)]
-
-viewPost : Post -> Html
-viewPost post = div [] [
-                 h3 [] [text post.title],
-                 p [] [text post.content],
-                 span [] [text "Written ", viewDate post.created]
-                ]
 
 flipOrder : Order -> Order
 flipOrder o = case o of
@@ -52,4 +39,6 @@ compareBy f a b = compare (f a) (f b)
 sortByDate = List.sortBy (.created >> Date.toTime)
 sortByDateReverse = List.sortWith (flipCompare <| compareBy (.created >> Date.toTime))
 
-main = div [] (List.map viewPost (sortByDateReverse posts))
+referenceDate = date "2015-03-01T14:09"
+
+main = div [] (List.map (Post.view referenceDate) (sortByDateReverse posts))
