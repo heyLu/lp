@@ -1,7 +1,10 @@
 module Stream where
 
 import Date
+import Date (Date)
 import Html (..)
+import Html.Attributes as Attr
+import Html.Events (onClick)
 import List
 import String
 import Time
@@ -9,6 +12,14 @@ import Signal
 
 import Post
 import Post (Post)
+
+type alias Model =
+    { posts         : List Post
+    , referenceDate : Date
+    }
+
+type Action = NoOp
+            | UpdateDate Date
 
 date s = case (Date.fromString s) of
     Ok  d -> d
@@ -23,9 +34,28 @@ posts = [{title = "Fancy post", content = "Post may have multiple lines now.\nWh
          {title = "Ancient history", content = "Teenage angst!!!!", created = date "2009-06-07T02:54:29"}
         ]
 
+-- view
+
+view model = div [] (List.map (Post.view model.referenceDate) (List.sortWith Post.compareByDateReverse model.posts))
+
+-- wiring it all up
+
+initialModel = { posts = posts, referenceDate = date "0" }
+
+update : Action -> Model -> Model
+update action model =
+    case action of
+      NoOp -> model
+
+      UpdateDate d -> { model | referenceDate <- d }
+
+model : Signal Model
+model = Signal.foldp update initialModel <| Signal.merge (Signal.subscribe updates) (Signal.map UpdateDate currentDate)
+
+updates : Signal.Channel Action
+updates = Signal.channel NoOp
+
+currentDate : Signal Date
 currentDate = Signal.map Date.fromTime <| Time.every Time.minute
 
-view referenceDate =
-    div [] (List.map (Post.view referenceDate) (List.sortWith Post.compareByDateReverse posts))
-
-main = Signal.map view currentDate
+main = Signal.map view model
