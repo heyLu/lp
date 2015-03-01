@@ -81,6 +81,6 @@ updates : Signal.Channel Action
 updates = Signal.channel NoOp
 
 currentDate : Signal Date
-currentDate = Signal.map Date.fromTime <| Time.every Time.minute
+currentDate = Signal.map Date.fromTime <| Time.every Time.second
 
 main = Signal.map view model
