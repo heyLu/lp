@@ -66,7 +66,7 @@ update action model =
       AddPost _ -> { model |
                       isEditing <- False,
                       posts <- let p = model.newPost
-                               in { p | created <- model.referenceDate } :: posts }
+                               in { p | created <- model.referenceDate } :: model.posts }
 
       CancelPost -> { model | isEditing <- False, newPost <- Post.empty }
 
