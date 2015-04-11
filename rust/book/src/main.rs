@@ -34,6 +34,14 @@ enum Number {
     NaN
 }
 
+fn print_num_type(num: Number) {
+    println!("{}", match num {
+        Number::Integer(_) => "integer",
+        Number::Float(_) => "float",
+        Number::NaN => "not a number"
+    })
+}
+
 fn main() {
     let x = 5; // x: i32
 
@@ -73,5 +81,10 @@ fn main() {
     let i: Number = Number::Integer(3);
     let f: Number = Number::Float(3.1415);
     let n: Number = Number::NaN;
-    println!("Here are some numbers: {:?}, {:?} and {:?}", i, f, n)
+    println!("Here are some numbers: {:?}, {:?} and {:?}", i, f, n);
+
+    // match
+    print_num_type(i);
+    print_num_type(f);
+    print_num_type(n);
 }
