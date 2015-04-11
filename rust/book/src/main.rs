@@ -27,6 +27,13 @@ struct Point {
 
 struct Meters(i32);
 
+#[derive(Debug)]
+enum Number {
+    Integer(i32),
+    Float(f32),
+    NaN
+}
+
 fn main() {
     let x = 5; // x: i32
 
@@ -60,5 +67,11 @@ fn main() {
     println!("Meet you at ({}, {}).", p.x, p.y);
 
     let Meters(l) = Meters(3);
-    println!("It's {}m until there, too long for me. Bye.", l)
+    println!("It's {}m until there, too long for me. Bye.", l);
+
+    // enums
+    let i: Number = Number::Integer(3);
+    let f: Number = Number::Float(3.1415);
+    let n: Number = Number::NaN;
+    println!("Here are some numbers: {:?}, {:?} and {:?}", i, f, n)
 }
