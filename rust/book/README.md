@@ -2,6 +2,14 @@
 
 [This book.](http://doc.rust-lang.org/1.0.0-beta/book/)
 
+## Installing rust
+
+I use the [recently released](http://blog.rust-lang.org/2015/04/03/Rust-1.0-beta.html)
+beta and installed it with `./install.sh --prefix=$HOME/.local`.
+Because it's insalled in a non-standard location, `LD_LIBRARY_PATH`
+needs to be set to include `$HOME/.local/lib`, or otherwise `rustc` will
+not be able to run.
+
 ## Compiling statically linked binaries
 
 The following assumes you have a `main.rs` and want to get a statically
