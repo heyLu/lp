@@ -87,4 +87,9 @@ fn main() {
     print_num_type(i);
     print_num_type(f);
     print_num_type(n);
+
+    // loops
+    for x in 0..10 {
+        println!("{}", x);
+    }
 }
