@@ -92,4 +92,12 @@ fn main() {
     for x in 0..10 {
         println!("{}", x);
     }
+
+    // strings
+    let string_slice = "Hello, World!";
+    let mut string = string_slice.to_string();
+    println!("{} = {}", string_slice, string);
+
+    string.push_str(" (again...)");
+    println!("{}", string);
 }
