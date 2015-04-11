@@ -2,5 +2,9 @@ fn main() {
     let x = 5;
 
     println!("Hello, World!");
-    println!("THE number is {}", x);
+    if x == 42 {
+        println!("It's THE ANSWER!");
+    } else {
+        println!("Meh, it's just a number, {}.", x);
+    }
 }
