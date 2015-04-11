@@ -100,4 +100,28 @@ fn main() {
 
     string.push_str(" (again...)");
     println!("{}", string);
+
+    // arrays
+    let array: [i32; 3] = [1, 2, 3];
+
+    println!("You have {} numbers:", array.len());
+    for n in array.iter() {
+        println!("{}", n);
+    }
+
+    // vectors
+    let mut vec: Vec<i32> = vec![4, 5, 6];
+    vec.push(7);
+
+    println!("You have {} more numbers:", vec.len());
+    for n in vec.iter() {
+        println!("{}", n);
+    }
+
+    // slices
+    let middle = &vec[1..3];
+    println!("Only a few of those:");
+    for n in middle.iter() {
+        println!("{}", n);
+    }
 }
