@@ -94,8 +94,8 @@ fn main() {
     }
 
     // strings
-    let string_slice = "Hello, World!";
-    let mut string = string_slice.to_string();
+    let string_slice: &str = "Hello, World!";
+    let mut string: String = string_slice.to_string();
     println!("{} = {}", string_slice, string);
 
     string.push_str(" (again...)");
