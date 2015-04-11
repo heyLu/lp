@@ -20,6 +20,13 @@ fn inc(x: i32) -> i32 {
     x + 1
 }
 
+struct Point {
+    x: i32,
+    y: i32
+}
+
+struct Meters(i32);
+
 fn main() {
     let x = 5; // x: i32
 
@@ -47,4 +54,11 @@ fn main() {
     } else {
         println!("The universe is basically ok.");
     }
+
+    // structs
+    let p = Point{x: 1, y: 2};
+    println!("Meet you at ({}, {}).", p.x, p.y);
+
+    let Meters(l) = Meters(3);
+    println!("It's {}m until there, too long for me. Bye.", l)
 }
