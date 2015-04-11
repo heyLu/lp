@@ -35,4 +35,16 @@ fn main() {
     println!("inc({}) = {}", n, inc(n));
     println!("inc(42) = {}", inc(42));
     println!("inc(43) = {}", inc(43));
+
+    // tuples
+    let ns = (3, 4);
+    println!("x, y = {}, {}", ns.0, ns.1);
+    let (x, y) = ns;
+    println!("x, y = {}, {}", x, y);
+
+    if ns == (4, 5) {
+        println!("All the rules are different!");
+    } else {
+        println!("The universe is basically ok.");
+    }
 }
