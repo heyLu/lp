@@ -25,12 +25,3 @@
       it again. Is on the list of "programs to read".
 
 [lyah]: http://learnyouahaskell.com
-
-## How To Learn
-
-- write something that you wish existed
-- play with the repl (Clojure excels at manipulating data, so take some data and play with it)
-    - `doc` and `ns-publics` are your friends
-- koans:
-    - [4clojure](http://www.4clojure.com/)
-    - ["Clojure Katas inspired by Alice in Wonderland"](https://github.com/gigasquid/wonderland-clojure-katas)
