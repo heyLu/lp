@@ -67,3 +67,5 @@ Some examples for the quibbles.
 - koans:
     - [4clojure](http://www.4clojure.com/)
     - ["Clojure Katas inspired by Alice in Wonderland"](https://github.com/gigasquid/wonderland-clojure-katas)
+- reading:
+    - [How I Start: Clojure](https://howistart.org/posts/clojure/1), in which you will write a markov bot that posts to twitter
