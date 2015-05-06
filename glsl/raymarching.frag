@@ -20,6 +20,9 @@
 uniform float MinimumDistance; slider[0.0,0.01,10.0]
 uniform int MaximumRaySteps; slider[0,10,100]
 
+// Defined later, must be forward declared for use in `trace`.
+float DistanceEstimator(vec3 pos);
+
 // Adapted with minimal changes from [1].
 float trace(vec3 from, vec3 direction) {
 	float totalDistance = 0.0;
