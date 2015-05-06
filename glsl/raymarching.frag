@@ -18,7 +18,7 @@
 
 #group DistranceEstimator
 uniform float MinimumDistance; slider[0.0,0.01,10.0]
-uniform int MaximumRaySteps; slider[10,0,100]
+uniform int MaximumRaySteps; slider[0,10,100]
 
 // Adapted with minimal changes from [1].
 float trace(vec3 from, vec3 direction) {
