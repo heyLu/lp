@@ -4,6 +4,9 @@
  * Adapted for Fragmentarium from [1].
  *
  * [1]: http://2008.sub.blue/blog/2009/12/13/mandelbulb.html
+ * [2]: http://www.fractalforums.com/theory/summary-of-3d-mandelbrot-set-formulas/
+ * [3]: http://blog.hvidtfeldts.net/index.php/2011/06/distance-estimated-3d-fractals-part-i/
+ * [4]: http://9bitscience.blogspot.co.uk/2013/07/raymarching-distance-fields_14.html
  */
 #include "3D.frag"
 
