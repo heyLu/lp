@@ -18,7 +18,7 @@
 
 #group DistranceEstimator
 uniform float MinimumDistance; slider[0.0,0.01,10.0]
-uniform int MaximumRaySteps; slider[0,10,100]
+uniform int MaximumRaySteps; slider[1,10,100]
 
 // Defined later, must be forward declared for use in `trace`.
 float DistanceEstimator(vec3 pos);
