@@ -28,6 +28,7 @@ function makeSlider(name, range, onChange) {
   sliderContainerEl.appendChild(sliderEl);
 
   var sliderValueEl = document.createElement("span");
+  sliderValueEl.style = "display: inline-block; width: 3em;";
   sliderValueEl.textContent = sliderEl.value;
   sliderContainerEl.appendChild(sliderValueEl);
 
