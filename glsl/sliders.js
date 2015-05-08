@@ -76,6 +76,7 @@ function initSliders(gl, program, sliders, onChange) {
     switch (slider.type) {
       case "float":
         slider.uniform = gl.getUniformLocation(program, slider.name);
+        gl.uniform1f(slider.uniform, slider.range[1]);
         
         slider.onChange = function(ev) {
           gl.uniform1f(slider.uniform, parseFloat(ev.target.value));
@@ -91,6 +92,13 @@ function initSliders(gl, program, sliders, onChange) {
       case "vec3":
         slider.values = slider.range.map((r) => r[1]);
         slider.uniform = gl.getUniformLocation(program, slider.name);
+        if (slider.type == "vec2") {
+          gl.uniform2f(slider.uniform, slider.values[0], slider.values[1]);
+        } else if (slider.type == "vec3") {
+          gl.uniform3f(slider.uniform, slider.values[0], slider.values[1], slider.values[2]);
+        } else {
+          throw new Error("unknown slider type " + slider.type);
+        }
         
         slider.onChange = function(ev, i) {
           slider.values[0] = parseFloat(ev.target.value);

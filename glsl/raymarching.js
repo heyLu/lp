@@ -243,8 +243,6 @@ void main() {
     gl.uniform2f(iResolution, w, h);
     render();
   };
-  
-  render();
 
   var sidebarEl = document.createElement("div");
   sidebarEl.style = `
@@ -267,6 +265,8 @@ void main() {
   });
   
   addSliders(sidebarEl, sliders);
+  
+  render();
 } catch (e) {
   window.error = e;
   var msg = document.createElement("pre");
