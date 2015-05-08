@@ -71,7 +71,7 @@ float DistanceEstimator(vec3 pos);
 float trace(vec3 from, vec3 direction) {
 	float totalDistance = 0.0;
   int stepsDone = 0;
-	for (int steps=0; steps < MaximumRaySteps; steps++) {
+	for (int steps = 0; steps < MaximumRaySteps; steps++) {
 		vec3 p = from + totalDistance * direction;
 		float distance = DistanceEstimator(p);
 		totalDistance += distance;
@@ -85,13 +85,13 @@ float DistanceEstimator(vec3 pos) {
   return length(pos) - 1.0;
 }
 
+/*uniform int MaxIterations; //#slider[1,50,200]
 const float bailout = 4.0;
-const int MaxIterations = 50;
 const float power = 8.0;
 const float phaseX = 0.0;
 const float phaseY = 0.0;
 
-/*float DistanceEstimator(vec3 z0) {
+float DistanceEstimator(vec3 z0) {
 	vec3 c = z0;
 	vec3 z = z0;
 	float pd = power - 1.0; // power for derivative
@@ -151,7 +151,9 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
 }
 
 uniform vec3 origin; //#slider[(-10.0,1.0,10.0),(-10.0,2.0,10.0),(-10.0,-1.0,10.0)]
+uniform vec3 angle; //#slider[(-3.0,0.0,3.0),(-3.0,0.0,3.0),(-3.0,0.0,3.0)]
 uniform vec3 color; //#slider[(0.0, 1.0, 1.0),(0.0,0.0,1.0),(0.0,0.0,1.0)]
+uniform float colorMix; //#slider[0.0,0.9,1.0]
 
 void main() {
   vec2 q = gl_FragCoord.xy / iResolution.xy;
@@ -164,7 +166,7 @@ void main() {
   // camera	
   //vec3 ro = vec3(1.0, 2.0, -1.0); //vec3( -0.5+3.2*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 3.2*sin(0.1*time + 6.0*mo.x) );
   vec3 ro = origin;
-  vec3 ta = vec3(0.0); //vec3( -0.5, -0.4, 0.5 );
+  vec3 ta = angle; //vec3(0.0); //vec3( -0.5, -0.4, 0.5 );
 
   // camera-to-world transformation
   mat3 ca = setCamera( ro, ta, 0.0 );
@@ -176,7 +178,7 @@ void main() {
   float dist = trace(ro, rd);
   vec3 col = vec3(dist, dist, dist);
 
-  col = mix(color, col, 0.9);
+  col = mix(color, col, colorMix);
   //col = pow( col, vec3(0.4545));
 
   gl_FragColor = vec4( col, 1.0 );
