@@ -51,22 +51,17 @@ try {
 
   var vertexShaderSrc = `
 attribute vec4 aPosition;
-attribute vec2 aSize;
-varying vec3 pos;
 
 void main() {
   gl_Position = aPosition;
-  gl_PointSize = 10.0;
-  pos = aPosition.xyz;
 }
 `
 
   var fragmentShaderSrc = `
 precision highp float;
 
-uniform vec2 uSize;
+uniform vec2 iResolution;
 uniform vec3 iMouse;
-varying vec3 pos;
 
 const int MaximumRaySteps = 150;
 const float MinimumDistance = 0.0000001;
@@ -156,11 +151,10 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
 }
 
 void main() {
-  vec2 q = gl_FragCoord.xy / uSize.xy;
+  vec2 q = gl_FragCoord.xy / iResolution.xy;
   vec2 p = -1.0 + 2.0*q;
-  p.x *= uSize.x / uSize.y;
-  //vec2 iMouse = uSize / 2.0;
-  vec2 mo = iMouse.xy/uSize.xy;
+  p.x *= iResolution.x / iResolution.y;
+  vec2 mo = iMouse.xy/iResolution.xy;
 
   float time = 15.0 + 0.0; // iGlobalTime
 
@@ -206,17 +200,14 @@ void main() {
   gl.useProgram(program);
   
   var aPosition = gl.getAttribLocation(program, 'aPosition');
-  var uSize = gl.getUniformLocation(program, 'uSize');
+  var iResolution = gl.getUniformLocation(program, 'iResolution');
   var iMouse = gl.getUniformLocation(program, 'iMouse');
-  var uFragColor = gl.getUniformLocation(program, 'uFragColor');
   
   gl.vertexAttrib2f(aPosition, 0.0, 0.0);
-  gl.uniform2f(uSize, canvas.width, canvas.height);
+  gl.uniform2f(iResolution, canvas.width, canvas.height);
   gl.uniform3f(iMouse, 0.0, 0.0, 0.0);
-  gl.uniform4f(uFragColor, 1.0, 0.0, 0.0, 1.0);
   
-  //gl.drawArrays(gl.POINTS, 0, 1);-
-  
+  // two triangles
   var positions = new Float32Array([
     -1.0, 1.0,
     -1.0, -1.0,
@@ -245,7 +236,7 @@ void main() {
     w = canvas.width = window.innerWidth;
     h = canvas.height = window.innerHeight;
     gl.viewport(0, 0, w, h);
-    gl.uniform2f(uSize, w, h);
+    gl.uniform2f(iResolution, w, h);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     render();
