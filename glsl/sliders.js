@@ -72,10 +72,10 @@ function addSliders(parent, sliders) {
 }
 
 function initSliders(gl, program, sliders, onChange) {
-  return sliders.map(function(slider) {
+  sliders.forEach(function(slider) {
     switch (slider.type) {
       case "float":
-        slider.uniform = gl.uniformLocation(program, slider.name);
+        slider.uniform = gl.getUniformLocation(program, slider.name);
         
         slider.onChange = function(ev) {
           gl.uniform1f(slider.uniform, parseFloat(ev.target.value));
@@ -90,11 +90,17 @@ function initSliders(gl, program, sliders, onChange) {
       case "vec2":
       case "vec3":
         slider.values = slider.range.map((r) => r[1]);
-        slider.uniform = gl.uniformLocation(program, slider.name);
+        slider.uniform = gl.getUniformLocation(program, slider.name);
         
         slider.onChange = function(ev, i) {
           slider.values[0] = parseFloat(ev.target.value);
-          gl.uniform2f(slider.uniform, slider.values[0], slider.values[1]);
+          if (slider.type == "vec2") {
+            gl.uniform2f(slider.uniform, slider.values[0], slider.values[1]);
+          } else if (slider.type == "vec3") {
+            gl.uniform3f(slider.uniform, slider.values[0], slider.values[1], slider.values[2]);
+          } else {
+            throw new Error("unknown slider type " + slider.type);
+          }
           
           if (onChange) {
             onChange(ev, slider, i);
@@ -109,6 +115,6 @@ function initSliders(gl, program, sliders, onChange) {
   });
 }
 
-var sliders = [{"name":" iPosition","type":"vec3","range":[[0.01,0.52,1.03],[0.04,0.55,1.06],[0.07,0.58,1.09]]},{"name":" iResolution","type":"vec2","range":[[0.01,0.52,1.03],[0.04,0.55,1.06]]},{"name":"fancyness","type":"float","range":[0.01,0.52,1.03]}];
+//var sliders = [{"name":" iPosition","type":"vec3","range":[[0.01,0.52,1.03],[0.04,0.55,1.06],[0.07,0.58,1.09]]},{"name":" iResolution","type":"vec2","range":[[0.01,0.52,1.03],[0.04,0.55,1.06]]},{"name":"fancyness","type":"float","range":[0.01,0.52,1.03]}];
 
-addSliders(document.body, sliders);
+//addSliders(document.body, sliders);

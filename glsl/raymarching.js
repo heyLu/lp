@@ -150,6 +150,9 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
   return mat3( cu, cv, cw );
 }
 
+uniform vec3 origin; //#slider[(-10.0,1.0,10.0),(-10.0,2.0,10.0),(-10.0,-1.0,10.0)]
+uniform vec3 color; //#slider[(0.0, 1.0, 1.0),(0.0,0.0,1.0),(0.0,0.0,1.0)]
+
 void main() {
   vec2 q = gl_FragCoord.xy / iResolution.xy;
   vec2 p = -1.0 + 2.0*q;
@@ -159,7 +162,8 @@ void main() {
   float time = 15.0 + 0.0; // iGlobalTime
 
   // camera	
-  vec3 ro = vec3(1.0, 2.0, -1.0); //vec3( -0.5+3.2*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 3.2*sin(0.1*time + 6.0*mo.x) );
+  //vec3 ro = vec3(1.0, 2.0, -1.0); //vec3( -0.5+3.2*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 3.2*sin(0.1*time + 6.0*mo.x) );
+  vec3 ro = origin;
   vec3 ta = vec3(0.0); //vec3( -0.5, -0.4, 0.5 );
 
   // camera-to-world transformation
@@ -172,7 +176,7 @@ void main() {
   float dist = trace(ro, rd);
   vec3 col = vec3(dist, dist, dist);
 
-  col = mix(vec3(1.0, 0.0, 0.0), col, 0.9);
+  col = mix(color, col, 0.9);
   //col = pow( col, vec3(0.4545));
 
   gl_FragColor = vec4( col, 1.0 );
@@ -241,7 +245,30 @@ void main() {
   };
   
   render();
+
+  var sidebarEl = document.createElement("div");
+  sidebarEl.style = `
+    position: absolute;
+    top: 0;
+    right: 0;
+
+    padding: 1ex;
+
+    font-family: monospace;
+    font-weight: bold;
+
+    background-color: rgba(255, 255, 255, 0.5);
+  `;
+  document.body.appendChild(sidebarEl);
+  
+  var sliders = findSliders(fragmentShaderSrc);
+  initSliders(gl, program, sliders, function(ev) {
+    render();
+  });
+  
+  addSliders(sidebarEl, sliders);
 } catch (e) {
+  window.error = e;
   var msg = document.createElement("pre");
   msg.style = "color: red; position: absolute; right: 0; bottom: 0";
   msg.textContent = e;

@@ -43,6 +43,7 @@ if (type == "float") {
 return {name: name, type: type, range: vals};
 }
 
+function findSliders(input) {
 var vars = [];
 input.split("\n").forEach(function(line) {
   var slider = findSlider(line);
@@ -52,3 +53,4 @@ input.split("\n").forEach(function(line) {
 });
 
 return vars;
+}
