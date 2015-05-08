@@ -32,7 +32,7 @@ function makeSlider(name, range, onChange) {
   sliderValueEl.textContent = sliderEl.value;
   sliderContainerEl.appendChild(sliderValueEl);
 
-  sliderEl.addEventListener("input", () => sliderValueEl.textContent = sliderEl.value);
+  sliderEl.addEventListener("input", function() { sliderValueEl.textContent = sliderEl.value });
   
   return sliderContainerEl;
 }
@@ -47,7 +47,7 @@ function makeMultiSlider(name, ranges, onChange) {
   containerEl.appendChild(labelEl);
     
   var names = [".x", ".y", ".z", ".y"];
-  ranges.forEach((range, i) => {
+  ranges.forEach(function(range, i) {
     containerEl.appendChild(makeSlider(names[i], range, function(ev) {
       onChange(ev, i);
     }));
@@ -57,7 +57,7 @@ function makeMultiSlider(name, ranges, onChange) {
 }
 
 function addSliders(parent, sliders) {
-  sliders.forEach((slider) => {
+  sliders.forEach(function(slider) {
     switch (slider.type) {
       case "int":
       case "float":
@@ -106,7 +106,7 @@ function initSliders(gl, program, sliders, onChange) {
         
       case "vec2":
       case "vec3":
-        slider.values = slider.range.map((r) => r[1]);
+        slider.values = slider.range.map(function(r) { return r[1] });
         slider.uniform = gl.getUniformLocation(program, slider.name);
         if (slider.type == "vec2") {
           gl.uniform2f(slider.uniform, slider.values[0], slider.values[1]);
