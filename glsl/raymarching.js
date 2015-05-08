@@ -164,9 +164,8 @@ void main() {
   float time = 15.0 + 0.0; // iGlobalTime
 
   // camera	
-  //vec3 ro = vec3(1.0, 2.0, -1.0); //vec3( -0.5+3.2*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 3.2*sin(0.1*time + 6.0*mo.x) );
-  vec3 ro = origin;
-  vec3 ta = angle; //vec3(0.0); //vec3( -0.5, -0.4, 0.5 );
+  vec3 ro = origin; //vec3( -0.5+3.2*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 3.2*sin(0.1*time + 6.0*mo.x) );
+  vec3 ta = angle; //vec3( -0.5, -0.4, 0.5 );
 
   // camera-to-world transformation
   mat3 ca = setCamera( ro, ta, 0.0 );
