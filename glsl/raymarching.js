@@ -1,3 +1,11 @@
+// # Rendering Signed Distance Functions with WebGL
+//
+// Yes, you can do this in Shadertoy, but this is how you can do it from scratch.
+// (It also loads a lot faster.)
+//
+// Use it by opening the Scratchpad in Firefox and evaluate the code with `Ctrl-R`
+// to rerender.  Including via `<script>` should also work.
+//
 // # Resources
 //
 // - [Raw WebGL](http://nickdesaulniers.github.io/RawWebGL) ([video](https://www.youtube.com/watch?v=H4c8t6myAWU))
