@@ -101,7 +101,8 @@ function initSliders(gl, program, sliders, onChange) {
         }
         
         slider.onChange = function(ev, i) {
-          slider.values[0] = parseFloat(ev.target.value);
+          slider.values[i] = parseFloat(ev.target.value);
+
           if (slider.type == "vec2") {
             gl.uniform2f(slider.uniform, slider.values[0], slider.values[1]);
           } else if (slider.type == "vec3") {
