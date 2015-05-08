@@ -237,14 +237,11 @@ void main() {
     h = canvas.height = window.innerHeight;
     gl.viewport(0, 0, w, h);
     gl.uniform2f(iResolution, w, h);
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
     render();
   };
   
   render();
 } catch (e) {
-  //alert(e);
   var msg = document.createElement("pre");
   msg.style = "color: red; position: absolute; right: 0; bottom: 0";
   msg.textContent = e;
