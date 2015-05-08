@@ -208,6 +208,7 @@ void main() {
   right: 0;
 }
   `
+  document.head.appendChild(styleEl);
 
   var canvas = document.createElement("canvas");
   var w = canvas.width = window.innerWidth;
