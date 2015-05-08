@@ -47,7 +47,9 @@ function makeMultiSlider(name, ranges, onChange) {
     
   var names = [".x", ".y", ".z", ".y"];
   ranges.forEach((range, i) => {
-    containerEl.appendChild(makeSlider(names[i], range));
+    containerEl.appendChild(makeSlider(names[i], range, function(ev) {
+      onChange(ev, i);
+    }));
   });
   
   return containerEl;
@@ -57,14 +59,44 @@ function addSliders(parent, sliders) {
   sliders.forEach((slider) => {
     switch (slider.type) {
       case "float":
-        parent.appendChild(makeSlider(slider.name, slider.range));
+        parent.appendChild(makeSlider(slider.name, slider.range, slider.onChange));
         break;
       case "vec2":
       case "vec3":
-        parent.appendChild(makeMultiSlider(slider.name, slider.range));
+        parent.appendChild(makeMultiSlider(slider.name, slider.range, slider.onChange));
         break;
       default:
-        parent.innerHTML += "unknown slider type " + slider.type;
+        throw new Error("unknown slider type " + slider.type);
+    }
+  });
+}
+
+function initSliders(gl, program, sliders) {
+  return sliders.map(function(slider) {
+    switch (slider.type) {
+      case "float":
+        slider.uniform = gl.uniformLocation(program, slider.name);
+        
+        slider.onChange = function(ev) {
+          gl.uniform1f(slider.uniform, parseFloat(ev.target.value));
+        }
+        
+        break;
+        
+      case "vec2":
+      case "vec3":
+        slider.values = slider.range.map((r) => r[1]);
+        slider.uniform = gl.uniformLocation(program, slider.name);
+        
+        slider.onChange = function(ev, i) {
+          slider.values[0] = parseFloat(ev.target.value);
+          gl.uniform2f(slider.uniform, slider.values[0], slider.values[1]);
+        }
+        
+        break;
+        
+      default:
+        throw new Error("unknown slider type " + slider.type);
     }
   });
 }
