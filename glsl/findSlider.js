@@ -1,6 +1,6 @@
 function findSlider(input) {
 var type = "unknown";
-var match = input.match(/^(uniform|attribute) (float|vec2|vec3) (.*);/);
+var match = input.match(/^(uniform|attribute) (int|float|vec2|vec3) (.*);/);
 if (!match) {
   return false;
 }
@@ -19,7 +19,7 @@ if (!match) {
 
 var rawVal = match[1];
 
-if (type == "float") {
+if (type == "int" || type == "float") {
   var vals = rawVal.split(",");
 
   vals = vals.map(function(v) {

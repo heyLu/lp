@@ -59,6 +59,7 @@ function makeMultiSlider(name, ranges, onChange) {
 function addSliders(parent, sliders) {
   sliders.forEach((slider) => {
     switch (slider.type) {
+      case "int":
       case "float":
         parent.appendChild(makeSlider(slider.name, slider.range, slider.onChange));
         break;
@@ -75,6 +76,20 @@ function addSliders(parent, sliders) {
 function initSliders(gl, program, sliders, onChange) {
   sliders.forEach(function(slider) {
     switch (slider.type) {
+      case "int":
+        slider.uniform = gl.getUniformLocation(program, slider.name);
+        gl.uniform1f(slider.uniform, slider.range[1]);
+        
+        slider.onChange = function(ev) {
+          gl.uniform1i(slider.uniform, parseInt(ev.target.value));
+          
+          if (onChange) {
+            onChange(ev, slider);
+          }
+        }
+        
+        break;
+
       case "float":
         slider.uniform = gl.getUniformLocation(program, slider.name);
         gl.uniform1f(slider.uniform, slider.range[1]);
