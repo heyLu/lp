@@ -185,6 +185,28 @@ void main() {
   
   document.body.style = "margin: 0; overflow: hidden;";
   document.body.innerHTML = "";
+  
+  var styleEl = document.createElement("style");
+  styleEl.textContent = `
+
+#sidebar {
+  position: absolute;
+  top: 0;
+  right: -250px;
+
+  padding: 1ex;
+
+  font-family: monospace;
+  font-weight: bold;
+
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+#sidebar:hover {
+  transition: right 0.1s;
+  right: 0;
+}
+  `
 
   var canvas = document.createElement("canvas");
   var w = canvas.width = window.innerWidth;
@@ -245,18 +267,7 @@ void main() {
   };
 
   var sidebarEl = document.createElement("div");
-  sidebarEl.style = `
-    position: absolute;
-    top: 0;
-    right: 0;
-
-    padding: 1ex;
-
-    font-family: monospace;
-    font-weight: bold;
-
-    background-color: rgba(255, 255, 255, 0.5);
-  `;
+  sidebarEl.id = "sidebar";
   document.body.appendChild(sidebarEl);
   
   var sliders = findSliders(fragmentShaderSrc);
