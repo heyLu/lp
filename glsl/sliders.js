@@ -71,7 +71,7 @@ function addSliders(parent, sliders) {
   });
 }
 
-function initSliders(gl, program, sliders) {
+function initSliders(gl, program, sliders, onChange) {
   return sliders.map(function(slider) {
     switch (slider.type) {
       case "float":
@@ -79,6 +79,10 @@ function initSliders(gl, program, sliders) {
         
         slider.onChange = function(ev) {
           gl.uniform1f(slider.uniform, parseFloat(ev.target.value));
+          
+          if (onChange) {
+            onChange(ev, slider);
+          }
         }
         
         break;
@@ -91,6 +95,10 @@ function initSliders(gl, program, sliders) {
         slider.onChange = function(ev, i) {
           slider.values[0] = parseFloat(ev.target.value);
           gl.uniform2f(slider.uniform, slider.values[0], slider.values[1]);
+          
+          if (onChange) {
+            onChange(ev, slider, i);
+          }
         }
         
         break;
