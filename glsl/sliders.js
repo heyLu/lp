@@ -1,4 +1,4 @@
-document.body.innerHTML = "";
+//document.body.innerHTML = "";
 var styleEl = document.createElement("style");
 styleEl.textContent = `
 .container .slider {
