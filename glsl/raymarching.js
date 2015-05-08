@@ -274,7 +274,7 @@ void main() {
   
   var sliders = findSliders(fragmentShaderSrc);
   initSliders(gl, program, sliders, function(ev) {
-    render();
+    requestAnimationFrame(render);
   });
   
   addSliders(sidebarEl, sliders);
