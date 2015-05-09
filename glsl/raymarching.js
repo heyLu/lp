@@ -323,6 +323,7 @@ void main() {
   tt.render();
   
   var editor = {};
+  editor.visible = true;
   editor.el = document.createElement("textarea");
   editor.el.id = "editor";
   editor.el.value = fragmentShaderSrc;
@@ -347,6 +348,23 @@ void main() {
       displayError(e);
     }
   }
+  
+  editor.toggle = function() {
+    if (editor.visible) {
+      editor.el.style.display = "none";
+    } else {
+      editor.el.style.display = "inherit";
+      editor.el.focus();
+    }
+    editor.visible = !editor.visible;
+  }
+  
+  window.addEventListener('keydown', function(ev) {
+    if (ev.ctrlKey && ev.keyCode == 72) {
+      ev.preventDefault();
+      editor.toggle();
+    }
+  })
 } catch (e) {
   displayError(e);
 }
