@@ -229,10 +229,12 @@ void main() {
   
   var aPosition = gl.getAttribLocation(program, 'aPosition');
   var iResolution = gl.getUniformLocation(program, 'iResolution');
+  var iGlobalTime = gl.getUniformLocation(program, 'iGlobalTime');
   var iMouse = gl.getUniformLocation(program, 'iMouse');
   
   gl.vertexAttrib2f(aPosition, 0.0, 0.0);
   gl.uniform2f(iResolution, canvas.width, canvas.height);
+  gl.uniform1f(iGlobalTime, 0.0);
   gl.uniform3f(iMouse, 0.0, 0.0, 0.0);
   
   // two triangles
