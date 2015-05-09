@@ -327,7 +327,7 @@ void main() {
   editor.visible = true;
   editor.el = document.createElement("textarea");
   editor.el.id = "editor";
-  editor.el.value = fragmentShaderSrc;
+  editor.el.value = tt.fragmentShaderSrc;
   document.body.appendChild(editor.el);
   
   editor.el.onkeydown = function(ev) {
@@ -336,7 +336,7 @@ void main() {
         tt = TwoTriangles(canvas, editor.el.value);
 
         sidebarEl.innerHTML = "";
-        sliders = findSliders(fragmentShaderSrc);
+        sliders = findSliders(tt.fragmentShaderSrc);
         initSliders(tt.gl, tt.program, sliders, function(ev) {
           requestAnimationFrame(tt.render);
         });
