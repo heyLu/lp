@@ -12,6 +12,18 @@
 // - [WebGL Fundamentals](http://webglfundamentals.org/webgl/lessons/webgl-fundamentals.html)
 
 try {
+  document.body.style = "margin: 0; overflow: hidden;";
+  document.body.innerHTML = "";
+  
+  var errorEl = document.createElement("pre");
+  errorEl.style = "color: red; position: absolute; right: 0; bottom: 0;";
+  document.body.appendChild(errorEl);
+  
+  function displayError(e) {
+    window.error = e;
+    errorEl.textContent = e;
+  }
+  
   function compileShader(gl, type, shaderSrc) {
     var shader = gl.createShader(type);
     gl.shaderSource(shader, shaderSrc);
@@ -183,10 +195,7 @@ void main() {
   gl_FragColor = vec4( col, 1.0 );
 }
 `
-  
-  document.body.style = "margin: 0; overflow: hidden;";
-  document.body.innerHTML = "";
-  
+   
   var styleEl = document.createElement("style");
   styleEl.textContent = `
 
@@ -296,9 +305,5 @@ void main() {
   
   tt.render();
 } catch (e) {
-  window.error = e;
-  var msg = document.createElement("pre");
-  msg.style = "color: red; position: absolute; right: 0; bottom: 0";
-  msg.textContent = e;
-  document.body.appendChild(msg);
+  displayError(e);
 }
