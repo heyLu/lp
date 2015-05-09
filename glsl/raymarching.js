@@ -74,8 +74,7 @@ void main() {
 }
 `
 
-  var fragmentShaderSrc = `
-precision highp float;
+  var fragmentShaderSrc = `precision highp float;
 
 uniform vec2 iResolution;
 uniform vec3 iMouse;
@@ -96,10 +95,6 @@ float trace(vec3 from, vec3 direction) {
 		if (distance < MinimumDistance) break;
 	}
 	return 1.0-float(stepsDone)/float(MaximumRaySteps);
-}
-
-float DistanceEstimator(vec3 pos) {
-  return length(pos) - 1.0;
 }
 
 /*uniform int MaxIterations; //#slider[1,50,200]
@@ -159,6 +154,26 @@ float DistanceEstimator(vec3 z0) {
 	return 0.5 * r * log(r)/r_dz;
 }*/
 
+float sphere(vec3 pos) {
+  return length(pos) - 1.0;
+}
+
+float pMod1(inout float p, float size) {
+  float halfsize = size * 0.5;
+  float c = floor((p + halfsize)/size);
+  p = mod(p+halfsize, size)-halfsize;
+  return c;
+}
+
+uniform vec3 offset; //#slider[(0.0,10.0,20.0),(0.0,10.0,20.0),(0.0,2.5,20.0)]
+
+float DistanceEstimator(vec3 pos) {
+  pMod1(pos.x, offset.x);
+  pMod1(pos.y, offset.y);
+  pMod1(pos.z, offset.z);
+  return sphere(pos);
+}
+
 mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
 	vec3 cw = normalize(ta-ro);
 	vec3 cp = vec3(sin(cr), cos(cr),0.0);
@@ -167,8 +182,8 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
   return mat3( cu, cv, cw );
 }
 
-uniform vec3 origin; //#slider[(-10.0,1.0,10.0),(-10.0,2.0,10.0),(-10.0,-1.0,10.0)]
-uniform vec3 angle; //#slider[(-3.0,0.0,3.0),(-3.0,0.0,3.0),(-3.0,0.0,3.0)]
+uniform vec3 origin; //#slider[(-10.0,0.41,10.0),(-10.0,2.03,10.0),(-10.0,-1.34,10.0)]
+uniform vec3 angle; //#slider[(-3.0,0.31,3.0),(-3.0,1.77,3.0),(-3.0,-0.18,3.0)]
 uniform vec3 color; //#slider[(0.0, 1.0, 1.0),(0.0,0.0,1.0),(0.0,0.0,1.0)]
 uniform float colorMix; //#slider[0.0,0.9,1.0]
 
