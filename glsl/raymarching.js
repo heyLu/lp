@@ -98,63 +98,6 @@ float trace(vec3 from, vec3 direction) {
 	return 1.0-float(stepsDone)/float(MaximumRaySteps);
 }
 
-/*uniform int MaxIterations; //#slider[1,50,200]
-const float bailout = 4.0;
-const float power = 8.0;
-const float phaseX = 0.0;
-const float phaseY = 0.0;
-
-float DistanceEstimator(vec3 z0) {
-	vec3 c = z0;
-	vec3 z = z0;
-	float pd = power - 1.0; // power for derivative
-	
-	// Convert z to polar coordinates
-	float r = length(z);
-	float th = atan(z.y, z.x);
-	float ph = asin(z.z / r);
-	
-	vec3 dz;
-	float ph_dz = 0.0;
-	float th_dz = 0.0;
-	float r_dz	= 1.0;
-	float powR, powRsin;
-	
-	// Iterate to compute the distance estimator.
-	for (int n = 0; n < MaxIterations; n++) {
-		// Calculate derivative of
-		powR = power * pow(r, pd);
-		powRsin = powR * r_dz * sin(ph_dz + pd*ph);
-		dz.x = powRsin * cos(th_dz + pd*th) + 1.0;
-		dz.y = powRsin * sin(th_dz + pd*th);
-		dz.z = powR * r_dz * cos(ph_dz + pd*ph);
-		
-		// polar coordinates of derivative dz
-		r_dz  = length(dz);
-		th_dz = atan(dz.y, dz.x);
-		ph_dz = acos(dz.z / r_dz);
-		
-		// z iteration
-		powR = pow(r, power);
-		powRsin = sin(power*ph);
-		z.x = powR * powRsin * cos(power*th);
-		z.y = powR * powRsin * sin(power*th);
-		z.z = powR * cos(power*ph);
-		z += c;
-		
-		r  = length(z);
-		if (r > bailout) break;
-		
-		th = atan(z.y, z.x) + phaseX;
-		ph = acos(z.z / r) + phaseY;
-		
-	}
-	
-	// Return the distance estimation value which determines the next raytracing
-	// step size, or if whether we are within the threshold of the surface.
-	return 0.5 * r * log(r)/r_dz;
-}*/
-
 float sphere(vec3 pos) {
   return length(pos) - 1.0;
 }
