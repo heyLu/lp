@@ -25,6 +25,10 @@ try {
     console.error(e);
   }
   
+  function clearError() {
+    errorEl.textContent = "";
+  }
+  
   function compileShader(gl, type, shaderSrc) {
     var shader = gl.createShader(type);
     gl.shaderSource(shader, shaderSrc);
@@ -217,6 +221,18 @@ void main() {
   transition: right 0.1s;
   right: 0;
 }
+
+#editor {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  border: none;
+  background-color: rgba(255, 255, 255, 0.5);
+
+  min-width: 72ex;
+  height: 100vh;
+}
   `
   document.head.appendChild(styleEl);
   
@@ -305,6 +321,32 @@ void main() {
   addSliders(sidebarEl, sliders);
   
   tt.render();
+  
+  var editor = {};
+  editor.el = document.createElement("textarea");
+  editor.el.id = "editor";
+  editor.el.value = fragmentShaderSrc;
+  document.body.appendChild(editor.el);
+  
+  editor.el.onkeydown = function(ev) {
+    try {
+      if (ev.ctrlKey && ev.keyCode == 13) {
+        tt = TwoTriangles(canvas, editor.el.value);
+
+        sidebarEl.innerHTML = "";
+        sliders = findSliders(fragmentShaderSrc);
+        initSliders(tt.gl, tt.program, sliders, function(ev) {
+          requestAnimationFrame(tt.render);
+        });
+        addSliders(sidebarEl, sliders);
+
+        tt.render();
+        clearError();
+      }
+    } catch (e) {
+      displayError(e);
+    }
+  }
 } catch (e) {
   displayError(e);
 }
