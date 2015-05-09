@@ -124,8 +124,10 @@ float DistanceEstimator(vec3 pos) {
   pMod1(pos.y, offset.y);
   pMod1(pos.z, offset.z + sin(iGlobalTime));
   //return sphere(pos);
-  return min(sphere(vec3(pos.x, pos.y - 0.5, pos.z), 0.75),
-             udBox(pos, vec3(1.0, 0.3, 1.0)));
+  //return min(sphere(vec3(pos.x, pos.y - 0.5, pos.z), 0.75),
+  //           udBox(pos, vec3(1.0, 0.3, 1.0)));
+  return min(max(-sphere(pos), udBox(pos, vec3(0.75))),
+             sphere(pos, 0.05 + 0.25 * (1.0 + sin(iGlobalTime * 0.5)*0.5)));
 }
 
 mat3 setCamera( in vec3 ro, in vec3 ta, float cr ) {
