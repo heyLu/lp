@@ -208,6 +208,7 @@ void main() {
   position: absolute;
   top: 0;
   right: -250px;
+  z-index: 1;
 
   padding: 1ex;
 
