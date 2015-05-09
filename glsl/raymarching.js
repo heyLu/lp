@@ -81,7 +81,7 @@ uniform vec2 iResolution;
 uniform vec3 iMouse;
 
 const int MaximumRaySteps = 150;
-const float MinimumDistance = 0.0000001;
+const float MinimumDistance = 0.0001;
 
 float DistanceEstimator(vec3 pos);
 
