@@ -209,79 +209,92 @@ void main() {
 }
   `
   document.head.appendChild(styleEl);
-
-  var canvas = document.createElement("canvas");
-  var w = canvas.width = window.innerWidth;
-  var h = canvas.height = window.innerHeight;
-  document.body.appendChild(canvas);
-
-  var gl = canvas.getContext("webgl");
-  if (!gl) { alert("i think your browser does not support webgl"); }
-
-  gl.clearColor(0.0, 0.0, 0.0, 1.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
   
-  var vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSrc);
-  var fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSrc);
-  
-  var program = linkShaders(gl, vertexShader, fragmentShader);
-  gl.useProgram(program);
-  
-  var aPosition = gl.getAttribLocation(program, 'aPosition');
-  var iResolution = gl.getUniformLocation(program, 'iResolution');
-  var iGlobalTime = gl.getUniformLocation(program, 'iGlobalTime');
-  var iMouse = gl.getUniformLocation(program, 'iMouse');
-  
-  gl.vertexAttrib2f(aPosition, 0.0, 0.0);
-  gl.uniform2f(iResolution, canvas.width, canvas.height);
-  gl.uniform1f(iGlobalTime, 0.0);
-  gl.uniform3f(iMouse, 0.0, 0.0, 0.0);
-  
-  // two triangles
-  var positions = new Float32Array([
-    -1.0, 1.0,
-    -1.0, -1.0,
-    1.0, 1.0,
+  function TwoTriangles(canvas, fragmentShaderSrc) {
+    var tt = {};
+    tt.canvas = canvas;
+    tt.fragmentShaderSrc = fragmentShaderSrc;
     
-    1.0, 1.0,
-    -1.0, -1.0,
-    1.0, -1.0
-  ]);
-  initBuffer(gl, positions, 2, aPosition);
-  
-  function render() {
-   gl.drawArrays(gl.TRIANGLES, 0, 6);
+    tt.w = canvas.width = window.innerWidth;
+    tt.h = canvas.height = window.innerHeight;
+
+    var gl = tt.gl = canvas.getContext("webgl");
+    if (!gl) { alert("i think your browser does not support webgl"); }
+
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    var vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSrc);
+    var fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSrc);
+
+    var program = tt.program = linkShaders(gl, vertexShader, fragmentShader);
+    gl.useProgram(program);
+
+    var aPosition = gl.getAttribLocation(program, 'aPosition');
+    var iResolution = gl.getUniformLocation(program, 'iResolution');
+    var iGlobalTime = gl.getUniformLocation(program, 'iGlobalTime');
+    var iMouse = gl.getUniformLocation(program, 'iMouse');
+
+    gl.vertexAttrib2f(aPosition, 0.0, 0.0);
+    gl.uniform2f(iResolution, canvas.width, canvas.height);
+    gl.uniform1f(iGlobalTime, 0.0);
+    gl.uniform3f(iMouse, 0.0, 0.0, 0.0);
+
+    // two triangles
+    var positions = new Float32Array([
+      -1.0, 1.0,
+      -1.0, -1.0,
+      1.0, 1.0,
+
+      1.0, 1.0,
+      -1.0, -1.0,
+      1.0, -1.0
+    ]);
+    initBuffer(gl, positions, 2, aPosition);
+
+    tt.render = function() {
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    };
+    
+    tt.draw = function() {
+      requestAnimationFrame(draw);
+      render();
+    }
+    
+    tt.canvas.addEventListener("mousemove", function(ev) {
+      gl.uniform3f(iMouse, ev.mouseX, ev.mouseY, 0.0);
+    });
+    
+      
+    window.onresize = function(ev) {
+      tt.w = tt.canvas.width = window.innerWidth;
+      tt.h = tt.canvas.height = window.innerHeight;
+      gl.viewport(0, 0, tt.w, tt.h);
+      gl.uniform2f(iResolution, tt.w, tt.h);
+      tt.render();
+    };
+    
+    tt.render();
+    return tt;
   }
   
-  document.body.addEventListener("mousemove", function(ev) {
-    gl.uniform3f(iMouse, ev.mouseX, ev.mouseY, 0.0);
-  });
+  var canvas = document.createElement("canvas");
+  document.body.appendChild(canvas);
   
-  function draw() {
-    requestAnimationFrame(draw);
-    render();
-  }
-  
-  window.onresize = function(ev) {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-    gl.viewport(0, 0, w, h);
-    gl.uniform2f(iResolution, w, h);
-    render();
-  };
+  var tt = TwoTriangles(canvas, fragmentShaderSrc);
 
   var sidebarEl = document.createElement("div");
   sidebarEl.id = "sidebar";
   document.body.appendChild(sidebarEl);
   
   var sliders = findSliders(fragmentShaderSrc);
-  initSliders(gl, program, sliders, function(ev) {
-    requestAnimationFrame(render);
+  initSliders(tt.gl, tt.program, sliders, function(ev) {
+    requestAnimationFrame(tt.render);
   });
   
   addSliders(sidebarEl, sliders);
   
-  render();
+  tt.render();
 } catch (e) {
   window.error = e;
   var msg = document.createElement("pre");
