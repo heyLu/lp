@@ -253,7 +253,8 @@ void main() {
   `
   document.head.appendChild(styleEl);
   
-  function TwoTriangles(canvas, fragmentShaderSrc) {
+  function TwoTriangles(canvas, fragmentShaderSrc, options) {
+    var options = options || {};
     var tt = {};
     tt.canvas = canvas;
     tt.fragmentShaderSrc = fragmentShaderSrc;
@@ -299,7 +300,7 @@ void main() {
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
     
-    tt.playing = false;
+    tt.playing = options.playing || false;
     tt.draw = function(timestamp) {
       if (tt.playing) {
         requestAnimationFrame(tt.draw);
@@ -347,6 +348,9 @@ void main() {
     };
     
     tt.render();
+    if (tt.playing) {
+      tt.draw();
+    }
     return tt;
   }
   
@@ -380,7 +384,7 @@ void main() {
   editor.el.onkeydown = function(ev) {
     try {
       if (ev.ctrlKey && ev.keyCode == 13) {
-        tt = TwoTriangles(canvas, editor.el.value);
+        tt = TwoTriangles(canvas, editor.el.value, {playing: tt.playing});
 
         sidebarEl.innerHTML = "";
         sliders = findSliders(tt.fragmentShaderSrc);
