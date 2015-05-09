@@ -76,6 +76,7 @@ void main() {
 
   var fragmentShaderSrc = `precision highp float;
 
+uniform float iGlobalTime;
 uniform vec2 iResolution;
 uniform vec3 iMouse;
 
@@ -170,7 +171,7 @@ uniform vec3 offset; //#slider[(0.0,10.0,20.0),(0.0,10.0,20.0),(0.0,2.5,20.0)]
 float DistanceEstimator(vec3 pos) {
   pMod1(pos.x, offset.x);
   pMod1(pos.y, offset.y);
-  pMod1(pos.z, offset.z);
+  pMod1(pos.z, offset.z + sin(iGlobalTime));
   return sphere(pos);
 }
 
@@ -298,10 +299,39 @@ void main() {
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
     
-    tt.draw = function() {
-      requestAnimationFrame(draw);
-      render();
+    tt.playing = false;
+    tt.draw = function(timestamp) {
+      if (tt.playing) {
+        requestAnimationFrame(tt.draw);
+      }
+      gl.uniform1f(iGlobalTime, timestamp / 1000);
+      tt.render();
     }
+    
+    tt.playingControls = document.createElement("div");
+    var playPauseButton = document.createElement("button");
+    playPauseButton.textContent = "Play";
+    playPauseButton.onclick = function(ev) {
+      tt.togglePlaying();
+    }
+    tt.playingControls.appendChild(playPauseButton);
+    
+    tt.togglePlaying = function() {
+      if (!tt.playing) {
+        tt.playing = true;
+        tt.draw();
+      } else {
+        tt.playing = false;
+      }
+      playPauseButton.textContent = tt.playing ? "Pause" : "Play";
+    }
+    
+    window.addEventListener('keydown', function(ev) {
+      if (ev.keyCode == 32 && document.activeElement != editor.el) { // Space
+        ev.preventDefault();
+        tt.togglePlaying();
+      }
+    });
     
     tt.canvas.addEventListener("mousemove", function(ev) {
       gl.uniform3f(iMouse, ev.mouseX, ev.mouseY, 0.0);
@@ -329,12 +359,13 @@ void main() {
   sidebarEl.id = "sidebar";
   document.body.appendChild(sidebarEl);
   
-  var sliders = findSliders(fragmentShaderSrc);
+  var sliders = findSliders(tt.fragmentShaderSrc);
   initSliders(tt.gl, tt.program, sliders, function(ev) {
     requestAnimationFrame(tt.render);
   });
-  
   addSliders(sidebarEl, sliders);
+  
+  sidebarEl.appendChild(tt.playingControls);
   
   tt.render();
   
@@ -354,9 +385,14 @@ void main() {
         sidebarEl.innerHTML = "";
         sliders = findSliders(tt.fragmentShaderSrc);
         initSliders(tt.gl, tt.program, sliders, function(ev) {
-          requestAnimationFrame(tt.render);
+          // rerender if not in animation mode (otherwise `tt.draw` will already do that)
+          if (!tt.playing) {
+            requestAnimationFrame(tt.render);
+          }
         });
         addSliders(sidebarEl, sliders);
+        
+        sidebarEl.appendChild(tt.playingControls);
 
         tt.render();
         clearError();
