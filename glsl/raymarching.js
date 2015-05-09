@@ -22,6 +22,7 @@ try {
   function displayError(e) {
     window.error = e;
     errorEl.textContent = e;
+    console.error(e);
   }
   
   function compileShader(gl, type, shaderSrc) {
