@@ -245,7 +245,7 @@ void main() {
   left: 0;
 
   border: none;
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.8);
 
   min-width: 72ex;
   height: 100vh;
