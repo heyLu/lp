@@ -267,7 +267,7 @@ void main() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     var vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSrc);
-    var fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSrc);
+    var fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, tt.fragmentShaderSrc);
 
     var program = tt.program = linkShaders(gl, vertexShader, fragmentShader);
     gl.useProgram(program);
@@ -377,11 +377,11 @@ void main() {
   }
   
   window.addEventListener('keydown', function(ev) {
-    if (ev.ctrlKey && ev.keyCode == 72) {
+    if (ev.ctrlKey && ev.keyCode == 72) { // Ctrl + H
       ev.preventDefault();
       editor.toggle();
     }
-  })
+  });
 } catch (e) {
   displayError(e);
 }
