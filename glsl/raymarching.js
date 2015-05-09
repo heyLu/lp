@@ -339,9 +339,10 @@ void main() {
   tt.render();
   
   var editor = {};
-  editor.visible = true;
+  editor.visible = false;
   editor.el = document.createElement("textarea");
   editor.el.id = "editor";
+  editor.el.style.display = "none";
   editor.el.value = tt.fragmentShaderSrc;
   document.body.appendChild(editor.el);
   
