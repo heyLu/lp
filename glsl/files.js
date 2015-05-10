@@ -79,7 +79,7 @@ files.create = function(name, content) {
   files.current = name;
   
   var file = { "name": name, "content": content, readonly: false };
-  localStorage["/papill0n.org/shaders/" + name] = content;
+  localStorage[files.prefix + name] = content;
   return file;
 }
 
