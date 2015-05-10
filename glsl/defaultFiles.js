@@ -6,6 +6,7 @@ void main() {
   gl_FragColor = vec4(gl_FragCoord.xy / iResolution, blue, 1.0);
 }`,
   "default.frag": `//#include "includes/sphere-tracer.frag"
+//#include "includes/default-main.frag"
 //#include "includes/iq-primitives.frag"
 //#include "includes/cupe-primitives.frag"
 
@@ -20,10 +21,7 @@ float DistanceEstimator(vec3 pos) {
   //           udBox(pos, vec3(1.0, 0.3, 1.0)));
   return min(max(-sphere(pos), udBox(pos, vec3(0.75))),
              sphere(pos, 0.05 + 0.25 * (1.0 + sin(iGlobalTime * 0.5)*0.5)));
-}
-
-//#include "includes/default-main.frag"
-`,
+}`,
   "includes/iq-primitives.frag": `float sphere(vec3 pos) {
   return length(pos) - 1.0;
 }
