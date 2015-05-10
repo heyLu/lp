@@ -131,5 +131,9 @@ document.body.appendChild(docsContainerEl);
 window.addEventListener("keydown", function(ev) {
   if (ev.ctrlKey && ev.keyCode == 72) { // Ctrl-h
     handleToggle(ev);
+  } else if (ev.keyCode == 27) { // Escape
+    if (location.hash == "#docs") {
+      handleToggle(ev);
+    }
   }
 });
