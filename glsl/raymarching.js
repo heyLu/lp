@@ -283,7 +283,7 @@ void main() {
   }
   
   window.addEventListener('keydown', function(ev) {
-    if (ev.ctrlKey && ev.keyCode == 72) { // Ctrl + H
+    if (ev.ctrlKey && ev.keyCode == 69) { // Ctrl + e
       ev.preventDefault();
       editor.toggle();
     }
