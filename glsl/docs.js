@@ -5,14 +5,14 @@ document.body.style = "margin: 0";*/
 var styleEl = document.createElement("style");
 styleEl.textContent = `
 #toggle {
-position: absolute;
-bottom: 0.5ex;
-right: 1ex;
-z-index: 3;
-font-size: 20px;
-font-weight: bold;
-color: white;
-text-decoration: none;
+  position: absolute;
+  bottom: 0.5ex;
+  right: 1ex;
+  z-index: 3;
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+  text-decoration: none;
 }
 
 #docs {
