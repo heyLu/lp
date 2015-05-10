@@ -5,6 +5,25 @@ files.builtin = {
 void main() {
   gl_FragColor = vec4(gl_FragCoord.xy / iResolution, blue, 1.0);
 }`,
+  "colors2.frag": `/*
+ * A shader that maps the RGB scale onto the canvas.
+ *
+ * Blue controls the amount of blue to mix in, or the speed with which
+ * to animate from/to blue when animating.
+ */
+
+uniform float blue; //#slider[0.0,0.0,1.0]
+
+void main() {
+  if (iGlobalTime > 0.0) {
+    // if animating, control the speed of the color shift
+    gl_FragColor = vec4(gl_FragCoord.xy / iResolution,
+                        0.5 + sin(iGlobalTime * blue)*0.5, 1.0);
+  } else {
+    // else just control the blue component
+    gl_FragColor = vec4(gl_FragCoord.xy / iResolution, blue, 1.0);
+  }
+}`,
   "default.frag": `//#include "includes/sphere-tracer.frag"
 //#include "includes/default-main.frag"
 //#include "includes/iq-primitives.frag"
