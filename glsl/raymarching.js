@@ -111,6 +111,12 @@ void main() {
   border: none;
   background-color: rgba(255, 255, 255, 0.8);
 }
+
+#editor-changed {
+  position: absolute;
+  right: 0;
+  top: 1.5em;
+}
   `
   document.head.appendChild(styleEl);
   

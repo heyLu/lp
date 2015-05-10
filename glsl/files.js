@@ -103,6 +103,7 @@ files.setupUI = function(editorEl) {
   }
 
   var nameEl = document.createElement("input");
+  nameEl.id = "editor-name";
   nameEl.value = files.current;
   nameEl.maxlength = 20;
   nameEl.placeholder = "Name of the shader";
@@ -145,6 +146,7 @@ files.setupUI = function(editorEl) {
   });
 
   var changeEl = document.createElement("span");
+  changeEl.id = "editor-changed";
   
   editorEl.addEventListener("keydown", function(ev) {
     if (ev.ctrlKey && ev.keyCode == 83) { // Ctrl-s
