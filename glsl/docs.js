@@ -79,6 +79,7 @@ Use the sliders on the left to change values used in the shader.
 
 - \`Ctrl-Enter\` reruns the shader
 - \`Ctrl-e\` toggles the editor
+- \`Ctrl-s\` (in the editor) saves the current shader
 - \`Space\` toggles animation
 - \`Ctrl-h\` toggles help
 
