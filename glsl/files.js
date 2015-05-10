@@ -143,13 +143,25 @@ Object.keys(localStorage).forEach(function(file) {
   }
 });
 
+var changeEl = document.createElement("span");
 var editorEl = document.createElement("textarea");
 editorEl.style  = "width: 70ex; height: 40em";
 editorEl.onkeydown = function(ev) {
   if (ev.ctrlKey && ev.keyCode == 83) { // Ctrl-s
     ev.preventDefault();
     
+    changeEl.textContent = "";
     files.save(files.current, editorEl.value);
+  }
+}
+
+editorEl.onkeyup = function(ev) {
+  if (!ev.altKey && !ev.ctrlKey) {
+    if (editorEl.value != files.currentFile.content) {
+      changeEl.textContent = "(changed)";
+    } else {
+      changeEl.textContent = "";
+    }
   }
 }
 
@@ -157,4 +169,5 @@ setFile(files.open(files.current), nameEl, editorEl);
 
 document.body.appendChild(filesEl);
 document.body.appendChild(nameEl);
+document.body.appendChild(changeEl);
 document.body.appendChild(editorEl);
