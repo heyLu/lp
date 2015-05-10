@@ -1,12 +1,12 @@
-document.title = ".edit";
-document.body.innerHTML = "";
+/*document.title = ".edit";
+document.body.innerHTML = "";*/
 
 var files = {};
 files.prefix = "/papill0n.org/shaders/";
 files.makeName = function(name) {
   return `${name} - shaders!`;
 }
-files.current = "spec.txt";
+/*files.current = "spec.txt";
 
 files.builtin = {"spec.txt": `# Spec
 
@@ -60,7 +60,7 @@ float sdSphere(vec3 pos, float size) {
              "includes/ray-marching.frag": `// Warning: This is likely to be slower than sphere tracing!
 float trace(vec3 origin, vec3 direction) {
   return 0.0;
-}`};
+}`};*/
 
 files.exists = function(name) {
   return name in files.builtin || (files.prefix + name) in localStorage;
@@ -174,10 +174,10 @@ files.setupUI = function(editorEl) {
   return containerEl;
 }
 
-var editor = {};
+/*var editor = {};
 editor.el = document.createElement("textarea");
 editor.el.style = "width: 70ex; height: 40em";
 editor.nameUIEl = files.setupUI(editor.el);
 
 document.body.appendChild(editor.nameUIEl);
-document.body.appendChild(editor.el);
+document.body.appendChild(editor.el);*/
