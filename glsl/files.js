@@ -65,10 +65,11 @@ files.exists = function(name) {
 files.open = function(name) {
   files.current = name;
   if (name in files.builtin) {
-    return {"name": name, "content": files.builtin[name], "readonly": true};
+    files.currentFile = {"name": name, "content": files.builtin[name], "readonly": true};
   } else {
-    return {"name": name, "content": localStorage[files.prefix + name], "readonly": false};
+    files.currentFile = {"name": name, "content": localStorage[files.prefix + name], "readonly": false};
   }
+  return files.currentFile;
 }
 
 files.create = function(name, content) {
@@ -78,12 +79,13 @@ files.create = function(name, content) {
   
   files.current = name;
   
-  var file = { "name": name, "content": content, readonly: false };
+  files.currentFile = { "name": name, "content": content, readonly: false };
   localStorage[files.prefix + name] = content;
-  return file;
+  return files.currentFile;
 }
 
 files.save = function(name, content) {
+  files.currentFile.content = content;
   localStorage[files.prefix + name] = content;
 }
 
