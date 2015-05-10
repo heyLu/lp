@@ -100,11 +100,14 @@ void main() {
   position: absolute;
   top: 0;
   left: 0;
+  height: 100%;
 }
 
 #editor textarea {
-  min-width: 72ex;
-  height: 100vh;
+  display: block;
+  width: 72ex;
+  height: calc(100% - 2em + 1px); /* TODO: fix this */
+  resize: horizontal;
 }
 
 #editor textarea, #editor input {
