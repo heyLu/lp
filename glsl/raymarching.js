@@ -16,7 +16,7 @@ try {
   document.body.innerHTML = "";
   
   var errorEl = document.createElement("pre");
-  errorEl.style = "color: red; position: absolute; right: 0; bottom: 0;";
+  errorEl.style = "color: red; position: absolute; right: 0; bottom: 0; background-color: black; z-index: 4";
   document.body.appendChild(errorEl);
   
   function displayError(e) {
