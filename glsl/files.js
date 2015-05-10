@@ -1,7 +1,11 @@
+document.title = ".edit";
 document.body.innerHTML = "";
 
 var files = {};
 files.prefix = "/papill0n.org/shaders/";
+files.makeName = function(name) {
+  return `${name} - shaders!`;
+}
 files.current = "spec.txt";
 
 files.builtin = {"spec.txt": `# Spec
@@ -64,6 +68,7 @@ files.exists = function(name) {
 
 files.open = function(name) {
   files.current = name;
+  document.title = files.makeName(name);
   if (name in files.builtin) {
     files.currentFile = {"name": name, "content": files.builtin[name], "readonly": true};
   } else {
@@ -78,6 +83,7 @@ files.create = function(name, content) {
   if (files.exists(name)) { throw new Error("already exists"); }
   
   files.current = name;
+  document.title = files.makeName(name);
   
   files.currentFile = { "name": name, "content": content, readonly: false };
   localStorage[files.prefix + name] = content;
