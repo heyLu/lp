@@ -1,21 +1,11 @@
 files.current = "default.frag";
 files.builtin = {
-  "colors.frag": `precision highp float;
-
-uniform vec2 iResolution;
-
-uniform float blue; //#slider[0.0,0.0,1.0]
+  "colors.frag": `uniform float blue; //#slider[0.0,0.0,1.0]
 
 void main() {
   gl_FragColor = vec4(gl_FragCoord.xy / iResolution, blue, 1.0);
 }`,
-  "default.frag": `precision highp float;
-
-uniform float iGlobalTime;
-uniform vec2 iResolution;
-uniform vec3 iMouse;
-
-const int MaximumRaySteps = 150;
+  "default.frag": `const int MaximumRaySteps = 150;
 const float MinimumDistance = 0.0001;
 
 float DistanceEstimator(vec3 pos);

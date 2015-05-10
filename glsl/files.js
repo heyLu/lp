@@ -66,14 +66,18 @@ files.exists = function(name) {
   return name in files.builtin || (files.prefix + name) in localStorage;
 }
 
+files.get = function(name) {
+  if (name in files.builtin) {
+    return {"name": name, "content": files.builtin[name], "readonly": true};
+  } else {
+    return {"name": name, "content": localStorage[files.prefix + name], "readonly": false};
+  }
+}
+
 files.open = function(name) {
   files.current = name;
   document.title = files.makeName(name);
-  if (name in files.builtin) {
-    files.currentFile = {"name": name, "content": files.builtin[name], "readonly": true};
-  } else {
-    files.currentFile = {"name": name, "content": localStorage[files.prefix + name], "readonly": false};
-  }
+  files.currentFile = files.get(name);
   return files.currentFile;
 }
 

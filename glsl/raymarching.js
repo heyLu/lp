@@ -124,7 +124,7 @@ void main() {
     var options = options || {};
     var tt = {};
     tt.canvas = canvas;
-    tt.fragmentShaderSrc = fragmentShaderSrc;
+    tt.fragmentShaderSrc = transformShader(fragmentShaderSrc);
     
     tt.w = canvas.width = window.innerWidth;
     tt.h = canvas.height = window.innerHeight;
