@@ -6,7 +6,8 @@ uniform vec3 iMouse;
 
 `;
 
-function transformShader(shader) {
+function transformShader(shader, noPrelude, visited) {
+  var visited = visited || {};
   var lines = shader.split("\n");
   lines = lines.map(function(line) {
     var match = line.match(/\/\/#include "(.*)"/);
@@ -15,14 +16,18 @@ function transformShader(shader) {
       if (!file.content) {
         throw new Error(`No such file: '${match[1]}'`);
       }
+      if (file.name in visited) {
+        throw new Error(`Include loop: '${match[1]}'`);
+      }
+      visited[file.name] = true;
+      var expanded = transformShader(file.content, true, visited);
       return `//#includestart "${match[1]}" (start)
-${file.content}
-//#includeend "${match[1]}"
-`
+${expanded}
+//#includeend "${match[1]}"`
     } else {
       return line;
     }
   });
   
-  return prelude + lines.join("\n");
+  return (noPrelude ? "" : prelude) + lines.join("\n");
 }
