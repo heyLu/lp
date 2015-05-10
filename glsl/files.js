@@ -95,79 +95,89 @@ files.save = function(name, content) {
   localStorage[files.prefix + name] = content;
 }
 
-function setFile(file, nameEl, contentEl) {
-  nameEl.value = file.name;
-  contentEl.value = file.content;
-  contentEl.readOnly = file.readonly;
-}
+files.setupUI = function(editorEl) {
+  function setFile(file, nameEl, contentEl) {
+    nameEl.value = file.name;
+    contentEl.value = file.content;
+    contentEl.readOnly = file.readonly;
+  }
 
-var nameEl = document.createElement("input");
-nameEl.value = files.current;
-nameEl.maxlength = 20;
-nameEl.placeholder = "Name of the shader";
-nameEl.setAttribute('list', 'files');
+  var nameEl = document.createElement("input");
+  nameEl.value = files.current;
+  nameEl.maxlength = 20;
+  nameEl.placeholder = "Name of the shader";
+  nameEl.setAttribute('list', 'files');
 
-nameEl.onselect = function(ev) {
-  setFile(files.open(nameEl.value), nameEl, editorEl);
-  editorEl.focus();
-}
-
-nameEl.onkeyup = function(ev) {
-  if (ev.keyCode == 13 && nameEl.value != files.current) { // Enter
-    var file = nameEl.value;
-    if (files.exists(file)) {
-      setFile(files.open(file), nameEl, editorEl);
-    } else {
-      setFile(files.create(file, ""), nameEl, editorEl);
-      var fileEl = document.createElement("option");
-      fileEl.textContent = file;
-      filesEl.appendChild(fileEl);
-    }
+  nameEl.onselect = function(ev) {
+    setFile(files.open(nameEl.value), nameEl, editorEl);
     editorEl.focus();
   }
-}
 
-function addFileOption(name) {
-  var fileEl = document.createElement("option");
-  fileEl.textContent = name;
-  filesEl.appendChild(fileEl);
-}
-
-var filesEl = document.createElement("datalist");
-filesEl.id = "files";
-Object.keys(files.builtin).forEach(addFileOption);
-
-Object.keys(localStorage).forEach(function(file) {
-  if (file.startsWith(files.prefix)) {
-    addFileOption(file.substr(files.prefix.length));
-  }
-});
-
-var changeEl = document.createElement("span");
-var editorEl = document.createElement("textarea");
-editorEl.style  = "width: 70ex; height: 40em";
-editorEl.onkeydown = function(ev) {
-  if (ev.ctrlKey && ev.keyCode == 83) { // Ctrl-s
-    ev.preventDefault();
-    
-    changeEl.textContent = "";
-    files.save(files.current, editorEl.value);
-  }
-}
-
-editorEl.onkeyup = function(ev) {
-  if (!ev.altKey && !ev.ctrlKey) {
-    if (editorEl.value != files.currentFile.content) {
-      changeEl.textContent = "(changed)";
-    } else {
-      changeEl.textContent = "";
+  nameEl.onkeyup = function(ev) {
+    if (ev.keyCode == 13 && nameEl.value != files.current) { // Enter
+      var file = nameEl.value;
+      if (files.exists(file)) {
+        setFile(files.open(file), nameEl, editorEl);
+      } else {
+        setFile(files.create(file, ""), nameEl, editorEl);
+        var fileEl = document.createElement("option");
+        fileEl.textContent = file;
+        filesEl.appendChild(fileEl);
+      }
+      editorEl.focus();
     }
   }
+
+  function addFileOption(name) {
+    var fileEl = document.createElement("option");
+    fileEl.textContent = name;
+    filesEl.appendChild(fileEl);
+  }
+
+  var filesEl = document.createElement("datalist");
+  filesEl.id = "files";
+  Object.keys(files.builtin).forEach(addFileOption);
+
+  Object.keys(localStorage).forEach(function(file) {
+    if (file.startsWith(files.prefix)) {
+      addFileOption(file.substr(files.prefix.length));
+    }
+  });
+
+  var changeEl = document.createElement("span");
+  
+  editorEl.addEventListener("keydown", function(ev) {
+    if (ev.ctrlKey && ev.keyCode == 83) { // Ctrl-s
+      ev.preventDefault();
+
+      changeEl.textContent = "";
+      files.save(files.current, editorEl.value);
+    }
+  });
+
+  editorEl.addEventListener("keyup", function(ev) {
+    if (!ev.altKey && !ev.ctrlKey) {
+      if (editorEl.value != files.currentFile.content) {
+        changeEl.textContent = "(changed)";
+      } else {
+        changeEl.textContent = "";
+      }
+    }
+  });
+
+  setFile(files.open(files.current), nameEl, editorEl);
+
+  var containerEl = document.createElement("div");
+  containerEl.appendChild(nameEl);
+  containerEl.appendChild(filesEl);
+  containerEl.appendChild(changeEl);
+  return containerEl;
 }
 
-setFile(files.open(files.current), nameEl, editorEl);
+var editor = {};
+editor.el = document.createElement("textarea");
+editor.el.style = "width: 70ex; height: 40em";
+editor.nameUIEl = files.setupUI(editor.el);
 
-document.body.appendChild(filesEl);
-document.body.appendChild(nameEl);
-document.body.appendChild(changeEl);
-document.body.appendChild(editorEl);
+document.body.appendChild(editor.nameUIEl);
+document.body.appendChild(editor.el);
