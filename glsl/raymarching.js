@@ -108,6 +108,8 @@ void main() {
   width: 72ex;
   height: calc(100% - 2em + 1px); /* TODO: fix this */
   resize: horizontal;
+  padding: 1ex;
+  box-sizing: border-box;
 }
 
 #editor textarea, #editor input {
