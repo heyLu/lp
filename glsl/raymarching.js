@@ -207,7 +207,8 @@ void main() {
     });
     
     tt.canvas.addEventListener("mousemove", function(ev) {
-      gl.uniform3f(iMouse, ev.mouseX, ev.mouseY, 0.0);
+      gl.uniform3f(iMouse, ev.clientX, ev.clientY, 0.0);
+      requestAnimationFrame(tt.render);
     });
     
       

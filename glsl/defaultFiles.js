@@ -41,6 +41,9 @@ float DistanceEstimator(vec3 pos) {
   return min(max(-sphere(pos), udBox(pos, vec3(0.75))),
              sphere(pos, 0.05 + 0.25 * (1.0 + sin(iGlobalTime * 0.5)*0.5)));
 }`,
+  "mouse.frag": `void main() {
+  gl_FragColor = vec4(iMouse.xy / iResolution, 0.0, 1.0);
+}`,
   "includes/iq-primitives.frag": `float sphere(vec3 pos) {
   return length(pos) - 1.0;
 }
