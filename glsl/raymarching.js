@@ -244,19 +244,25 @@ void main() {
       var origin = tt.gl.getUniform(tt.program, tt.origin);
       
       switch (ev.keyCode) {
+        case 38: // Up
         case 87: // W
           origin = [origin[0]+tt.direction[0], origin[1]+tt.direction[1], origin[2]+tt.direction[2]];
           break;
+        case 37: // Left
         case 65: // A
           break;
+        case 40: // Down
         case 83: // S
           origin = [origin[0]-tt.direction[0], origin[1]-tt.direction[1], origin[2]-tt.direction[2]];
           break;
+        case 39: // Right
         case 68: // D
           break;
         default:
           return
       }
+      
+      ev.preventDefault();
       
       gl.uniform3f(tt.origin, origin[0], origin[1], origin[2]);
       requestAnimationFrame(tt.render);
