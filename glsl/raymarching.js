@@ -237,7 +237,7 @@ void main() {
     });
     
     window.addEventListener('keydown', function(ev) {
-      if (document.activeElement != document.body) {
+      if (document.activeElement != document.body || ev.ctrlKey || ev.altKey) {
         return;
       }
       
