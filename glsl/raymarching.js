@@ -155,6 +155,8 @@ void main() {
     gl.uniform2f(iResolution, canvas.width, canvas.height);
     gl.uniform1f(iGlobalTime, 0.0);
     gl.uniform3f(iMouse, 0.0, 0.0, 0.0);
+    
+    tt.origin = gl.getUniformLocation(program, 'origin');
 
     // two triangles
     var positions = new Float32Array([
@@ -206,12 +208,60 @@ void main() {
       }
     });
     
+    tt.direction = [0, 0, 1];
+    tt.angle = {horizontal: 0.0, vertical: 0.0};
+    
+    var iDirection = gl.getUniformLocation(program, 'iDirection');
+    gl.uniform3f(iDirection, tt.direction[0], tt.direction[1], tt.direction[2]);
+    
+    var mousePressed = false;
+    tt.canvas.addEventListener("mousedown", function(ev) { if (ev.button == 0) { mousePressed = true; }});
+    tt.canvas.addEventListener("mouseup", function(ev) { mousePressed = false; });
+    
     tt.canvas.addEventListener("mousemove", function(ev) {
       gl.uniform3f(iMouse, ev.clientX, canvas.clientHeight - ev.clientY, 0.0);
+      
+      if (!mousePressed || !iDirection) {
+        return;
+      }
+      
+      tt.angle.horizontal += 0.0001 * (tt.w/2 - ev.clientX);
+      tt.angle.vertical += 0.0001 * (tt.h/2 - ev.clientY);
+      tt.direction = [Math.cos(tt.angle.vertical) * Math.sin(tt.angle.horizontal),
+                      Math.sin(tt.angle.vertical),
+                      Math.cos(tt.angle.vertical) * Math.cos(tt.angle.horizontal)];
+      
+      gl.uniform3f(iDirection, tt.direction[0], tt.direction[1], tt.direction[2]);
+
       requestAnimationFrame(tt.render);
     });
     
+    window.addEventListener('keydown', function(ev) {
+      if (document.activeElement != document.body) {
+        return;
+      }
       
+      var origin = tt.gl.getUniform(tt.program, tt.origin);
+      
+      switch (ev.keyCode) {
+        case 87: // W
+          origin = [origin[0]+tt.direction[0], origin[1]+tt.direction[1], origin[2]+tt.direction[2]];
+          break;
+        case 65: // A
+          break;
+        case 83: // S
+          origin = [origin[0]-tt.direction[0], origin[1]-tt.direction[1], origin[2]-tt.direction[2]];
+          break;
+        case 68: // D
+          break;
+        default:
+          return
+      }
+      
+      gl.uniform3f(tt.origin, origin[0], origin[1], origin[2]);
+      requestAnimationFrame(tt.render);
+    });
+    
     window.onresize = function(ev) {
       tt.w = tt.canvas.width = window.innerWidth;
       tt.h = tt.canvas.height = window.innerHeight;
