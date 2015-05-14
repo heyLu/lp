@@ -120,7 +120,19 @@ For example, \`//#include "includes/iq-primitives.frag"\` includes the primitive
 
 ## Resources
 
-...
+If you want to learn by observing, take a look at \`colors.frag\`, \`colors2.frag\`, \`mouse.frag\` and then \`default.frag\`.  Try the commented out examples in order, and figure out what they do.  The signed distance functions talk listed below should provide enough background for starting to figure things out on your own.
+
+- GLSL
+    - The [WebGL 1.0 reference card](http://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf) is very handy if you already know a bit about GLSL.
+- Signed Distance Functions
+    - [How to Create Content with Signed Distance Functions](https://www.youtube.com/watch?v=s8nFqwOho-s), by Johann Korndorfer is a good introduction
+    - The [Distance Estimated 3D Fractals](http://blog.hvidtfeldts.net/index.php/2011/06/distance-estimated-3d-fractals-part-i/) series is also an excellent introduction to SDFs.  Later entries also handle lighting and rendering fractals, but you can just read the first entries to learn about SDFs.
+    - Iñigo Quilez has written a good overview with [distance functions for various geometrical objects](http://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm)
+    - [Shadertoy](http://shadertoy.com/) has a lot of fascinating shaders, and is a direct inspiration of this tool
+- Inspiration
+    - Shadertoy
+    - [pouët.net](http://www.pouet.net/) and the demoscene in general
+    - ...
 
 ## Fin
 
