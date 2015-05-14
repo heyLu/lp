@@ -3,6 +3,7 @@ var prelude = `precision highp float;
 uniform float iGlobalTime;
 uniform vec2 iResolution;
 uniform vec3 iMouse;
+uniform vec3 iDirection;
 
 `;
 

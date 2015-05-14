@@ -88,34 +88,20 @@ float trace(vec3 from, vec3 direction) {
 }
 
 uniform vec3 origin; //#slider[(-10.0,0.41,10.0),(-10.0,2.03,10.0),(-10.0,-1.34,10.0)]
-uniform vec3 angle; //#slider[(-3.0,0.31,3.0),(-3.0,1.77,3.0),(-3.0,-0.18,3.0)]
-uniform vec3 color; //#slider[(0.0, 1.0, 1.0),(0.0,0.0,1.0),(0.0,0.0,1.0)]
-uniform float colorMix; //#slider[0.0,0.9,1.0]
+uniform float whee; //#slider[-3.1415,0.0,3.1415]
 
 void main() {
-  vec2 q = gl_FragCoord.xy / iResolution.xy;
-  vec2 p = -1.0 + 2.0*q;
-  p.x *= iResolution.x / iResolution.y;
-  vec2 mo = iMouse.xy/iResolution.xy;
+  // screen coords (0,0)..(width,height) to "centered" & normalized coords (-1,-1)..(1,1)
+  vec2 normalizedCoord = -1.0 + gl_FragCoord.xy / iResolution * 2.0;
+  // aspect ratio (?)
+  normalizedCoord.x *= iResolution.x / iResolution.y;
 
-  float time = 15.0 + 0.0; // iGlobalTime
+  mat3 ca = setCamera(origin, origin + iDirection, whee);
+  vec3 direction = ca * normalize(vec3(normalizedCoord.xy, 2.5));
 
-  // camera	
-  vec3 ro = origin; //vec3( -0.5+3.2*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 3.2*sin(0.1*time + 6.0*mo.x) );
-  vec3 ta = angle; //vec3( -0.5, -0.4, 0.5 );
-
-  // camera-to-world transformation
-  mat3 ca = setCamera( ro, ta, 0.0 );
-
-  // ray direction
-  vec3 rd = ca * normalize( vec3(p.xy, 2.5) );
-
-  // render	
-  float dist = trace(ro, rd);
+  // render
+  float dist = trace(origin, direction);
   vec3 col = vec3(dist, dist, dist);
-
-  col = mix(color, col, colorMix);
-  //col = pow( col, vec3(0.4545));
 
   gl_FragColor = vec4( col, 1.0 );
 }`
