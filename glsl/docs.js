@@ -75,13 +75,18 @@ docsEl.textContent = `# shaders!
 
 Use the sliders on the left to change values used in the shader.
 
-## Keyboard shortcuts
+## Keyboard shortcuts and navigation
 
 - \`Ctrl-Enter\` reruns the shader
 - \`Ctrl-e\` toggles the editor
 - \`Ctrl-s\` (in the editor) saves the current shader
 - \`Space\` toggles animation
 - \`Ctrl-h\` toggles help
+
+You can move around using keyboard and mouse.  Pressing W (or Up) moves the camera
+forward, pressing S (or Down) moves it backwards.  By pressing the left mouse button
+and moving the mouse, you can "look around" then use the keyboard to move in that
+direction.
 
 ## Default uniforms
 
