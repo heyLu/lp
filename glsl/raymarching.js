@@ -209,6 +209,7 @@ void main() {
     });
     
     tt.direction = [0, 0, 1];
+    tt.right = [-1, 0, 0];
     tt.angle = {horizontal: 0.0, vertical: 0.0};
     
     var iDirection = gl.getUniformLocation(program, 'iDirection');
@@ -230,6 +231,9 @@ void main() {
       tt.direction = [Math.cos(tt.angle.vertical) * Math.sin(tt.angle.horizontal),
                       Math.sin(tt.angle.vertical),
                       Math.cos(tt.angle.vertical) * Math.cos(tt.angle.horizontal)];
+      tt.right = [Math.sin(tt.angle.horizontal - Math.PI/2),
+                  0,
+                  Math.cos(tt.angle.horizontal - Math.PI/2)];
       
       gl.uniform3f(iDirection, tt.direction[0], tt.direction[1], tt.direction[2]);
 
@@ -250,6 +254,7 @@ void main() {
           break;
         case 37: // Left
         case 65: // A
+          origin = [origin[0]-tt.right[0], origin[1]-tt.right[1], origin[2]-tt.right[2]];
           break;
         case 40: // Down
         case 83: // S
@@ -257,6 +262,7 @@ void main() {
           break;
         case 39: // Right
         case 68: // D
+          origin = [origin[0]+tt.right[0], origin[1]+tt.right[1], origin[2]+tt.right[2]];
           break;
         default:
           return
