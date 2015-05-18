@@ -12,8 +12,8 @@ use std::io::Read;
 
 fn parse_dimac(dimac: &str) {
     let mut lines = dimac.lines();
-    let mut num_vars = 0;
-    let mut num_clauses = 0;
+    let mut num_vars;
+    let mut num_clauses;
     
     match lines.next() {
         None => { println!("Error: expected cnf description"); return }
@@ -45,6 +45,8 @@ fn parse_dimac(dimac: &str) {
 
 fn main() {
     let input: &mut String = &mut String::new();
-    io::stdin().read_to_string(input);
-    parse_dimac(input)
+    match io::stdin().read_to_string(input) {
+        Ok(_) => { parse_dimac(input) }
+        Err(e) => { println!("Error: {}", e) }
+    }
 }
