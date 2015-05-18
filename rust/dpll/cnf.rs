@@ -41,6 +41,23 @@ fn parse_dimac(dimac: &str) {
         println!("Error: Wrong number of clauses: Expected {}, but got {}", num_clauses, clause_lines.len());
         return
     }
+
+    let mut clauses: Vec<Vec<i32>> = Vec::with_capacity(num_clauses as usize);
+    for clause_line in clause_lines {
+        let mut vars: Vec<i32> = clause_line.split(" ").map(|x| x.parse::<i32>().unwrap()).collect();
+        if vars.is_empty() {
+            println!("Error: empty clause");
+            return
+        }
+        if vars[vars.len()-1] != 0 {
+            println!("Clause must be terminated with 0");
+            return
+        }
+        let l = vars.len();
+        vars.truncate(l - 1);
+        println!("{:?}", vars);
+        clauses.push(vars)
+    }
 }
 
 fn main() {
