@@ -16,6 +16,22 @@ struct CNF {
     clauses: Vec<Vec<i32>>
 }
 
+/// Parses a CNF formula in DIMAC format.
+///
+/// # Examples
+///
+/// A simple example for a formula in DIMAC format is below:
+///
+/// ```text
+/// p cnf 5 3
+/// 1 2 3 0
+/// -2 3 4 0
+/// 4 5 0
+/// ```
+///
+/// The above represents a formula with 5 variables and 3 clauses.  The first
+/// line specifies this.  Each following line represents a clause with possibly
+/// negated literals, terminated by 0 and a newline.
 fn parse_dimac(dimac: &str) -> Result<CNF, String> {
     let mut lines = dimac.lines();
     let mut num_vars;
