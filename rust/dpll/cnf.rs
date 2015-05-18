@@ -37,7 +37,6 @@ fn parse_dimac(dimac: &str) -> Result<CNF, String> {
                 Ok(n) => { num_clauses = n }
                 Err(e) => { return Err(format!("<num clauses> must be a positive integer: {}", e)) }
             }
-            println!("cnf has {} variables and {} clauses", num_vars, num_clauses)
         }
     }
 
@@ -57,7 +56,6 @@ fn parse_dimac(dimac: &str) -> Result<CNF, String> {
         }
         let l = vars.len();
         vars.truncate(l - 1);
-        println!("{:?}", vars);
         clauses.push(vars)
     }
 
@@ -69,7 +67,12 @@ fn main() {
     let input: &mut String = &mut String::new();
     match io::stdin().read_to_string(input) {
         Ok(_) => match parse_dimac(input) {
-            Ok(cnf) => { println!("ok!") }
+            Ok(cnf) => {
+                println!("cnf has {} variables and {} clauses", cnf.num_vars, cnf.num_clauses);
+                for clause in cnf.clauses {
+                    println!("{:?}", clause);
+                }
+            }
             Err(e) => { println!("Error: {}", e) }
         },
         Err(e) => { println!("Error: {}", e) }
