@@ -56,7 +56,7 @@ pub fn parse_dimac(dimac: &str) -> Result<CNF, String> {
 
 	let mut clauses: Vec<Vec<i32>> = Vec::with_capacity(num_clauses as usize);
 	for clause_line in clause_lines {
-		let mut vars: Vec<i32> = clause_line.split(" ").map(|x| x.parse::<i32>().unwrap()).collect();
+		let mut vars: Vec<i32> = clause_line.split(" ").filter(|x| x != &"").map(|x| x.parse::<i32>().unwrap()).collect();
 		if vars.is_empty() {
 			return Err("empty clause".to_string())
 		}
