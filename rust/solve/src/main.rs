@@ -14,6 +14,7 @@ use std::io;
 use std::io::Read;
 
 use solve::cnf;
+use solve::dpll;
 
 fn main() {
     let input: &mut String = &mut String::new();
@@ -21,9 +22,14 @@ fn main() {
 	Ok(_) => match cnf::parse_dimac(input) {
 	    Ok(cnf) => {
 		println!("cnf has {} variables and {} clauses", cnf.num_vars, cnf.num_clauses);
-		for clause in cnf.clauses {
+		for clause in cnf.clauses.clone() {
 		    println!("{:?}", clause);
 		}
+
+                match dpll::dpll(cnf.clauses) {
+                    Some(bindings) => println!("satisfiable: {:?}", bindings),
+                    None => println!("not satisfiable")
+                }
 	    }
 	    Err(e) => { println!("Error: {}", e) }
 	},

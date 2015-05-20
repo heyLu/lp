@@ -1,8 +1,8 @@
 use std::collections::BTreeSet;
 
-type Var = i32;
-type BoundVars = BTreeSet<Var>;
-type Clause = Vec<Var>;
+pub type Var = i32;
+pub type BoundVars = BTreeSet<Var>;
+pub type Clause = Vec<Var>;
 
 fn empty_vars() -> BoundVars {
     BTreeSet::new()
@@ -127,7 +127,7 @@ fn test_is_clause_unit() {
     assert!(!is_clause_unit(vars, vec!(1, 2)));
 }
 
-fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
+pub fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
     fn dpll_inner(stack: &mut Vec<(Var, BoundVars)>, vars: &mut BoundVars, clauses: Vec<Clause>) -> Option<BoundVars> {
         if clauses.iter().all(|c| is_clause_satisfied(&vars, c.clone())) { // all clauses satisfied, success
             Some(vars.clone())
