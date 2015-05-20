@@ -1,3 +1,8 @@
+//! The cnf library provides facilities to work with CNF formulas.
+//!
+//! `CNF` stands for conjunctive normal form, i.e. a logic formula that
+//! consists of a conjunction of disjunctions.
+
  pub struct CNF {
 	  pub num_vars: u32,
 	  pub num_clauses: u32,
