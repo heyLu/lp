@@ -145,14 +145,13 @@ pub fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
                 }
             }
         } else if clauses.iter().any(|c| is_clause_unit(&vars, c)) { // a unit clause exists, propagate
-            let cs = clauses.clone();
-            let clause = cs.iter().find(|&c| is_clause_unit(&vars, c)).unwrap();
+            let clause = clauses.iter().find(|&c| is_clause_unit(&vars, c)).unwrap();
             let unknown = *clause.iter().find(|&v| is_unknown(&vars, *v)).unwrap();
             //println!("propagate {} from {:?}", unknown, clause);
             vars.insert(unknown);
         } else { // none of the above, decide (guess) an unknown variable
             let mut unknown: Var = 0;
-            for c in clauses.clone() {
+            for c in &clauses {
                 match c.iter().find(|&v| is_unknown(vars, *v)) {
                     Some(&u) => { unknown = u; break }
                     None => continue
