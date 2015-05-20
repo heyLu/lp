@@ -26,7 +26,7 @@ pub struct CNF {
 /// line specifies this.  Each following line represents a clause with possibly
 /// negated literals, terminated by 0 and a newline.
 pub fn parse_dimac(dimac: &str) -> Result<CNF, String> {
-	let mut lines = dimac.lines().filter(|l| !(l.starts_with("c") || l.trim() == ""));
+	let mut lines = dimac.lines().filter(|l| !l.starts_with("c") && l.trim() != "");
 	let mut num_vars;
 	let mut num_clauses;
 
