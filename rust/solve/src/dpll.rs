@@ -97,3 +97,32 @@ fn test_is_clause_conflict() {
     assert!(!is_clause_conflict(&from_vec(vec!(1)), vec!(1)));
     assert!(!is_clause_conflict(&from_vec(vec!(2)), vec!(1, 2)));
 }
+
+/// A unit clause is a clause where one atom is unknown and all
+/// others are false.
+fn is_clause_unit(vars: &BoundVars, clause: Clause) -> bool {
+    let mut unknowns = 0;
+    
+    for v in clause {
+        if is_unknown(vars, v) {
+            unknowns += 1
+        }
+
+        if unknowns > 1 || is_true(vars, v) {
+            return false
+        }
+    }
+
+    return unknowns == 1
+}
+
+#[test]
+fn test_is_clause_unit() {
+    let vars = &from_vec(vec!(1, 2));
+    assert!(is_clause_unit(vars, vec!(3)));
+    assert!(is_clause_unit(vars, vec!(-1, 3)));
+    assert!(is_clause_unit(vars, vec!(-1, -2, 3)));
+    assert!(!is_clause_unit(vars, vec!(1, 3)));
+    assert!(!is_clause_unit(vars, vec!(1, 2, 3)));
+    assert!(!is_clause_unit(vars, vec!(1, 2)));
+}
