@@ -11,7 +11,7 @@ code related to constraint programming at the same time.
 There are a few things here:
 
 - an incomplete parser for CNFs in DIMAC format ([./src/cnf.rs](./src/cnf.rs))
-- a naïve implementation of the DPLL algorithm
+- a naïve implementation of the DPLL algorithm ([./src/dpll.rs](./src/dpll.rs))
 - a binary that uses these things to parse CNFs on stdin and solves them
     using the DPLL implementation
 
