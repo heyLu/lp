@@ -75,13 +75,7 @@ fn test_is_unknown() {
 
 /// A satisfied clause is a clause where at least one atom is true.
 fn is_clause_satisfied(vars: &BoundVars, clause: Clause) -> bool {
-    for v in clause {
-        if is_true(vars, v) {
-            return true
-        }
-    }
-    
-    return false
+    clause.iter().any(|v| is_true(vars, *v))
 }
 
 #[test]
@@ -92,20 +86,14 @@ fn test_is_clause_satisfied() {
 
 /// A conflict clause is a clause whose atoms each are false.
 fn is_clause_conflict(vars: &BoundVars, clause: Clause) -> bool {
-    for v in clause {
-        if is_true(vars, v) {
-            return false
-        }
-    }
-
-    return true
+    clause.iter().all(|v| is_false(vars, *v))
 }
 
 #[test]
 fn test_is_clause_conflict() {
-    assert!(is_clause_conflict(&empty_vars(), vec!(1)));
-    assert!(is_clause_conflict(&empty_vars(), vec!(1, 2, 3)));
-    assert!(is_clause_conflict(&from_vec(vec!(4)), vec!(1, 2, 3)));
+    assert!(is_clause_conflict(&from_vec(vec!(-1)), vec!(1)));
+    assert!(is_clause_conflict(&from_vec(vec!(-1, -2, -3)), vec!(1, 2, 3)));
+    assert!(is_clause_conflict(&from_vec(vec!(-1, -2, -3, 4)), vec!(1, 2, 3)));
     assert!(!is_clause_conflict(&from_vec(vec!(1)), vec!(1)));
     assert!(!is_clause_conflict(&from_vec(vec!(2)), vec!(1, 2)));
 }
