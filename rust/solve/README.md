@@ -8,5 +8,13 @@ things yet.  Maybe at some point in the future...*
 That being said, this is me playing around with Rust and writing some
 code related to constraint programming at the same time.
 
-Currently there's an incomplete parser for CNFs in DIMAC format in
-[./src/cnf.rs](./src/cnf.rs).
+There are a few things here:
+
+- an incomplete parser for CNFs in DIMAC format ([./src/cnf.rs](./src/cnf.rs))
+- a naïve implementation of the DPLL algorithm
+- a binary that uses these things to parse CNFs on stdin and solves them
+    using the DPLL implementation
+
+    you can try it yourself:
+
+        $ cat examples/external-02-quinn.cnf | cargo run --release
