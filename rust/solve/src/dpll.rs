@@ -74,36 +74,36 @@ fn test_is_unknown() {
 }
 
 /// A satisfied clause is a clause where at least one atom is true.
-fn is_clause_satisfied(vars: &BoundVars, clause: Clause) -> bool {
+fn is_clause_satisfied(vars: &BoundVars, clause: &Clause) -> bool {
     clause.iter().any(|v| is_true(vars, *v))
 }
 
 #[test]
 fn test_is_clause_satisfied() {
-    assert!(is_clause_satisfied(&from_vec(vec!(1)), vec!(1)));
-    assert!(!is_clause_satisfied(&empty_vars(), vec!(1)));
+    assert!(is_clause_satisfied(&from_vec(vec!(1)), &vec!(1)));
+    assert!(!is_clause_satisfied(&empty_vars(), &vec!(1)));
 }
 
 /// A conflict clause is a clause whose atoms each are false.
-fn is_clause_conflict(vars: &BoundVars, clause: Clause) -> bool {
+fn is_clause_conflict(vars: &BoundVars, clause: &Clause) -> bool {
     clause.iter().all(|v| is_false(vars, *v))
 }
 
 #[test]
 fn test_is_clause_conflict() {
-    assert!(is_clause_conflict(&from_vec(vec!(-1)), vec!(1)));
-    assert!(is_clause_conflict(&from_vec(vec!(-1, -2, -3)), vec!(1, 2, 3)));
-    assert!(is_clause_conflict(&from_vec(vec!(-1, -2, -3, 4)), vec!(1, 2, 3)));
-    assert!(!is_clause_conflict(&from_vec(vec!(1)), vec!(1)));
-    assert!(!is_clause_conflict(&from_vec(vec!(2)), vec!(1, 2)));
+    assert!(is_clause_conflict(&from_vec(vec!(-1)), &vec!(1)));
+    assert!(is_clause_conflict(&from_vec(vec!(-1, -2, -3)), &vec!(1, 2, 3)));
+    assert!(is_clause_conflict(&from_vec(vec!(-1, -2, -3, 4)), &vec!(1, 2, 3)));
+    assert!(!is_clause_conflict(&from_vec(vec!(1)), &vec!(1)));
+    assert!(!is_clause_conflict(&from_vec(vec!(2)), &vec!(1, 2)));
 }
 
 /// A unit clause is a clause where one atom is unknown and all
 /// others are false.
-fn is_clause_unit(vars: &BoundVars, clause: Clause) -> bool {
+fn is_clause_unit(vars: &BoundVars, clause: &Clause) -> bool {
     let mut unknowns = 0;
     
-    for v in clause {
+    for &v in clause {
         if is_unknown(vars, v) {
             unknowns += 1
         }
@@ -119,12 +119,12 @@ fn is_clause_unit(vars: &BoundVars, clause: Clause) -> bool {
 #[test]
 fn test_is_clause_unit() {
     let vars = &from_vec(vec!(1, 2));
-    assert!(is_clause_unit(vars, vec!(3)));
-    assert!(is_clause_unit(vars, vec!(-1, 3)));
-    assert!(is_clause_unit(vars, vec!(-1, -2, 3)));
-    assert!(!is_clause_unit(vars, vec!(1, 3)));
-    assert!(!is_clause_unit(vars, vec!(1, 2, 3)));
-    assert!(!is_clause_unit(vars, vec!(1, 2)));
+    assert!(is_clause_unit(vars, &vec!(3)));
+    assert!(is_clause_unit(vars, &vec!(-1, 3)));
+    assert!(is_clause_unit(vars, &vec!(-1, -2, 3)));
+    assert!(!is_clause_unit(vars, &vec!(1, 3)));
+    assert!(!is_clause_unit(vars, &vec!(1, 2, 3)));
+    assert!(!is_clause_unit(vars, &vec!(1, 2)));
 }
 
 pub fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
@@ -132,10 +132,10 @@ pub fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
     let mut vars = &mut empty_vars();
     
     loop {
-        if clauses.iter().all(|c| is_clause_satisfied(&vars, c.clone())) { // all clauses satisfied, success
+        if clauses.iter().all(|c| is_clause_satisfied(&vars, c)) { // all clauses satisfied, success
             //println!("satisfied");
             return Some(vars.clone())
-        } else if clauses.iter().any(|c| is_clause_conflict(&vars, c.clone())) { // a conflict exists, backtrack
+        } else if clauses.iter().any(|c| is_clause_conflict(&vars, c)) { // a conflict exists, backtrack
             match stack.pop() {
                 None => return None, // nothing to backtrack, no solution found
                 Some((v, b)) => {
@@ -144,9 +144,9 @@ pub fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
                     vars.insert(v);
                 }
             }
-        } else if clauses.iter().any(|c| is_clause_unit(&vars, c.clone())) { // a unit clause exists, propagate
+        } else if clauses.iter().any(|c| is_clause_unit(&vars, c)) { // a unit clause exists, propagate
             let cs = clauses.clone();
-            let clause = cs.iter().find(|&c| is_clause_unit(&vars, c.clone())).unwrap();
+            let clause = cs.iter().find(|&c| is_clause_unit(&vars, c)).unwrap();
             let unknown = *clause.iter().find(|&v| is_unknown(&vars, *v)).unwrap();
             //println!("propagate {} from {:?}", unknown, clause);
             vars.insert(unknown);
