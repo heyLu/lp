@@ -153,15 +153,9 @@ pub fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
         } else { // none of the above, decide (guess) an unknown variable
             let mut unknown: Var = 0;
             for c in clauses.clone() {
-                for v in c {
-                    if is_unknown(vars, v) {
-                        unknown = v;
-                        break;
-                    }
-                }
-                
-                if unknown != 0 {
-                    break;
+                match c.iter().find(|&v| is_unknown(vars, *v)) {
+                    Some(&u) => { unknown = u; break }
+                    None => continue
                 }
             }
             assert!(unknown != 0);
