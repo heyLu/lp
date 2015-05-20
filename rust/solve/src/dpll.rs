@@ -128,16 +128,18 @@ fn test_is_clause_unit() {
 }
 
 pub fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
-    fn dpll_inner(stack: &mut Vec<(Var, BoundVars)>, vars: &mut BoundVars, clauses: Vec<Clause>) -> Option<BoundVars> {
+    let stack: &mut Vec<(Var, BoundVars)> = &mut Vec::new();
+    let mut vars = &mut empty_vars();
+    
+    loop {
         if clauses.iter().all(|c| is_clause_satisfied(&vars, c.clone())) { // all clauses satisfied, success
-            Some(vars.clone())
+            return Some(vars.clone())
         } else if clauses.iter().any(|c| is_clause_conflict(&vars, c.clone())) { // a conflict exists, backtrack
             match stack.pop() {
-                None => None, // nothing to backtrack, no solution found
+                None => return None, // nothing to backtrack, no solution found
                 Some((v, b)) => {
-                    let bv = &mut b.clone();
-                    bv.insert(v);
-                    dpll_inner(stack, bv, clauses)
+                    vars.clone_from(&b);
+                    vars.insert(v);
                 }
             }
         } else if clauses.iter().any(|c| is_clause_unit(&vars, c.clone())) { // a unit clause exists, propagate
@@ -145,7 +147,6 @@ pub fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
             let clause = cs.iter().find(|&c| is_clause_unit(&vars, c.clone())).unwrap();
             let unknown = *clause.iter().find(|&v| is_unknown(&vars, *v)).unwrap();
             vars.insert(unknown);
-            dpll_inner(stack, vars, clauses)
         } else { // none of the above, decide (guess) an unknown variable
             let mut unknown: Var = 0;
             for c in clauses.clone() {
@@ -155,15 +156,16 @@ pub fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
                         break;
                     }
                 }
+                
+                if unknown != 0 {
+                    break;
+                }
             }
             assert!(unknown != 0);
             stack.push((unknown, vars.clone()));
             vars.insert(-unknown);
-            dpll_inner(stack, vars, clauses)
         }
     }
-
-    dpll_inner(&mut Vec::new(), &mut empty_vars(), clauses)
 }
 
 #[test]
