@@ -6,11 +6,12 @@
  *
  * You have been warned...
  */
+extern crate solve;
 
 use std::io;
 use std::io::Read;
 
-mod cnf;
+use solve::cnf;
 
 fn main() {
     let input: &mut String = &mut String::new();
