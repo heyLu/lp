@@ -12,7 +12,6 @@ extern crate solve;
 
 use std::io;
 use std::io::Read;
-use std::thread;
 
 use solve::cnf;
 use solve::dpll;
@@ -27,12 +26,10 @@ fn main() {
 		    println!("{:?}", clause);
 		}
 
-                thread::Builder::new().name("solver".to_string()).stack_size(100 * 1024 * 1024).spawn(move || {
-                    match dpll::dpll(cnf.clauses) {
-                        Some(bindings) => println!("satisfiable: {:?}", bindings),
-                        None => println!("not satisfiable")
-                    }
-                }).unwrap().join();
+                match dpll::dpll(cnf.clauses) {
+                    Some(bindings) => println!("satisfiable: {:?}", bindings),
+                    None => println!("not satisfiable")
+                }
 	    }
 	    Err(e) => { println!("Error: {}", e) }
 	},
