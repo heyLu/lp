@@ -133,11 +133,13 @@ pub fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
     
     loop {
         if clauses.iter().all(|c| is_clause_satisfied(&vars, c.clone())) { // all clauses satisfied, success
+            //println!("satisfied");
             return Some(vars.clone())
         } else if clauses.iter().any(|c| is_clause_conflict(&vars, c.clone())) { // a conflict exists, backtrack
             match stack.pop() {
                 None => return None, // nothing to backtrack, no solution found
                 Some((v, b)) => {
+                    //println!("backtrack! {}", v);
                     vars.clone_from(&b);
                     vars.insert(v);
                 }
@@ -146,6 +148,7 @@ pub fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
             let cs = clauses.clone();
             let clause = cs.iter().find(|&c| is_clause_unit(&vars, c.clone())).unwrap();
             let unknown = *clause.iter().find(|&v| is_unknown(&vars, *v)).unwrap();
+            //println!("propagate {} from {:?}", unknown, clause);
             vars.insert(unknown);
         } else { // none of the above, decide (guess) an unknown variable
             let mut unknown: Var = 0;
@@ -163,6 +166,7 @@ pub fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
             }
             assert!(unknown != 0);
             stack.push((unknown, vars.clone()));
+            //println!("decide {}", -unknown);
             vars.insert(-unknown);
         }
     }
