@@ -1,11 +1,13 @@
 /*
- * Terrible code for reading CNF formulas in DIMAC format.
+ * Reads a CNF formula in DIMAC format on stdin, parses it and prints
+ * the result.
  *
- * Don't read this, it's horrible.  Although I'm hoping to clean it up
- * at some point, I'm not sure when (if ever) that will be.
+ * Many things (support for comments, empty lines and sane code in
+ * general) are still missing.
  *
- * You have been warned...
+ * You have been warned ...
  */
+
 extern crate solve;
 
 use std::io;
