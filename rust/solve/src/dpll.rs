@@ -126,3 +126,48 @@ fn test_is_clause_unit() {
     assert!(!is_clause_unit(vars, vec!(1, 2, 3)));
     assert!(!is_clause_unit(vars, vec!(1, 2)));
 }
+
+fn dpll(clauses: Vec<Clause>) -> Option<BoundVars> {
+    fn dpll_inner(stack: &mut Vec<(Var, BoundVars)>, vars: &mut BoundVars, clauses: Vec<Clause>) -> Option<BoundVars> {
+        if clauses.iter().all(|c| is_clause_satisfied(&vars, c.clone())) { // all clauses satisfied, success
+            Some(vars.clone())
+        } else if clauses.iter().any(|c| is_clause_conflict(&vars, c.clone())) { // a conflict exists, backtrack
+            match stack.pop() {
+                None => None, // nothing to backtrack, no solution found
+                Some((v, b)) => {
+                    let bv = &mut b.clone();
+                    bv.insert(v);
+                    dpll_inner(stack, bv, clauses)
+                }
+            }
+        } else if clauses.iter().any(|c| is_clause_unit(&vars, c.clone())) { // a unit clause exists, propagate
+            let cs = clauses.clone();
+            let clause = cs.iter().find(|&c| is_clause_unit(&vars, c.clone())).unwrap();
+            let unknown = *clause.iter().find(|&v| is_unknown(&vars, *v)).unwrap();
+            vars.insert(unknown);
+            dpll_inner(stack, vars, clauses)
+        } else { // none of the above, decide (guess) an unknown variable
+            let mut unknown: Var = 0;
+            for c in clauses.clone() {
+                for v in c {
+                    if is_unknown(vars, v) {
+                        unknown = v;
+                        break;
+                    }
+                }
+            }
+            assert!(unknown != 0);
+            stack.push((unknown, vars.clone()));
+            vars.insert(-unknown);
+            dpll_inner(stack, vars, clauses)
+        }
+    }
+
+    dpll_inner(&mut Vec::new(), &mut empty_vars(), clauses)
+}
+
+#[test]
+fn test_dpll_trivial() {
+    let clauses = vec!(vec!(1, 2), vec!(2));
+    assert!(dpll(clauses).is_some());
+}
