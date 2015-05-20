@@ -15,7 +15,13 @@ fn from_vec(v: Vec<Var>) -> BoundVars {
 }
 
 fn is_true(vars: &BoundVars, var: Var) -> bool {
-    vars.contains(&var) || !vars.contains(&-var)
+    let t = vars.contains(&var);
+    let nt = vars.contains(&-var);
+    if t || nt {
+        t || !nt
+    } else {
+        false
+    }
 }
 
 #[test]
@@ -25,10 +31,18 @@ fn test_is_true() {
     assert!(is_true(vars, -2));
     assert!(!is_true(vars, -1));
     assert!(!is_true(vars, 2));
+    assert!(!is_true(vars, 3));
+    assert!(!is_true(vars, -3));
 }
 
 fn is_false(vars: &BoundVars, var: Var) -> bool {
-    !vars.contains(&var) || vars.contains(&-var)
+    let t = vars.contains(&var);
+    let nt = vars.contains(&-var);
+    if t || nt {
+        !t || nt
+    } else {
+        false
+    }
 }
 
 #[test]
@@ -38,6 +52,8 @@ fn test_is_false() {
     assert!(is_false(vars, 2));
     assert!(!is_false(vars, 1));
     assert!(!is_false(vars, -2));
+    assert!(!is_false(vars, 3));
+    assert!(!is_false(vars, -3));
 }
 
 fn is_unknown(vars: &BoundVars, var: Var) -> bool {
