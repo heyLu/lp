@@ -8,6 +8,7 @@ fn empty_vars() -> BoundVars {
     BTreeSet::new()
 }
 
+#[cfg(test)]
 fn from_vec(v: Vec<Var>) -> BoundVars {
     let mut vars = empty_vars();
     vars.extend(v);
