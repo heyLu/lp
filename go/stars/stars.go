@@ -33,9 +33,6 @@ func main() {
 		panic(err)
 	}
 
-	sem := make(chan bool, config.concurrency)
-	var wg sync.WaitGroup
-
 	hadErrors := false
 	errors := make(chan error, config.concurrency)
 	go func() {
@@ -44,6 +41,9 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 		}
 	}()
+
+	sem := make(chan bool, config.concurrency)
+	var wg sync.WaitGroup
 
 	wg.Add(len(stars))
 	for _, info := range stars {
