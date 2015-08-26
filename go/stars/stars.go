@@ -28,7 +28,7 @@ func init() {
 func main() {
 	flag.Parse()
 
-	var stars []starInfo
+	var stars []repoInfo
 	decoder := json.NewDecoder(os.Stdin)
 	err := decoder.Decode(&stars)
 	if err != nil {
@@ -59,7 +59,7 @@ func main() {
 	wg.Wait()
 }
 
-func updateRepo(info starInfo) error {
+func updateRepo(info repoInfo) error {
 	f, err := os.Open(path.Join(config.directory, info.RepoName))
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -82,18 +82,18 @@ func updateRepo(info starInfo) error {
 	return nil
 }
 
-func gitClone(info starInfo) error {
+func gitClone(info repoInfo) error {
 	cmd := exec.Command("git", "clone", info.CloneUrl,
 		path.Join(config.directory, info.RepoName))
 	return cmd.Run()
 }
 
-func gitPull(info starInfo) error {
+func gitPull(info repoInfo) error {
 	cmd := exec.Command("git", "-C", path.Join(config.directory, info.RepoName), "pull")
 	return cmd.Run()
 }
 
-func gitLastCommit(info starInfo) (time.Time, error) {
+func gitLastCommit(info repoInfo) (time.Time, error) {
 	cmd := exec.Command("git", "-C", path.Join(config.directory, info.RepoName),
 		"log", "-n", "1", "--format=%cd", "--date=iso8601-strict")
 	out, err := cmd.Output()
@@ -105,7 +105,7 @@ func gitLastCommit(info starInfo) (time.Time, error) {
 	return time.Parse(time.RFC3339, outStr)
 }
 
-type starInfo struct {
+type repoInfo struct {
 	RepoName    string    `json:"full_name"`
 	Description string    `json:"description"`
 	CloneUrl    string    `json:"git_url"`
