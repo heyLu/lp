@@ -1,4 +1,15 @@
 // `unpaginate` unpaginates json resources.
+//
+// The requested resource is assumed to return an array of JSON
+// objects.  `unpaginate` prints a new array containing the JSON
+// objects from all pages on stdout.
+//
+// Pagination is assumed to be in the format that the GitHub v3
+// API uses:
+//
+//  HTTP/1.1 200 OK
+//  ...
+//  Link: <https://api.github.com/user/527119/repos?per_page=42&page=2>; rel="next", <https://api.github.com/user/527119/repos?per_page=42&page=2>; rel="last"
 package main
 
 import (
