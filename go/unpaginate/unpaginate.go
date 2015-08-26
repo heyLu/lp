@@ -13,15 +13,23 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"golang.org/x/crypto/ssh/terminal"
 	"net/http"
 	"os"
 	"strings"
 )
 
+var config struct {
+	userInfo string
+}
+
 func init() {
+	flag.StringVar(&config.userInfo, "user", "", "The basic auth user information")
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags] <url>\n\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, `Fetches JSON documents from a paginated resource
@@ -43,11 +51,36 @@ func main() {
 
 	url := flag.Arg(0)
 
+	authorization := ""
+	if config.userInfo != "" {
+		if !strings.Contains(config.userInfo, ":") {
+			fmt.Fprint(os.Stderr, "Type in your password/token: ")
+			password, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			config.userInfo += ":" + string(password)
+		}
+
+		authorization = "Basic " + base64.StdEncoding.EncodeToString([]byte(config.userInfo))
+	}
+
 	os.Stdout.WriteString("[\n")
 
 	first := true
 	for url != "" {
-		res, err := http.Get(url)
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		if authorization != "" {
+			req.Header.Set("Authorization", authorization)
+		}
+
+		res, err := http.DefaultClient.Do(req)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
