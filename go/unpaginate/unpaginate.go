@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -64,5 +65,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	os.Stdout.WriteString("\n]")
+	os.Stdout.WriteString("\n]\n")
+
+	next := ""
+	links := res.Header.Get("Link")
+	if links != "" {
+		for _, link := range strings.Split(links, ",") {
+			link := strings.TrimSpace(link)
+			start := strings.Index(link, "<")
+			end := strings.Index(link, ">")
+			if start != -1 && end != -1 && start < end &&
+				strings.HasSuffix(link, "rel=\"next\"") {
+				next = link[start+1 : end]
+				break
+			}
+		}
+	}
+
+	if next != "" {
+		fmt.Fprintf(os.Stderr, next)
+	}
 }
