@@ -14,13 +14,11 @@ import (
 )
 
 var config struct {
-	userName    string
 	directory   string
 	concurrency int
 }
 
 func init() {
-	flag.StringVar(&config.userName, "user", "heyLu", "The GitHub user to fetch stars for")
 	flag.StringVar(&config.directory, "directory", "github-stars", "The directory to store the repos in")
 	flag.IntVar(&config.concurrency, "concurrency", 10, "The number of repos to update concurrently")
 }
