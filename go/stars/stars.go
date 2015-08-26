@@ -36,7 +36,15 @@ func main() {
 	sem := make(chan bool, config.concurrency)
 	var wg sync.WaitGroup
 
+	hadErrors := false
 	errors := make(chan error, config.concurrency)
+	go func() {
+		for err := range errors {
+			hadErrors = true
+			fmt.Fprintln(os.Stderr, "Error:", err)
+		}
+	}()
+
 	wg.Add(len(stars))
 	for _, info := range stars {
 		info := info
@@ -53,14 +61,6 @@ func main() {
 			<-sem
 		}()
 	}
-
-	hadErrors := false
-	go func() {
-		for err := range errors {
-			hadErrors = true
-			fmt.Fprintln(os.Stderr, "Error:", err)
-		}
-	}()
 
 	wg.Wait()
 	close(errors)
