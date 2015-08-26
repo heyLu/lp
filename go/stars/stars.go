@@ -36,6 +36,7 @@ func main() {
 	sem := make(chan bool, config.concurrency)
 	var wg sync.WaitGroup
 
+	errors := make(chan error, config.concurrency)
 	wg.Add(len(stars))
 	for _, info := range stars {
 		info := info
@@ -45,8 +46,7 @@ func main() {
 			fmt.Printf("% 48s - %s\n", info.RepoName, info.Description)
 			err := updateRepo(info)
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
+				errors <- fmt.Errorf("Fetching %s: %s", info.RepoName, err)
 			}
 
 			wg.Done()
@@ -54,7 +54,20 @@ func main() {
 		}()
 	}
 
+	hadErrors := false
+	go func() {
+		for err := range errors {
+			hadErrors = true
+			fmt.Fprintln(os.Stderr, "Error:", err)
+		}
+	}()
+
 	wg.Wait()
+	close(errors)
+
+	if hadErrors {
+		os.Exit(1)
+	}
 }
 
 func updateRepo(info repoInfo) error {
