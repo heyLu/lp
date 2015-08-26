@@ -21,6 +21,10 @@ $ curl https://api.github.com/users/heyLu/repos | ./stars
 # Fetch all repos (public, private, org member)
 $ token=<personal access token>
 $ curl -u heyLu:$token https://api.github.com/user/repos | ./stars
+
+# Fetch repos from a file
+$ ./stars < repos.json
+...
 ```
 
 However, note that GitHub's API uses pagination, so ensure you set the
