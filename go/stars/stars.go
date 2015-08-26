@@ -3,6 +3,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,11 +13,21 @@ import (
 	"time"
 )
 
-var userName = "heyLu"
-var directory = "github-stars"
-var concurrency = 10
+var config struct {
+	userName    string
+	directory   string
+	concurrency int
+}
+
+func init() {
+	flag.StringVar(&config.userName, "user", "heyLu", "The GitHub user to fetch stars for")
+	flag.StringVar(&config.directory, "directory", "github-stars", "The directory to store the repos in")
+	flag.IntVar(&config.concurrency, "concurrency", 10, "The number of repos to update concurrently")
+}
 
 func main() {
+	flag.Parse()
+
 	var stars []starInfo
 	decoder := json.NewDecoder(os.Stdin)
 	err := decoder.Decode(&stars)
@@ -24,7 +35,7 @@ func main() {
 		panic(err)
 	}
 
-	sem := make(chan bool, 10)
+	sem := make(chan bool, config.concurrency)
 	var wg sync.WaitGroup
 
 	wg.Add(len(stars))
@@ -49,7 +60,7 @@ func main() {
 }
 
 func updateRepo(info starInfo) error {
-	f, err := os.Open(path.Join(directory, info.RepoName))
+	f, err := os.Open(path.Join(config.directory, info.RepoName))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return gitClone(info)
@@ -73,17 +84,17 @@ func updateRepo(info starInfo) error {
 
 func gitClone(info starInfo) error {
 	cmd := exec.Command("git", "clone", info.CloneUrl,
-		path.Join(directory, info.RepoName))
+		path.Join(config.directory, info.RepoName))
 	return cmd.Run()
 }
 
 func gitPull(info starInfo) error {
-	cmd := exec.Command("git", "-C", path.Join(directory, info.RepoName), "pull")
+	cmd := exec.Command("git", "-C", path.Join(config.directory, info.RepoName), "pull")
 	return cmd.Run()
 }
 
 func gitLastCommit(info starInfo) (time.Time, error) {
-	cmd := exec.Command("git", "-C", path.Join(directory, info.RepoName),
+	cmd := exec.Command("git", "-C", path.Join(config.directory, info.RepoName),
 		"log", "-n", "1", "--format=%cd", "--date=iso8601-strict")
 	out, err := cmd.Output()
 	if err != nil {
