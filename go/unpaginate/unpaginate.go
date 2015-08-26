@@ -23,6 +23,7 @@ func main() {
 
 	os.Stdout.WriteString("[\n")
 
+	first := true
 	for url != "" {
 		res, err := http.Get(url)
 		if err != nil {
@@ -37,7 +38,6 @@ func main() {
 			os.Exit(1)
 		}
 
-		first := true
 		for decoder.More() {
 			if !first {
 				os.Stdout.WriteString(", ")
