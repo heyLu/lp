@@ -21,6 +21,14 @@ var config struct {
 func init() {
 	flag.StringVar(&config.directory, "directory", "github-stars", "The directory to store the repos in")
 	flag.IntVar(&config.concurrency, "concurrency", 10, "The number of repos to update concurrently")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [flags]\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Fetches your GitHub stars and updates them as necessary.\n\n")
+		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "  -h, --help\n\tDisplay this message\n")
+	}
+
 }
 
 func main() {
