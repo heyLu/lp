@@ -8,11 +8,13 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"sync"
 	"time"
 )
 
 var userName = "heyLu"
 var directory = "github-stars"
+var concurrency = 10
 
 func main() {
 	var stars []starInfo
@@ -22,14 +24,28 @@ func main() {
 		panic(err)
 	}
 
+	sem := make(chan bool, 10)
+	var wg sync.WaitGroup
+
+	wg.Add(len(stars))
 	for _, info := range stars {
-		fmt.Printf("% 48s - %s\n", info.RepoName, info.Description)
-		err := updateRepo(info)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		info := info
+
+		sem <- true
+		go func() {
+			fmt.Printf("% 48s - %s\n", info.RepoName, info.Description)
+			err := updateRepo(info)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			wg.Done()
+			<-sem
+		}()
 	}
+
+	wg.Wait()
 }
 
 func updateRepo(info starInfo) error {
