@@ -10,12 +10,23 @@ import (
 	"strings"
 )
 
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [flags] <url>\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, `Fetches JSON documents from a paginated resource
+and returns a single JSON document.
+
+`)
+		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "  -h, --help\n\tDisplay this message\n")
+	}
+}
+
 func main() {
 	flag.Parse()
 
 	if flag.NArg() != 1 {
-		fmt.Printf("Usage: %s [flags] <url>\n", os.Args[0])
-		flag.PrintDefaults()
+		flag.Usage()
 		os.Exit(1)
 	}
 
