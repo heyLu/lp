@@ -20,69 +20,68 @@ func main() {
 	}
 
 	url := flag.Arg(0)
-	res, err := http.Get(url)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	decoder := json.NewDecoder(res.Body)
-	_, err = decoder.Token()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
 
 	os.Stdout.WriteString("[\n")
 
-	first := true
-	for decoder.More() {
-		if !first {
-			os.Stdout.WriteString(", ")
-		} else {
-			first = false
-		}
-
-		var data interface{}
-		err := decoder.Decode(&data)
-		if err != nil {
-			fmt.Println("decode:", err)
-			os.Exit(1)
-		}
-
-		out, err := json.MarshalIndent(data, "  ", "  ")
+	for url != "" {
+		res, err := http.Get(url)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		os.Stdout.Write(out)
-	}
+		decoder := json.NewDecoder(res.Body)
+		_, err = decoder.Token()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
-	_, err = decoder.Token()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+		first := true
+		for decoder.More() {
+			if !first {
+				os.Stdout.WriteString(", ")
+			} else {
+				first = false
+			}
 
-	os.Stdout.WriteString("\n]\n")
+			var data interface{}
+			err := decoder.Decode(&data)
+			if err != nil {
+				fmt.Println("decode:", err)
+				os.Exit(1)
+			}
 
-	next := ""
-	links := res.Header.Get("Link")
-	if links != "" {
-		for _, link := range strings.Split(links, ",") {
-			link := strings.TrimSpace(link)
-			start := strings.Index(link, "<")
-			end := strings.Index(link, ">")
-			if start != -1 && end != -1 && start < end &&
-				strings.HasSuffix(link, "rel=\"next\"") {
-				next = link[start+1 : end]
-				break
+			out, err := json.MarshalIndent(data, "  ", "  ")
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			os.Stdout.Write(out)
+		}
+
+		_, err = decoder.Token()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		url = ""
+		links := res.Header.Get("Link")
+		if links != "" {
+			for _, link := range strings.Split(links, ",") {
+				link := strings.TrimSpace(link)
+				start := strings.Index(link, "<")
+				end := strings.Index(link, ">")
+				if start != -1 && end != -1 && start < end &&
+					strings.HasSuffix(link, "rel=\"next\"") {
+					url = link[start+1 : end]
+					break
+				}
 			}
 		}
 	}
 
-	if next != "" {
-		fmt.Fprintf(os.Stderr, next)
-	}
+	os.Stdout.WriteString("\n]\n")
 }
