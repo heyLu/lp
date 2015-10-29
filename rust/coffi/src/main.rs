@@ -55,6 +55,7 @@ extern {
 fn main() {
     let x = unsafe { cos(3.1415) };
     println!("cos(3.1415) = {}", x);
+    println!("");
 
     let mut img = png_image::new();
     let file_name = std::env::args().nth(1).unwrap_or(String::from("mei.png"));
