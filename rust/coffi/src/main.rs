@@ -33,7 +33,7 @@ fn main() {
 
     let mut img: png_image;
     unsafe {
-        img = std::mem::uninitialized();
+        img = std::mem::zeroed();
         let res = png_image_begin_read_from_file(&mut img, "mei.png".as_ptr());
         println!("read_from_file: {}", res);
         println!("{}x{}", img.width, img.height);
