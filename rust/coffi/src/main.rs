@@ -6,12 +6,9 @@ extern {
     fn cos(d: f64) -> f64;
 }
 
-#[allow(non_camel_case_types)]
-enum png_opaque {}
-
 #[repr(C)]
 struct png_image {
-    opaque: *mut png_opaque,
+    opaque: *mut libc::c_void,
     version: libc::uint32_t,
     width: libc::uint32_t,
     height: libc::uint32_t,
