@@ -25,6 +25,10 @@ impl png_image {
         img.version = 1;
         return img
     }
+
+    fn begin_read_from_file(&mut self, file_name: *const u8) -> u32 {
+        unsafe { png_image_begin_read_from_file(self, file_name) as u32 }
+    }
 }
 
 impl std::fmt::Display for png_image {
@@ -52,11 +56,9 @@ fn main() {
     let x = unsafe { cos(3.1415) };
     println!("cos(3.1415) = {}", x);
 
-    unsafe {
-        let mut img = png_image::new();
-        println!("{}", img);
-        let res = png_image_begin_read_from_file(&mut img, "mei.png\0".as_ptr());
-        println!("read_from_file: {}", res);
-        println!("{}", img);
-    }
+    let mut img = png_image::new();
+    println!("{}", img);
+    let res = img.begin_read_from_file("mei.png\0".as_ptr());
+    println!("read_from_file: {}", res);
+    println!("{}", img);
 }
