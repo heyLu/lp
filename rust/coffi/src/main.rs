@@ -34,17 +34,13 @@ impl PNGImage {
 impl std::fmt::Display for PNGImage {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         fn get_message(msg: [libc::c_char; 64]) -> String {
-            let mut vec = Vec::new();
-            for i in 0..64 {
-                vec.push(msg[i] as u8);
-            }
-            String::from_utf8(vec).unwrap()
+            String::from_utf8(msg.iter().map(|&c| c as u8).collect()).unwrap()
         }
 
         write!(f, "{}x{} {} {} {} {} {} {}", self.width, self.height, self.version,
                self.format, self.flags, self.colormap_entries, self.warning_or_error,
                get_message(self.message))
-    }
+        }
 }
 
 #[link(name = "png")]
