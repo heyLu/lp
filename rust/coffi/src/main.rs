@@ -16,7 +16,7 @@ struct png_image {
     flags: libc::uint32_t,
     colormap_entries: libc::uint32_t,
     warning_or_error:  libc::uint32_t,
-    message: [u8; 64],
+    message: [libc::c_char; 64],
 }
 
 impl png_image {
@@ -26,17 +26,17 @@ impl png_image {
         return img
     }
 
-    fn begin_read_from_file(&mut self, file_name: *const u8) -> u32 {
+    fn begin_read_from_file(&mut self, file_name: *const libc::c_char) -> u32 {
         unsafe { png_image_begin_read_from_file(self, file_name) as u32 }
     }
 }
 
 impl std::fmt::Display for png_image {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        fn get_message(msg: [u8; 64]) -> String {
+        fn get_message(msg: [libc::c_char; 64]) -> String {
             let mut vec = Vec::new();
             for i in 0..64 {
-                vec.push(msg[i]);
+                vec.push(msg[i] as u8);
             }
             String::from_utf8(vec).unwrap()
         }
@@ -49,7 +49,7 @@ impl std::fmt::Display for png_image {
 
 #[link(name = "png")]
 extern {
-    fn png_image_begin_read_from_file(img: *mut png_image, file_name: *const u8) -> libc::c_int;
+    fn png_image_begin_read_from_file(img: *mut png_image, file_name: *const libc::c_char) -> libc::c_int;
 }
 
 fn main() {
@@ -58,7 +58,9 @@ fn main() {
 
     let mut img = png_image::new();
     println!("{}", img);
-    let res = img.begin_read_from_file("mei.png\0".as_ptr());
+    let file_name = std::env::args().nth(1).unwrap_or(String::from("mei.png"));
+    let c_name = std::ffi::CString::new(file_name).unwrap();
+    let res = img.begin_read_from_file(c_name.as_ptr());
     println!("read_from_file: {}", res);
     println!("{}", img);
 }
