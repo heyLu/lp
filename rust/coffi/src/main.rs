@@ -9,13 +9,13 @@ extern {
 #[repr(C)]
 struct png_image {
     opaque: *mut libc::c_void,
-    version: libc::uint32_t,
-    width: libc::uint32_t,
-    height: libc::uint32_t,
-    format: libc::uint32_t,
-    flags: libc::uint32_t,
-    colormap_entries: libc::uint32_t,
-    warning_or_error:  libc::uint32_t,
+    version: libc::c_uint,
+    width: libc::c_uint,
+    height: libc::c_uint,
+    format: libc::c_uint,
+    flags: libc::c_uint,
+    colormap_entries: libc::c_uint,
+    warning_or_error:  libc::c_uint,
     message: [libc::c_char; 64],
 }
 
