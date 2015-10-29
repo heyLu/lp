@@ -42,6 +42,7 @@ fn main() {
 
     unsafe {
         let mut img: png_image = std::mem::zeroed();
+        img.version = 1;
         print_img(&img);
         let res = png_image_begin_read_from_file(&mut img, "mei.png\0".as_ptr());
         println!("read_from_file: {}", res);
