@@ -26,14 +26,12 @@ impl PNGImage {
         return img
     }
 
-    fn begin_read_from_file(&mut self, file_name: *const libc::c_char) -> u32 {
-        unsafe { png_image_begin_read_from_file(self, file_name) as u32 }
-    }
-}
-
-impl PNGImage {
     fn message(&self) -> String {
         String::from_utf8(self.message.iter().map(|&c| c as u8).collect()).unwrap()
+    }
+
+    fn begin_read_from_file(&mut self, file_name: *const libc::c_char) -> u32 {
+        unsafe { png_image_begin_read_from_file(self, file_name) as u32 }
     }
 }
 
