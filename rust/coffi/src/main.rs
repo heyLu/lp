@@ -31,15 +31,17 @@ impl PNGImage {
     }
 }
 
+impl PNGImage {
+    fn message(&self) -> String {
+        String::from_utf8(self.message.iter().map(|&c| c as u8).collect()).unwrap()
+    }
+}
+
 impl std::fmt::Display for PNGImage {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        fn get_message(msg: [libc::c_char; 64]) -> String {
-            String::from_utf8(msg.iter().map(|&c| c as u8).collect()).unwrap()
-        }
-
         write!(f, "{}x{} {} {} {} {} {} {}", self.width, self.height, self.version,
                self.format, self.flags, self.colormap_entries, self.warning_or_error,
-               get_message(self.message))
+               self.message())
         }
 }
 
