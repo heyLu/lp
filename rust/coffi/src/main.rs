@@ -28,11 +28,23 @@ fn main() {
     let x = unsafe { cos(3.1415) };
     println!("cos(3.1415) = {}", x);
 
-    let mut img: png_image;
+    fn get_message(msg: [u8; 64]) -> String {
+        let mut vec = Vec::new();
+        for i in 0..64 {
+            vec.push(msg[i]);
+        }
+        String::from_utf8(vec).unwrap()
+    }
+
+    fn print_img(img: &png_image) {
+        println!("{}x{} {} {} {} {} {} {}", img.width, img.height, img.version, img.format, img.flags, img.colormap_entries, img.warning_or_error, get_message(img.message))
+    }
+
     unsafe {
-        img = std::mem::zeroed();
+        let mut img: png_image = std::mem::zeroed();
+        print_img(&img);
         let res = png_image_begin_read_from_file(&mut img, "mei.png".as_ptr());
         println!("read_from_file: {}", res);
-        println!("{}x{}", img.width, img.height);
+        print_img(&img);
     }
 }
