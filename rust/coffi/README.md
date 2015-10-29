@@ -12,6 +12,9 @@ height.
 cargo run <path-to-png>
 ```
 
+Should build with Rust 1.6.0-nightly, which is necessary because it
+uses the `feature(libc)` flag.
+
 If you use emacs, `flycheck-mode` can check the code on the *fly*, which
 is awesome!
 
