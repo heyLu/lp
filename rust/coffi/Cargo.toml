@@ -1,0 +1,4 @@
+[package]
+name = "coffi"
+version = "0.1.0"
+authors = ["Lucas Stadler <lu@papill0n.org>"]
