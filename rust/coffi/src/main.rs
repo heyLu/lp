@@ -7,7 +7,7 @@ extern {
 }
 
 #[repr(C)]
-struct png_image {
+struct PNGImage {
     opaque: *mut libc::c_void,
     version: libc::c_uint,
     width: libc::c_uint,
@@ -19,9 +19,9 @@ struct png_image {
     message: [libc::c_char; 64],
 }
 
-impl png_image {
-    fn new() -> png_image {
-        let mut img: png_image = unsafe { std::mem::zeroed() };
+impl PNGImage {
+    fn new() -> PNGImage {
+        let mut img: PNGImage = unsafe { std::mem::zeroed() };
         img.version = 1;
         return img
     }
@@ -31,7 +31,7 @@ impl png_image {
     }
 }
 
-impl std::fmt::Display for png_image {
+impl std::fmt::Display for PNGImage {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         fn get_message(msg: [libc::c_char; 64]) -> String {
             let mut vec = Vec::new();
@@ -49,7 +49,7 @@ impl std::fmt::Display for png_image {
 
 #[link(name = "png")]
 extern {
-    fn png_image_begin_read_from_file(img: *mut png_image, file_name: *const libc::c_char) -> libc::c_int;
+    fn png_image_begin_read_from_file(img: *mut PNGImage, file_name: *const libc::c_char) -> libc::c_int;
 }
 
 fn main() {
@@ -57,7 +57,7 @@ fn main() {
     println!("cos(3.1415) = {}", x);
     println!("");
 
-    let mut img = png_image::new();
+    let mut img = PNGImage::new();
     let file_name = std::env::args().nth(1).unwrap_or(String::from("mei.png"));
     let c_name = std::ffi::CString::new(file_name).unwrap();
     let res = img.begin_read_from_file(c_name.as_ptr());
