@@ -19,6 +19,22 @@ struct png_image {
     message: [u8; 64],
 }
 
+impl std::fmt::Display for png_image {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fn get_message(msg: [u8; 64]) -> String {
+            let mut vec = Vec::new();
+            for i in 0..64 {
+                vec.push(msg[i]);
+            }
+            String::from_utf8(vec).unwrap()
+        }
+
+        write!(f, "{}x{} {} {} {} {} {} {}", self.width, self.height, self.version,
+               self.format, self.flags, self.colormap_entries, self.warning_or_error,
+               get_message(self.message))
+    }
+}
+
 #[link(name = "png")]
 extern {
     fn png_image_begin_read_from_file(img: *mut png_image, file_name: *const u8) -> libc::c_int;
@@ -28,24 +44,12 @@ fn main() {
     let x = unsafe { cos(3.1415) };
     println!("cos(3.1415) = {}", x);
 
-    fn get_message(msg: [u8; 64]) -> String {
-        let mut vec = Vec::new();
-        for i in 0..64 {
-            vec.push(msg[i]);
-        }
-        String::from_utf8(vec).unwrap()
-    }
-
-    fn print_img(img: &png_image) {
-        println!("{}x{} {} {} {} {} {} {}", img.width, img.height, img.version, img.format, img.flags, img.colormap_entries, img.warning_or_error, get_message(img.message))
-    }
-
     unsafe {
         let mut img: png_image = std::mem::zeroed();
         img.version = 1;
-        print_img(&img);
+        println!("{}", img);
         let res = png_image_begin_read_from_file(&mut img, "mei.png\0".as_ptr());
         println!("read_from_file: {}", res);
-        print_img(&img);
+        println!("{}", img);
     }
 }
