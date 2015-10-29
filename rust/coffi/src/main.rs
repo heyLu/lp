@@ -19,6 +19,14 @@ struct png_image {
     message: [u8; 64],
 }
 
+impl png_image {
+    fn new() -> png_image {
+        let mut img: png_image = unsafe { std::mem::zeroed() };
+        img.version = 1;
+        return img
+    }
+}
+
 impl std::fmt::Display for png_image {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         fn get_message(msg: [u8; 64]) -> String {
@@ -45,8 +53,7 @@ fn main() {
     println!("cos(3.1415) = {}", x);
 
     unsafe {
-        let mut img: png_image = std::mem::zeroed();
-        img.version = 1;
+        let mut img = png_image::new();
         println!("{}", img);
         let res = png_image_begin_read_from_file(&mut img, "mei.png\0".as_ptr());
         println!("read_from_file: {}", res);
