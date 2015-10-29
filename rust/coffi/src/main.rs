@@ -6,8 +6,8 @@ extern {
     fn cos(d: f64) -> f64;
 }
 
-#[repr(C)]
-struct png_opaque;
+#[allow(non_camel_case_types)]
+enum png_opaque {}
 
 #[repr(C)]
 struct png_image {
