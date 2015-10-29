@@ -57,7 +57,6 @@ fn main() {
     println!("cos(3.1415) = {}", x);
 
     let mut img = png_image::new();
-    println!("{}", img);
     let file_name = std::env::args().nth(1).unwrap_or(String::from("mei.png"));
     let c_name = std::ffi::CString::new(file_name).unwrap();
     let res = img.begin_read_from_file(c_name.as_ptr());
