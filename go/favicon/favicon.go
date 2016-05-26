@@ -31,12 +31,12 @@ func main() {
 	}
 
 	addr := fmt.Sprintf("localhost:%d", *port)
+	fmt.Printf("listening on %s\n", addr)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		fmt.Println("error: ", err)
 		os.Exit(1)
 	}
-	fmt.Printf("listening on %s\n", addr)
 }
 
 func HandleGetFavicon(w http.ResponseWriter, r *http.Request) {
