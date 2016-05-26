@@ -99,7 +99,7 @@ app.post('/scripts/:name', function(req, res) {
 });
 
 var server = http.createServer(app);
-server.listen(8001);
+server.listen(8001, 'localhost');
 
 var wss = new ws.Server({server: server, path: '/ws'});
 
