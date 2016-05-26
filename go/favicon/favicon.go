@@ -30,12 +30,13 @@ func main() {
 		flag.Set("p", p)
 	}
 
-	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
+	addr := fmt.Sprintf("localhost:%d", *port)
+	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		fmt.Println("error: ", err)
 		os.Exit(1)
 	}
-	fmt.Printf("listening on :%d\n", *port)
+	fmt.Printf("listening on %s\n", addr)
 }
 
 func HandleGetFavicon(w http.ResponseWriter, r *http.Request) {
