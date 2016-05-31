@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 
 	"code.google.com/p/cascadia"
@@ -39,6 +40,15 @@ func main() {
 	flag.Parse()
 
 	u := flag.Args()[0]
+	url, err := url.Parse(u)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	if url.Scheme == "" {
+		u = "http://" + u
+	}
 
 	info, err := GetPageInfo(u)
 	if err != nil {
