@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -29,17 +30,24 @@ type PageInfo struct {
 }
 
 var config = struct {
-	output string
+	output    string
+	cachePath string
 }{}
 
 func init() {
 	flag.StringVar(&config.output, "output", "text", "what format to output")
+	flag.StringVar(&config.cachePath, "cache", "inquire.db", "path to the cache file")
 }
 
 func main() {
 	flag.Parse()
 
-	u := flag.Args()[0]
+	if flag.NArg() != 1 {
+		fmt.Fprintf(os.Stderr, "Usage: %s [flags] <url>\n", os.Args[0])
+		os.Exit(1)
+	}
+	u := flag.Arg(0)
+
 	url, err := url.Parse(u)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -50,10 +58,35 @@ func main() {
 		u = "http://" + u
 	}
 
-	info, err := GetPageInfo(u)
+	db, err := openCache(config.cachePath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+
+	var info *PageInfo
+
+	cached := isCached(db, u)
+	if cached {
+		info, err = GetPageInfoFromCache(db, u)
+	} else {
+		info, err = GetPageInfo(u)
+	}
+
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+
+	if !cached {
+		err = storeInCache(db, u, info)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+
+		err = writeCache(db, config.cachePath)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
 	}
 
 	switch config.output {
@@ -88,6 +121,57 @@ func main() {
 		fmt.Fprintln(os.Stderr, "unknown output format:", config.output)
 		os.Exit(1)
 	}
+}
+
+type Cache map[string][]byte
+
+func openCache(path string) (Cache, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return Cache{}, nil
+		}
+
+		return nil, err
+	}
+
+	dec := gob.NewDecoder(f)
+	var db Cache
+	err = dec.Decode(&db)
+	return db, err
+}
+
+func isCached(db Cache, u string) bool {
+	_, ok := db[u]
+	return ok
+}
+
+func GetPageInfoFromCache(db Cache, u string) (*PageInfo, error) {
+	rawInfo := db[u]
+	var info *PageInfo
+	err := json.Unmarshal(rawInfo, &info)
+	return info, err
+}
+
+func storeInCache(db Cache, u string, info *PageInfo) error {
+	rawInfo, err := json.Marshal(info)
+	if err != nil {
+		return err
+	}
+	db[u] = rawInfo
+	return nil
+}
+
+func writeCache(db Cache, path string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	enc := gob.NewEncoder(f)
+	err = enc.Encode(db)
+	return err
 }
 
 func GetPageInfo(u string) (*PageInfo, error) {
