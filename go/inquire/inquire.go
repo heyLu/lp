@@ -52,7 +52,8 @@ func main() {
 
 	info, err := GetPageInfo(u)
 	if err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 
 	switch config.output {
