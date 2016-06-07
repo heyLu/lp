@@ -12,14 +12,14 @@ JSStringRef to_string(JSContextRef ctx, JSValueRef val);
 JSValueRef console_log(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) {
 	for (int i = 0; i < argumentCount; i++) {
 		if (i > 0) {
-			putchar(' ');
+			fprintf(stdout, " ");
 		}
 
 		JSStringRef str = to_string(ctx, arguments[i]);
 		JSStringGetUTF8CString(str, console_log_buf, CONSOLE_LOG_BUF_SIZE);
-		printf("%s", console_log_buf);
+		fprintf(stdout, "%s", console_log_buf);
 	}
-	putchar('\n');
+	fprintf(stdout, "\n");
 
 	return JSValueMakeUndefined(ctx);
 }
