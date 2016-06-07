@@ -59,6 +59,12 @@ int main(int argc, char **argv) {
 	register_global_function(ctx, "CONSOLE_LOG", console_log);
 	register_global_function(ctx, "CONSOLE_ERROR", console_error);
 
+	JSStringRef init_source = JSStringCreateWithUTF8CString("<init>");
+	JSStringRef init_script = JSStringCreateWithUTF8CString("var console = {};"\
+			"console.log = CONSOLE_LOG;"\
+			"console.error = CONSOLE_ERROR;");
+	JSEvaluateScript(ctx, init_script, NULL, init_source, 0, NULL);
+
 	JSStringRef source = JSStringCreateWithUTF8CString("<inline>");
 	JSStringRef script;
 	if (argc == 0) {
