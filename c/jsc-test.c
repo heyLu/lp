@@ -5,7 +5,6 @@
 #include <JavaScriptCore/JavaScript.h>
 
 #define CONSOLE_LOG_BUF_SIZE 1000
-
 char console_log_buf[CONSOLE_LOG_BUF_SIZE];
 
 JSStringRef to_string(JSContextRef ctx, JSValueRef val);
