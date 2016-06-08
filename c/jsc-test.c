@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include <JavaScriptCore/JavaScript.h>
 
@@ -39,6 +40,47 @@ JSValueRef function_console_error(JSContextRef ctx, JSObjectRef function, JSObje
 	return JSValueMakeUndefined(ctx);
 }
 
+JSValueRef function_import_script(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) {
+	if (argumentCount == 1 && JSValueGetType(ctx, arguments[0]) == kJSTypeString) {
+		JSStringRef path_str_ref = JSValueToStringCopy(ctx, arguments[0], NULL);
+		char path[100];
+		path[0] = '\0';
+		JSStringGetUTF8CString(path_str_ref, path, 100);
+
+		FILE *f = fopen(path, "r");
+		if (f == NULL) {
+			perror("fopen");
+			goto err;
+		}
+
+		struct stat f_stat;
+		if (fstat(fileno(f), &f_stat) < 0) {
+			perror("fstat");
+			goto err;
+		}
+
+		char *buf = malloc(f_stat.st_size * sizeof(char));
+		fread(buf, sizeof(char), f_stat.st_size, f);
+		if (ferror(f)) {
+			perror("fread");
+			free(buf);
+			goto err;
+		}
+
+		JSStringRef script_ref = JSStringCreateWithUTF8CString(buf);
+		free(buf);
+
+		JSEvaluateScript(ctx, script_ref, NULL, path_str_ref, 0, NULL);
+		JSStringRelease(script_ref);
+	}
+
+	return JSValueMakeUndefined(ctx);
+
+err:
+	// TODO: Fill exception with error from errno
+	return JSValueMakeUndefined(ctx);
+}
+
 void register_global_function(JSContextRef ctx, char *name, JSObjectCallAsFunctionCallback handler) {
 	JSObjectRef global_obj = JSContextGetGlobalObject(ctx);
 
@@ -55,6 +97,8 @@ int main(int argc, char **argv) {
 	JSGlobalContextSetName(ctx, nameRef);
 
 	JSObjectRef global_obj = JSContextGetGlobalObject(ctx);
+
+	register_global_function(ctx, "IMPORT_SCRIPT", function_import_script);
 
 	register_global_function(ctx, "CONSOLE_LOG", function_console_log);
 	register_global_function(ctx, "CONSOLE_ERROR", function_console_error);
