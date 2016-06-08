@@ -9,6 +9,7 @@
 char console_log_buf[CONSOLE_LOG_BUF_SIZE];
 
 JSStringRef to_string(JSContextRef ctx, JSValueRef val);
+JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source);
 
 JSValueRef function_console_log(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) {
 	for (int i = 0; i < argumentCount; i++) {
@@ -46,6 +47,7 @@ JSValueRef function_import_script(JSContextRef ctx, JSObjectRef function, JSObje
 		char path[100];
 		path[0] = '\0';
 		JSStringGetUTF8CString(path_str_ref, path, 100);
+		JSStringRelease(path_str_ref);
 
 		FILE *f = fopen(path, "r");
 		if (f == NULL) {
@@ -67,23 +69,8 @@ JSValueRef function_import_script(JSContextRef ctx, JSObjectRef function, JSObje
 			goto err;
 		}
 
-		JSStringRef script_ref = JSStringCreateWithUTF8CString(buf);
+		evaluate_script(ctx, buf, path);
 		free(buf);
-
-		JSValueRef ex = NULL;
-		JSEvaluateScript(ctx, script_ref, NULL, path_str_ref, 0, &ex);
-		JSStringRelease(script_ref);
-
-#ifdef DEBUG
-		if (ex != NULL) {
-			JSStringRef ex_str = to_string(ctx, ex);
-			char ex_buf[1000];
-			ex_buf[0] = '\0';
-			JSStringGetUTF8CString(ex_str, ex_buf, 1000);
-			printf("import: %s\n", ex_buf);
-			JSStringRelease(ex_str);
-		}
-#endif
 	}
 
 	return JSValueMakeUndefined(ctx);
@@ -151,4 +138,32 @@ JSStringRef to_string(JSContextRef ctx, JSValueRef val) {
 
 		return JSValueToStringCopy(ctx, obj_val, NULL);
 	}
+}
+
+JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source) {
+	JSStringRef script_ref = JSStringCreateWithUTF8CString(script);
+	JSStringRef source_ref = NULL;
+	if (source != NULL) {
+		source_ref = JSStringCreateWithUTF8CString(source);
+	}
+
+	JSValueRef ex = NULL;
+	JSValueRef val = JSEvaluateScript(ctx, script_ref, NULL, source_ref, 0, &ex);
+	JSStringRelease(script_ref);
+	if (source != NULL) {
+		JSStringRelease(source_ref);
+	}
+
+#ifdef DEBUG
+	if (ex != NULL) {
+		JSStringRef ex_str = to_string(ctx, ex);
+		char ex_buf[1000];
+		ex_buf[0] = '\0';
+		JSStringGetUTF8CString(ex_str, ex_buf, 1000);
+		printf("eval %s: %s\n", source, ex_buf);
+		JSStringRelease(ex_str);
+	}
+#endif
+
+	return val;
 }
