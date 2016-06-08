@@ -148,7 +148,6 @@ JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source) {
 
 #ifdef DEBUG
 	if (ex != NULL) {
-		printf("\n---\n%s\n---\n", script);
 		JSStringRef ex_str = to_string(ctx, ex);
 		char ex_buf[1000];
 		ex_buf[0] = '\0';
