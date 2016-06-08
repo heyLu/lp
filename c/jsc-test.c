@@ -11,6 +11,8 @@ char console_log_buf[CONSOLE_LOG_BUF_SIZE];
 JSStringRef to_string(JSContextRef ctx, JSValueRef val);
 JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source);
 
+char* get_contents(char *path);
+
 JSValueRef function_console_log(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) {
 	for (int i = 0; i < argumentCount; i++) {
 		if (i > 0) {
@@ -49,27 +51,14 @@ JSValueRef function_import_script(JSContextRef ctx, JSObjectRef function, JSObje
 		JSStringGetUTF8CString(path_str_ref, path, 100);
 		JSStringRelease(path_str_ref);
 
-		FILE *f = fopen(path, "r");
-		if (f == NULL) {
-			perror("fopen");
+		char full_path[150];
+		snprintf(full_path, 150, "%s/%s", "out", path);
+		char *buf = get_contents(full_path);
+		if (buf == NULL) {
 			goto err;
 		}
 
-		struct stat f_stat;
-		if (fstat(fileno(f), &f_stat) < 0) {
-			perror("fstat");
-			goto err;
-		}
-
-		char *buf = malloc(f_stat.st_size * sizeof(char));
-		fread(buf, sizeof(char), f_stat.st_size, f);
-		if (ferror(f)) {
-			perror("fread");
-			free(buf);
-			goto err;
-		}
-
-		evaluate_script(ctx, buf, path);
+		evaluate_script(ctx, buf, full_path);
 		free(buf);
 	}
 
@@ -163,4 +152,38 @@ JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source) {
 #endif
 
 	return val;
+}
+
+char *get_contents(char *path) {
+	FILE *f = fopen(path, "r");
+	if (f == NULL) {
+		perror("fopen");
+		goto err;
+	}
+
+	struct stat f_stat;
+	if (fstat(fileno(f), &f_stat) < 0) {
+		perror("fstat");
+		goto err;
+	}
+
+	char *buf = malloc(f_stat.st_size);
+	memset(buf, 0, f_stat.st_size);
+	fread(buf, f_stat.st_size, 1, f);
+	buf[f_stat.st_size] = '\0';
+	if (ferror(f)) {
+		perror("fread");
+		free(buf);
+		goto err;
+	}
+
+	if (fclose(f) < 0) {
+		perror("fclose");
+		goto err;
+	}
+
+	return buf;
+
+err:
+	return NULL;
 }
