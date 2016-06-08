@@ -9,7 +9,7 @@ char console_log_buf[CONSOLE_LOG_BUF_SIZE];
 
 JSStringRef to_string(JSContextRef ctx, JSValueRef val);
 
-JSValueRef console_log(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) {
+JSValueRef function_console_log(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) {
 	for (int i = 0; i < argumentCount; i++) {
 		if (i > 0) {
 			fprintf(stdout, " ");
@@ -24,7 +24,7 @@ JSValueRef console_log(JSContextRef ctx, JSObjectRef function, JSObjectRef thisO
 	return JSValueMakeUndefined(ctx);
 }
 
-JSValueRef console_error(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) {
+JSValueRef function_console_error(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) {
 	for (int i = 0; i < argumentCount; i++) {
 		if (i > 0) {
 			fprintf(stderr, " ");
@@ -56,8 +56,8 @@ int main(int argc, char **argv) {
 
 	JSObjectRef global_obj = JSContextGetGlobalObject(ctx);
 
-	register_global_function(ctx, "CONSOLE_LOG", console_log);
-	register_global_function(ctx, "CONSOLE_ERROR", console_error);
+	register_global_function(ctx, "CONSOLE_LOG", function_console_log);
+	register_global_function(ctx, "CONSOLE_ERROR", function_console_error);
 
 	JSStringRef init_source = JSStringCreateWithUTF8CString("<init>");
 	JSStringRef init_script = JSStringCreateWithUTF8CString("var console = {};"\
