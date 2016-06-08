@@ -217,7 +217,7 @@ char *get_contents(char *path) {
 		goto err;
 	}
 
-	char *buf = malloc(f_stat.st_size);
+	char *buf = malloc(f_stat.st_size + 1);
 	memset(buf, 0, f_stat.st_size);
 	fread(buf, f_stat.st_size, 1, f);
 	buf[f_stat.st_size] = '\0';
