@@ -102,20 +102,17 @@ int main(int argc, char **argv) {
 	register_global_function(ctx, "CONSOLE_LOG", function_console_log);
 	register_global_function(ctx, "CONSOLE_ERROR", function_console_error);
 
-	JSStringRef init_source = JSStringCreateWithUTF8CString("<init>");
-	JSStringRef init_script = JSStringCreateWithUTF8CString("var console = {};"\
+	evaluate_script(ctx, "var console = {};"\
 			"console.log = CONSOLE_LOG;"\
-			"console.error = CONSOLE_ERROR;");
-	JSEvaluateScript(ctx, init_script, NULL, init_source, 0, NULL);
+			"console.error = CONSOLE_ERROR;", "<init>");
 
-	JSStringRef source = JSStringCreateWithUTF8CString("<inline>");
-	JSStringRef script;
+	char *script;
 	if (argc == 0) {
-		script = JSStringCreateWithUTF8CString("CONSOLE_LOG(\"Hello, World!\");");
+		script = "CONSOLE_LOG(\"Hello, World!\");";
 	} else {
-		script = JSStringCreateWithUTF8CString(argv[1]);
+		script = argv[1];
 	}
-	JSValueRef res = JSEvaluateScript(ctx, script, global_obj, source, 0, NULL);
+	JSValueRef res = evaluate_script(ctx, script, "<inline>");
 
 	char res_buf[1000];
 	res_buf[0] = '\0';
