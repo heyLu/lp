@@ -5,6 +5,8 @@
 
 #include <JavaScriptCore/JavaScript.h>
 
+#include "zip.h"
+
 #define CONSOLE_LOG_BUF_SIZE 1000
 char console_log_buf[CONSOLE_LOG_BUF_SIZE];
 
