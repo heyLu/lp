@@ -11,6 +11,8 @@ char console_log_buf[CONSOLE_LOG_BUF_SIZE];
 JSStringRef to_string(JSContextRef ctx, JSValueRef val);
 JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source);
 
+void bootstrap(JSContextRef ctx, char *deps_file_path, char *goog_base_path);
+
 char* get_contents(char *path);
 
 JSValueRef function_console_log(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) {
@@ -95,6 +97,8 @@ int main(int argc, char **argv) {
 			"console.log = CONSOLE_LOG;"\
 			"console.error = CONSOLE_ERROR;", "<init>");
 
+	bootstrap(ctx, "out/main.js", "out/goog/base.js");
+
 	char *script;
 	if (argc == 0) {
 		script = "CONSOLE_LOG(\"Hello, World!\");";
@@ -142,6 +146,7 @@ JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source) {
 
 #ifdef DEBUG
 	if (ex != NULL) {
+		printf("\n---\n%s\n---\n", script);
 		JSStringRef ex_str = to_string(ctx, ex);
 		char ex_buf[1000];
 		ex_buf[0] = '\0';
@@ -152,6 +157,50 @@ JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source) {
 #endif
 
 	return val;
+}
+
+void bootstrap(JSContextRef ctx, char *deps_file_path, char *goog_base_path) {
+	char source[] = "<bootstrap>";
+
+	// Setup CLOSURE_IMPORT_SCRIPT
+	evaluate_script(ctx, "CLOSURE_IMPORT_SCRIPT = function(src) { IMPORT_SCRIPT('goog/' + src); return true; }", source);
+
+	// Load goog base
+	char *base_script_str = get_contents(goog_base_path);
+	if (base_script_str == NULL) {
+		fprintf(stderr, "The goog base JavaScript text could not be loaded");
+		exit(1);
+	}
+	evaluate_script(ctx, base_script_str, "<bootstrap:base>");
+	free(base_script_str);
+
+	// Load the deps file
+	char *deps_script_str = get_contents(deps_file_path);
+	if (deps_script_str == NULL) {
+		fprintf(stderr, "The goog base JavaScript text could not be loaded");
+		exit(1);
+	}
+	evaluate_script(ctx, deps_script_str, "<bootstrap:deps>");
+	free(deps_script_str);
+
+	evaluate_script(ctx, "goog.isProvided_ = function(x) { return false; };", source);
+
+	evaluate_script(ctx, "goog.require = function (name) { return CLOSURE_IMPORT_SCRIPT(goog.dependencies_.nameToPath[name]); };", source);
+
+	evaluate_script(ctx, "goog.require('cljs.core');", source);
+
+	// redef goog.require to track loaded libs
+	evaluate_script(ctx, "cljs.core._STAR_loaded_libs_STAR_ = cljs.core.into.call(null, cljs.core.PersistentHashSet.EMPTY, [\"cljs.core\"]);\n"
+			"goog.require = function (name, reload) {\n"
+			"    if(!cljs.core.contains_QMARK_(cljs.core._STAR_loaded_libs_STAR_, name) || reload) {\n"
+			"        var AMBLY_TMP = cljs.core.PersistentHashSet.EMPTY;\n"
+			"        if (cljs.core._STAR_loaded_libs_STAR_) {\n"
+			"            AMBLY_TMP = cljs.core._STAR_loaded_libs_STAR_;\n"
+			"        }\n"
+			"        cljs.core._STAR_loaded_libs_STAR_ = cljs.core.into.call(null, AMBLY_TMP, [name]);\n"
+			"        CLOSURE_IMPORT_SCRIPT(goog.dependencies_.nameToPath[name]);\n"
+			"    }\n"
+			"};", source);
 }
 
 char *get_contents(char *path) {
