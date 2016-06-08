@@ -70,8 +70,20 @@ JSValueRef function_import_script(JSContextRef ctx, JSObjectRef function, JSObje
 		JSStringRef script_ref = JSStringCreateWithUTF8CString(buf);
 		free(buf);
 
-		JSEvaluateScript(ctx, script_ref, NULL, path_str_ref, 0, NULL);
+		JSValueRef ex = NULL;
+		JSEvaluateScript(ctx, script_ref, NULL, path_str_ref, 0, &ex);
 		JSStringRelease(script_ref);
+
+#ifdef DEBUG
+		if (ex != NULL) {
+			JSStringRef ex_str = to_string(ctx, ex);
+			char ex_buf[1000];
+			ex_buf[0] = '\0';
+			JSStringGetUTF8CString(ex_str, ex_buf, 1000);
+			printf("import: %s\n", ex_buf);
+			JSStringRelease(ex_str);
+		}
+#endif
 	}
 
 	return JSValueMakeUndefined(ctx);
