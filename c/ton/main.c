@@ -117,12 +117,18 @@ JSValueRef function_load(JSContextRef ctx, JSObjectRef function, JSObjectRef thi
 		// TODO: should not load from here?
 		snprintf(full_path, 150, "%s/%s", "out", path);
 
+		JSValueRef contents_val = NULL;
+
 		char *contents = get_contents(full_path);
-		JSStringRef contents_str = JSStringCreateWithUTF8CString(contents);
-		free(contents);
+		if (contents != NULL) {
+			JSStringRef contents_str = JSStringCreateWithUTF8CString(contents);
+			free(contents);
+
+			contents_val = JSValueMakeString(ctx, contents_str);
+		}
 
 		JSValueRef res[2];
-		res[0] = JSValueMakeString(ctx, contents_str);
+		res[0] = contents_val;
 		res[1] = JSValueMakeNumber(ctx, 0);
 		return JSObjectMakeArray(ctx, 2, res, NULL);
 	}
