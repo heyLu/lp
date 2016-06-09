@@ -13,6 +13,8 @@ char console_log_buf[CONSOLE_LOG_BUF_SIZE];
 JSStringRef to_string(JSContextRef ctx, JSValueRef val);
 JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source);
 
+char *munge(char *s);
+
 void bootstrap(JSContextRef ctx, char *deps_file_path, char *goog_base_path);
 
 char* get_contents(char *path);
@@ -158,6 +160,56 @@ JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source) {
 #endif
 
 	return val;
+}
+
+char *munge(char *s) {
+	int len = strlen(s);
+	int new_len = 0;
+	for (int i = 0; i < len; i++) {
+		switch (s[i]) {
+		case '!':
+			new_len += 6; // _BANG_
+			break;
+		case '?':
+			new_len += 7; // _QMARK_
+			break;
+		default:
+			new_len += 1;
+		}
+	}
+
+	char *ms = malloc((new_len+1) * sizeof(char));
+	int j = 0;
+	for (int i = 0; i < len; i++) {
+		switch (s[i]) {
+		case '-':
+			ms[j++] = '_';
+			break;
+		case '!':
+			ms[j++] = '_';
+			ms[j++] = 'B';
+			ms[j++] = 'A';
+			ms[j++] = 'N';
+			ms[j++] = 'G';
+			ms[j++] = '_';
+			break;
+		case '?':
+			ms[j++] = '_';
+			ms[j++] = 'Q';
+			ms[j++] = 'M';
+			ms[j++] = 'A';
+			ms[j++] = 'R';
+			ms[j++] = 'K';
+			ms[j++] = '_';
+			break;
+
+		default:
+			ms[j++] = s[i];
+		}
+	}
+	ms[new_len] = '\0';
+
+	return ms;
 }
 
 void bootstrap(JSContextRef ctx, char *deps_file_path, char *goog_base_path) {
