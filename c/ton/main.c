@@ -94,13 +94,15 @@ JSValueRef function_read_file(JSContextRef ctx, JSObjectRef function, JSObjectRe
 		snprintf(full_path, 150, "%s/%s", "out", path);
 
 		char *contents = get_contents(full_path);
-		JSStringRef contents_str = JSStringCreateWithUTF8CString(contents);
-		free(contents);
+		if (contents != NULL) {
+			JSStringRef contents_str = JSStringCreateWithUTF8CString(contents);
+			free(contents);
 
-		JSValueRef res[2];
-		res[0] = JSValueMakeString(ctx, contents_str);
-		res[1] = JSValueMakeNumber(ctx, 0);
-		return JSObjectMakeArray(ctx, 2, res, NULL);
+			JSValueRef res[2];
+			res[0] = JSValueMakeString(ctx, contents_str);
+			res[1] = JSValueMakeNumber(ctx, 0);
+			return JSObjectMakeArray(ctx, 2, res, NULL);
+		}
 	}
 
 	return JSValueMakeNull(ctx);
