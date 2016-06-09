@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <errno.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -241,7 +242,92 @@ void register_global_function(JSContextRef ctx, char *name, JSObjectCallAsFuncti
 	JSObjectSetProperty(ctx, global_obj, fn_name, fn_obj, kJSPropertyAttributeNone, NULL);
 }
 
+void usage(char *program_name) {
+	printf("%s [flags]\n", program_name);
+	printf("\n");
+	printf(
+		"  -h, --help       Display this help message\n"
+		"  -v, --verbose    Print verbose diagnostics\n"
+		"  -r, --repl       Whether to start a REPL\n"
+		"  -s, --static-fns Whether to use the :static-fns compiler option\n"
+		"  -k, --cache      The directory to cache compiler results in\n"
+		"  -j, --javascript Whether to run a JavaScript REPL\n"
+		"  -e, --eval       Evaluate the given expression\n"
+	);
+}
+
+bool verbose = false;
+bool repl = false;
+bool static_fns = false;
+char *cache_path = NULL;
+
+bool javascript = false;
+
 int main(int argc, char **argv) {
+	int num_eval_args = 0;
+	char **eval_args = NULL;
+
+	struct option long_options[] = {
+		{"help", no_argument, NULL, 'h'},
+		{"verbose", no_argument, NULL, 'v'},
+		{"repl", no_argument, NULL, 'r'},
+		{"static-fns", no_argument, NULL, 's'},
+		{"cache", required_argument, NULL, 'k'},
+		{"javascript", no_argument, NULL, 'j'},
+		{"eval", required_argument, NULL, 'e'},
+
+		{0, 0, 0, 0}
+	};
+	int opt, option_index;
+	while ((opt = getopt_long(argc, argv, "hvrsk:je:", long_options, &option_index)) != -1) {
+		switch (opt) {
+		case 'h':
+			usage(argv[0]);
+			exit(0);
+		case 'v':
+			verbose = true;
+			break;
+		case 'r':
+			repl = true;
+			break;
+		case 's':
+			static_fns = true;
+			break;
+		case 'k':
+			cache_path = argv[optind - 1];
+			break;
+		case 'j':
+			javascript = true;
+			break;
+		case 'e':
+			printf("should eval '%s'\n", optarg);
+			num_eval_args += 1;
+			eval_args = realloc(eval_args, num_eval_args * sizeof(char*));
+			eval_args[num_eval_args - 1] = argv[optind - 1];
+			break;
+		case '?':
+			usage(argv[0]);
+			exit(1);
+		default:
+			printf("unhandled argument: %c\n", opt);
+		}
+	}
+
+	int num_rest_args = 0;
+	char **rest_args = NULL;
+	if (optind < argc) {
+		num_rest_args = argc - optind;
+		rest_args = malloc((argc - optind) * sizeof(char*));
+		int i = 0;
+		while (optind < argc) {
+			rest_args[i++] = argv[optind++];
+		}
+	}
+
+	if (num_rest_args == 0) {
+		repl = true;
+	}
+
 	JSGlobalContextRef ctx = JSGlobalContextCreate(NULL);
 
 	JSStringRef nameRef = JSStringCreateWithUTF8CString("jsc-test");
@@ -280,11 +366,8 @@ int main(int argc, char **argv) {
 	evaluate_script(ctx, "cljs.core.set_print_fn_BANG_.call(null,PLANCK_PRINT_FN);", "<init>");
 	evaluate_script(ctx, "cljs.core.set_print_err_fn_BANG_.call(null,PLANCK_PRINT_ERR_FN);", "<init>");
 
-	bool repl = true;
-
 	{
 		JSValueRef arguments[4];
-		bool verbose = true, static_fns = true;
 		arguments[0] = JSValueMakeBoolean(ctx, repl);
 		arguments[1] = JSValueMakeBoolean(ctx, verbose);
 		JSStringRef cache_path_str = JSStringCreateWithUTF8CString(".planck_cache");
@@ -305,13 +388,16 @@ int main(int argc, char **argv) {
 
 	evaluate_script(ctx, "cljs.core._STAR_assert_STAR_ = true;", "<init>");
 
+	for (int i = 0; i < num_eval_args; i++) {
+		evaluate_source(ctx, "text", eval_args[i], true, "cljs.user");
+	}
+
 	//evaluate_source(ctx, "text", "(empty? \"\")", true, "cljs.user");
 
 	printf("---\nrequire macros\n---\n");
 	evaluate_source(ctx, "text", "(require-macros 'planck.repl 'planck.core 'planck.shell 'planck.from.io.aviso.ansi 'clojure.template 'cljs.spec 'cljs.spec.impl.gen 'cljs.test)", true, "cljs.user");
 
 	if (repl) {
-		bool javascript = false;
 		char *prompt = javascript ? " > " : " => ";
 
 		char *line;
