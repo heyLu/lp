@@ -19,13 +19,14 @@ void bootstrap(JSContextRef ctx, char *deps_file_path, char *goog_base_path);
 
 char* get_contents(char *path);
 
-JSValueRef function_console_log(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) {
-	for (int i = 0; i < argumentCount; i++) {
+JSValueRef function_console_log(JSContextRef ctx, JSObjectRef function, JSObjectRef this_object,
+		size_t argc, const JSValueRef args[], JSValueRef* exception) {
+	for (int i = 0; i < argc; i++) {
 		if (i > 0) {
 			fprintf(stdout, " ");
 		}
 
-		JSStringRef str = to_string(ctx, arguments[i]);
+		JSStringRef str = to_string(ctx, args[i]);
 		JSStringGetUTF8CString(str, console_log_buf, CONSOLE_LOG_BUF_SIZE);
 		fprintf(stdout, "%s", console_log_buf);
 	}
@@ -34,13 +35,14 @@ JSValueRef function_console_log(JSContextRef ctx, JSObjectRef function, JSObject
 	return JSValueMakeUndefined(ctx);
 }
 
-JSValueRef function_console_error(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) {
-	for (int i = 0; i < argumentCount; i++) {
+JSValueRef function_console_error(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
+		size_t argc, const JSValueRef args[], JSValueRef* exception) {
+	for (int i = 0; i < argc; i++) {
 		if (i > 0) {
 			fprintf(stderr, " ");
 		}
 
-		JSStringRef str = to_string(ctx, arguments[i]);
+		JSStringRef str = to_string(ctx, args[i]);
 		JSStringGetUTF8CString(str, console_log_buf, CONSOLE_LOG_BUF_SIZE);
 		fprintf(stderr, "%s", console_log_buf);
 	}
@@ -49,9 +51,10 @@ JSValueRef function_console_error(JSContextRef ctx, JSObjectRef function, JSObje
 	return JSValueMakeUndefined(ctx);
 }
 
-JSValueRef function_import_script(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) {
-	if (argumentCount == 1 && JSValueGetType(ctx, arguments[0]) == kJSTypeString) {
-		JSStringRef path_str_ref = JSValueToStringCopy(ctx, arguments[0], NULL);
+JSValueRef function_import_script(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
+		size_t argc, const JSValueRef args[], JSValueRef* exception) {
+	if (argc == 1 && JSValueGetType(ctx, args[0]) == kJSTypeString) {
+		JSStringRef path_str_ref = JSValueToStringCopy(ctx, args[0], NULL);
 		char path[100];
 		path[0] = '\0';
 		JSStringGetUTF8CString(path_str_ref, path, 100);
