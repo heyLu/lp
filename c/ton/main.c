@@ -7,6 +7,8 @@
 
 #include <JavaScriptCore/JavaScript.h>
 
+#include "linenoise.h"
+
 #include "zip.h"
 
 #define CONSOLE_LOG_BUF_SIZE 1000
@@ -15,7 +17,7 @@ char console_log_buf[CONSOLE_LOG_BUF_SIZE];
 JSStringRef to_string(JSContextRef ctx, JSValueRef val);
 JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source);
 
-void evaluate_source(JSContextRef ctx, char *type, char *source_value, bool expression, char *set_ns);
+JSValueRef evaluate_source(JSContextRef ctx, char *type, char *source_value, bool expression, char *set_ns);
 char *munge(char *s);
 
 void bootstrap(JSContextRef ctx, char *deps_file_path, char *goog_base_path);
@@ -304,19 +306,27 @@ int main(int argc, char **argv) {
 	printf("---\nrequire macros\n---\n");
 	evaluate_source(ctx, "text", "(require-macros 'planck.repl 'planck.core 'planck.shell 'planck.from.io.aviso.ansi 'clojure.template 'cljs.spec 'cljs.spec.impl.gen 'cljs.test)", true, "cljs.user");
 
-	char *script;
-	if (argc == 0) {
-		script = "CONSOLE_LOG(\"Hello, World!\");";
-	} else {
-		script = argv[1];
-	}
-	JSValueRef res = evaluate_script(ctx, script, "<inline>");
+	if (repl) {
+		bool javascript = false;
+		char *prompt = javascript ? " > " : " => ";
 
-	char res_buf[1000];
-	res_buf[0] = '\0';
-	JSStringRef res_str = to_string(ctx, res);
-	JSStringGetUTF8CString(res_str, res_buf, 1000);
-	printf("%s\n", res_buf);
+		char *line;
+		while ((line = linenoise(prompt)) != NULL) {
+			JSValueRef res = NULL;
+			if (javascript) {
+				res = evaluate_script(ctx, line, "<stdin>");
+			} else {
+				res = evaluate_source(ctx, "text", line, true, "cljs.user");
+			}
+			free(line);
+
+			char res_buf[1000];
+			res_buf[0] = '\0';
+			JSStringRef res_str = to_string(ctx, res);
+			JSStringGetUTF8CString(res_str, res_buf, 1000);
+			printf("%s\n", res_buf);
+		}
+	}
 }
 
 JSStringRef to_string(JSContextRef ctx, JSValueRef val) {
@@ -394,7 +404,7 @@ JSObjectRef get_function(JSContextRef ctx, char *namespace, char *name) {
 	return JSValueToObject(ctx, val, NULL);
 }
 
-void evaluate_source(JSContextRef ctx, char *type, char *source, bool expression, char *set_ns) {
+JSValueRef evaluate_source(JSContextRef ctx, char *type, char *source, bool expression, char *set_ns) {
 	JSValueRef args[7];
 	int num_args = 7;
 
@@ -419,10 +429,12 @@ void evaluate_source(JSContextRef ctx, char *type, char *source, bool expression
 	JSObjectRef execute_fn = get_function(ctx, "planck.repl", "execute");
 	JSObjectRef global_obj = JSContextGetGlobalObject(ctx);
 	JSValueRef ex = NULL;
-	JSObjectCallAsFunction(ctx, execute_fn, global_obj, num_args, args, &ex);
+	JSValueRef val = JSObjectCallAsFunction(ctx, execute_fn, global_obj, num_args, args, &ex);
 
 	debug_print_value
 ("planck.repl/execute", ctx, ex);
+
+	return ex != NULL ? ex : val;
 }
 
 char *munge(char *s) {

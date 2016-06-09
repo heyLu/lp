@@ -2,6 +2,9 @@
 /out
 /jsc-funcs
 
+/linenoise.c
+/linenoise.h
+
 /planck
 
 /.vscode
