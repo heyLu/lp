@@ -26,9 +26,9 @@ JSObjectRef get_function(JSContextRef ctx, char *namespace, char *name);
 char* get_contents(char *path);
 
 #ifdef DEBUG
-#define debug_print_value(prefix, ctx, val)	print_value(prefix, ctx, val);
+#define debug_print_value(prefix, ctx, val)	print_value(prefix ": ", ctx, val)
 #else
-#define debug_print_value(prefix, ctx, val) ;
+#define debug_print_value(prefix, ctx, val)
 #endif
 
 void print_value(char *prefix, JSContextRef ctx, JSValueRef exception) {
@@ -37,7 +37,7 @@ void print_value(char *prefix, JSContextRef ctx, JSValueRef exception) {
 		char ex_buf[1000];
 		ex_buf[0] = '\0';
 		JSStringGetUTF8CString(ex_str, ex_buf, 1000-1);
-		printf("%s: %s\n", prefix, ex_buf);
+		printf("%s%s\n", prefix, ex_buf);
 		JSStringRelease(ex_str);
 	}
 }
@@ -324,11 +324,7 @@ int main(int argc, char **argv) {
 			}
 			free(line);
 
-			char res_buf[1000];
-			res_buf[0] = '\0';
-			JSStringRef res_str = to_string(ctx, res);
-			JSStringGetUTF8CString(res_str, res_buf, 1000);
-			printf("%s\n", res_buf);
+			print_value("", ctx, res);
 		}
 	}
 }
