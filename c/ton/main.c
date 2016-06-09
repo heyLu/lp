@@ -25,8 +25,13 @@ JSObjectRef get_function(JSContextRef ctx, char *namespace, char *name);
 
 char* get_contents(char *path);
 
-void debug_print_value(char *prefix, JSContextRef ctx, JSValueRef exception) {
 #ifdef DEBUG
+#define debug_print_value(prefix, ctx, val)	print_value(prefix, ctx, val);
+#else
+#define debug_print_value(prefix, ctx, val) ;
+#endif
+
+void print_value(char *prefix, JSContextRef ctx, JSValueRef exception) {
 	if (exception != NULL) {
 		JSStringRef ex_str = to_string(ctx, exception);
 		char ex_buf[1000];
@@ -35,7 +40,6 @@ void debug_print_value(char *prefix, JSContextRef ctx, JSValueRef exception) {
 		printf("%s: %s\n", prefix, ex_buf);
 		JSStringRelease(ex_str);
 	}
-#endif
 }
 
 JSValueRef function_console_log(JSContextRef ctx, JSObjectRef function, JSObjectRef this_object,
