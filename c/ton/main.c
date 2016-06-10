@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #include <JavaScriptCore/JavaScript.h>
 
@@ -27,7 +28,7 @@ char *munge(char *s);
 void bootstrap(JSContextRef ctx, char *deps_file_path, char *goog_base_path);
 JSObjectRef get_function(JSContextRef ctx, char *namespace, char *name);
 
-char* get_contents(char *path);
+char* get_contents(char *path, time_t *last_modified);
 void write_contents(char *path, char *contents);
 int mkdir_p(char *path);
 
@@ -97,14 +98,15 @@ JSValueRef function_read_file(JSContextRef ctx, JSObjectRef function, JSObjectRe
 		// TODO: should not load from here?
 		snprintf(full_path, 150, "%s/%s", "out", path);
 
-		char *contents = get_contents(full_path);
+		time_t last_modified = 0;
+		char *contents = get_contents(full_path, &last_modified);
 		if (contents != NULL) {
 			JSStringRef contents_str = JSStringCreateWithUTF8CString(contents);
 			free(contents);
 
 			JSValueRef res[2];
 			res[0] = JSValueMakeString(ctx, contents_str);
-			res[1] = JSValueMakeNumber(ctx, 0);
+			res[1] = JSValueMakeNumber(ctx, last_modified);
 			return JSObjectMakeArray(ctx, 2, res, NULL);
 		}
 	}
@@ -131,18 +133,17 @@ JSValueRef function_load(JSContextRef ctx, JSObjectRef function, JSObjectRef thi
 
 		JSValueRef contents_val = NULL;
 
-		char *contents = get_contents(full_path);
+		time_t last_modified = 0;
+		char *contents = get_contents(full_path, &last_modified);
 		if (contents != NULL) {
 			JSStringRef contents_str = JSStringCreateWithUTF8CString(contents);
 			free(contents);
 
-			contents_val = JSValueMakeString(ctx, contents_str);
+			JSValueRef res[2];
+			res[0] = JSValueMakeString(ctx, contents_str);;
+			res[1] = JSValueMakeNumber(ctx, last_modified);
+			return JSObjectMakeArray(ctx, 2, res, NULL);
 		}
-
-		JSValueRef res[2];
-		res[0] = contents_val;
-		res[1] = JSValueMakeNumber(ctx, 0);
-		return JSObjectMakeArray(ctx, 2, res, NULL);
 	}
 
 	return JSValueMakeNull(ctx);
@@ -272,7 +273,7 @@ JSValueRef function_import_script(JSContextRef ctx, JSObjectRef function, JSObje
 
 		char full_path[150];
 		snprintf(full_path, 150, "%s/%s", "out", path);
-		char *buf = get_contents(full_path);
+		char *buf = get_contents(full_path, NULL);
 		if (buf == NULL) {
 			goto err;
 		}
@@ -653,7 +654,7 @@ void bootstrap(JSContextRef ctx, char *deps_file_path, char *goog_base_path) {
 	evaluate_script(ctx, "CLOSURE_IMPORT_SCRIPT = function(src) { IMPORT_SCRIPT('goog/' + src); return true; }", source);
 
 	// Load goog base
-	char *base_script_str = get_contents(goog_base_path);
+	char *base_script_str = get_contents(goog_base_path, NULL);
 	if (base_script_str == NULL) {
 		fprintf(stderr, "The goog base JavaScript text could not be loaded");
 		exit(1);
@@ -662,7 +663,7 @@ void bootstrap(JSContextRef ctx, char *deps_file_path, char *goog_base_path) {
 	free(base_script_str);
 
 	// Load the deps file
-	char *deps_script_str = get_contents(deps_file_path);
+	char *deps_script_str = get_contents(deps_file_path, NULL);
 	if (deps_script_str == NULL) {
 		fprintf(stderr, "The goog base JavaScript text could not be loaded");
 		exit(1);
@@ -690,7 +691,7 @@ void bootstrap(JSContextRef ctx, char *deps_file_path, char *goog_base_path) {
 			"};", source);
 }
 
-char *get_contents(char *path) {
+char *get_contents(char *path, time_t *last_modified) {
 /*#ifdef DEBUG
 	printf("get_contents(\"%s\")\n", path);
 #endif*/
@@ -707,6 +708,10 @@ char *get_contents(char *path) {
 	if (fstat(fileno(f), &f_stat) < 0) {
 		err_prefix = "fstat";
 		goto err;
+	}
+
+	if (last_modified != NULL) {
+		*last_modified = f_stat.st_mtim.tv_sec;
 	}
 
 	char *buf = malloc(f_stat.st_size + 1);
