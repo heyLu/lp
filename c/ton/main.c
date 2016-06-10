@@ -91,8 +91,7 @@ JSValueRef function_read_file(JSContextRef ctx, JSObjectRef function, JSObjectRe
 		JSStringGetUTF8CString(path_str, path, 100);
 		JSStringRelease(path_str);
 
-		debug_print_value
-	("read_file", ctx, args[0]);
+		debug_print_value("read_file", ctx, args[0]);
 
 		char full_path[150];
 		// TODO: should not load from here?
@@ -124,8 +123,7 @@ JSValueRef function_load(JSContextRef ctx, JSObjectRef function, JSObjectRef thi
 		JSStringGetUTF8CString(path_str, path, 100);
 		JSStringRelease(path_str);
 
-		debug_print_value
-	("load", ctx, args[0]);
+		debug_print_value("load", ctx, args[0]);
 
 		char full_path[150];
 		// TODO: should not load from here?
@@ -214,7 +212,7 @@ JSValueRef function_eval(JSContextRef ctx, JSObjectRef function, JSObjectRef thi
 	if (argc == 2
 		&& JSValueGetType(ctx, args[0]) == kJSTypeString
 		&& JSValueGetType(ctx, args[1]) == kJSTypeString) {
-		debug_print_value("eval", ctx, args[1]);
+		debug_print_value("eval", ctx, args[0]);
 
 		JSStringRef sourceRef = JSValueToStringCopy(ctx, args[0], NULL);
 		JSStringRef pathRef = JSValueToStringCopy(ctx, args[1], NULL);
