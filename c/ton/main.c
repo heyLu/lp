@@ -430,8 +430,7 @@ int main(int argc, char **argv) {
 		arguments[3] = JSValueMakeBoolean(ctx, static_fns);
 		JSValueRef ex = NULL;
 		JSObjectCallAsFunction(ctx, get_function(ctx, "planck.repl", "init"), JSContextGetGlobalObject(ctx), 4, arguments, &ex);
-		debug_print_value
-	("planck.repl/init", ctx, ex);
+		debug_print_value("planck.repl/init", ctx, ex);
 	}
 
 	if (repl) {
@@ -500,8 +499,7 @@ JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source) {
 		JSStringRelease(source_ref);
 	}
 
-	debug_print_value
-("evaluate_script", ctx, ex);
+	debug_print_value("evaluate_script", ctx, ex);
 
 	return val;
 }
@@ -590,8 +588,7 @@ JSValueRef evaluate_source(JSContextRef ctx, char *type, char *source, bool expr
 	JSValueRef ex = NULL;
 	JSValueRef val = JSObjectCallAsFunction(ctx, execute_fn, global_obj, num_args, args, &ex);
 
-	debug_print_value
-("planck.repl/execute", ctx, ex);
+	debug_print_value("planck.repl/execute", ctx, ex);
 
 	return ex != NULL ? ex : val;
 }
