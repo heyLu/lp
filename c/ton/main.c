@@ -17,6 +17,8 @@
 #define CONSOLE_LOG_BUF_SIZE 1000
 char console_log_buf[CONSOLE_LOG_BUF_SIZE];
 
+int exit_value = 0;
+
 JSStringRef to_string(JSContextRef ctx, JSValueRef val);
 JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source);
 
@@ -258,6 +260,14 @@ JSValueRef function_print_err_fn(JSContextRef ctx, JSObjectRef function, JSObjec
 	return JSValueMakeNull(ctx);
 }
 
+JSValueRef function_set_exit_value(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
+		size_t argc, const JSValueRef args[], JSValueRef* exception) {
+	if (argc == 1 && JSValueGetType (ctx, args[0]) == kJSTypeNumber) {
+		exit_value = JSValueToNumber(ctx, args[0], NULL);
+	}
+	return JSValueMakeNull(ctx);
+}
+
 JSValueRef function_import_script(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
 		size_t argc, const JSValueRef args[], JSValueRef* exception) {
 	if (argc == 1 && JSValueGetType(ctx, args[0]) == kJSTypeString) {
@@ -352,7 +362,6 @@ int main(int argc, char **argv) {
 			javascript = true;
 			break;
 		case 'e':
-			printf("should eval '%s'\n", optarg);
 			num_eval_args += 1;
 			eval_args = realloc(eval_args, num_eval_args * sizeof(char*));
 			eval_args[num_eval_args - 1] = argv[optind - 1];
@@ -376,7 +385,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (num_rest_args == 0) {
+	if (num_rest_args == 0 && num_eval_args == 0) {
 		repl = true;
 	}
 
@@ -415,6 +424,8 @@ int main(int argc, char **argv) {
 	register_global_function(ctx, "PLANCK_GET_TERM_SIZE", function_get_term_size);
 	register_global_function(ctx, "PLANCK_PRINT_FN", function_print_fn);
 	register_global_function(ctx, "PLANCK_PRINT_ERR_FN", function_print_err_fn);
+
+	register_global_function(ctx, "PLANCK_SET_EXIT_VALUE", function_set_exit_value);
 
 	evaluate_script(ctx, "cljs.core.set_print_fn_BANG_.call(null,PLANCK_PRINT_FN);", "<init>");
 	evaluate_script(ctx, "cljs.core.set_print_err_fn_BANG_.call(null,PLANCK_PRINT_ERR_FN);", "<init>");
@@ -465,6 +476,8 @@ int main(int argc, char **argv) {
 			print_value("", ctx, res);
 		}
 	}
+
+	return exit_value;
 }
 
 JSStringRef to_string(JSContextRef ctx, JSValueRef val) {
