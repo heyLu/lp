@@ -176,23 +176,21 @@ JSValueRef function_cache(JSContextRef ctx, JSObjectRef function, JSObjectRef th
 		int max_suffix_len = 20;
 		int prefix_len = strlen(cache_prefix);
 		char *path = malloc((prefix_len + max_suffix_len) * sizeof(char));
+		memset(path, 0, prefix_len + max_suffix_len);
 
 		suffix = ".js";
-		strncpy(path, cache_prefix, prefix_len);
-		path[prefix_len] = '\0';
-		strncat(path, suffix, strlen(suffix));
+		strcpy(path, cache_prefix);
+		strcat(path, suffix);
 		write_contents(path, source);
 
 		suffix = ".cache.json";
-		strncpy(path, cache_prefix, prefix_len);
-		path[prefix_len] = '\0';
-		strncat(path, suffix, strlen(suffix));
+		strcpy(path, cache_prefix);
+		strcat(path, suffix);
 		write_contents(path, cache);
 
 		suffix = ".js.map.json";
-		strncpy(path, cache_prefix, prefix_len);
-		path[prefix_len] = '\0';
-		strncat(path, suffix, strlen(suffix));
+		strcpy(path, cache_prefix);
+		strcat(path, suffix);
 		write_contents(path, sourcemap);
 
 		free(cache_prefix);
@@ -517,8 +515,9 @@ char *value_to_c_string(JSContextRef ctx, JSValueRef val) {
 	}
 
 	JSStringRef str_ref = JSValueToStringCopy(ctx, val, NULL);
-	size_t len = JSStringGetLength(str_ref);
+	size_t len = JSStringGetLength(str_ref) + 1;
 	char *str = malloc(len * sizeof(char));
+	memset(str, 0, len);
 	JSStringGetUTF8CString(str_ref, str, len);
 	JSStringRelease(str_ref);
 
