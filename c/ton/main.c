@@ -455,11 +455,6 @@ int main(int argc, char **argv) {
 		evaluate_source(ctx, "text", eval_args[i], true, "cljs.user");
 	}
 
-	//evaluate_source(ctx, "text", "(empty? \"\")", true, "cljs.user");
-
-	printf("---\nrequire macros\n---\n");
-	evaluate_source(ctx, "text", "(require-macros 'planck.repl 'planck.core 'planck.shell 'planck.from.io.aviso.ansi 'clojure.template 'cljs.spec 'cljs.spec.impl.gen 'cljs.test)", true, "cljs.user");
-
 	if (repl) {
 		char *prompt = javascript ? " > " : " => ";
 
