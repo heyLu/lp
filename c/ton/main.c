@@ -86,6 +86,7 @@ JSValueRef function_read_file(JSContextRef ctx, JSObjectRef function, JSObjectRe
 	if (argc == 1 && JSValueGetType(ctx, args[0]) == kJSTypeString) {
 		char path[100];
 		JSStringRef path_str = JSValueToStringCopy(ctx, args[0], NULL);
+		assert(JSStringGetLength(path_str) < 100);
 		JSStringGetUTF8CString(path_str, path, 100);
 		JSStringRelease(path_str);
 
@@ -118,6 +119,7 @@ JSValueRef function_load(JSContextRef ctx, JSObjectRef function, JSObjectRef thi
 	if (argc == 1 && JSValueGetType(ctx, args[0]) == kJSTypeString) {
 		char path[100];
 		JSStringRef path_str = JSValueToStringCopy(ctx, args[0], NULL);
+		assert(JSStringGetLength(path_str) < 100);
 		JSStringGetUTF8CString(path_str, path, 100);
 		JSStringRelease(path_str);
 
