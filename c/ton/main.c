@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <getopt.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +19,8 @@ char console_log_buf[CONSOLE_LOG_BUF_SIZE];
 JSStringRef to_string(JSContextRef ctx, JSValueRef val);
 JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source);
 
+char *value_to_c_string(JSContextRef ctx, JSValueRef val);
+
 JSValueRef evaluate_source(JSContextRef ctx, char *type, char *source_value, bool expression, char *set_ns);
 char *munge(char *s);
 
@@ -25,6 +28,8 @@ void bootstrap(JSContextRef ctx, char *deps_file_path, char *goog_base_path);
 JSObjectRef get_function(JSContextRef ctx, char *namespace, char *name);
 
 char* get_contents(char *path);
+void write_contents(char *path, char *contents);
+int mkdir_p(char *path);
 
 #ifdef DEBUG
 #define debug_print_value(prefix, ctx, val)	print_value(prefix ": ", ctx, val)
@@ -150,6 +155,56 @@ JSValueRef function_load_deps_cljs_files(JSContextRef ctx, JSObjectRef function,
 	// TODO: not implemented
 	fprintf(stderr, "WARN: %s: stub\n", __func__);
 	return JSObjectMakeArray(ctx, 0, NULL, NULL);
+}
+
+JSValueRef function_cache(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
+		size_t argc, const JSValueRef args[], JSValueRef* exception) {
+	if (argc == 4 &&
+			JSValueGetType (ctx, args[0]) == kJSTypeString &&
+			JSValueGetType (ctx, args[1]) == kJSTypeString &&
+			(JSValueGetType (ctx, args[2]) == kJSTypeString
+				|| JSValueGetType (ctx, args[2]) == kJSTypeNull) &&
+			(JSValueGetType (ctx, args[3]) == kJSTypeString
+				|| JSValueGetType (ctx, args[3]) == kJSTypeNull)) {
+		debug_print_value("cache", ctx, args[0]);
+
+		char *cache_prefix = value_to_c_string(ctx, args[0]);
+		char *source = value_to_c_string(ctx, args[1]);
+		char *cache = value_to_c_string(ctx, args[2]);
+		char *sourcemap = value_to_c_string(ctx, args[3]);
+
+		char *suffix = NULL;
+		int max_suffix_len = 20;
+		int prefix_len = strlen(cache_prefix);
+		char *path = malloc((prefix_len + max_suffix_len) * sizeof(char));
+
+		suffix = ".js";
+		strncpy(path, cache_prefix, prefix_len);
+		path[prefix_len] = '\0';
+		strncat(path, suffix, strlen(suffix));
+		write_contents(path, source);
+
+		suffix = ".cache.json";
+		strncpy(path, cache_prefix, prefix_len);
+		path[prefix_len] = '\0';
+		strncat(path, suffix, strlen(suffix));
+		write_contents(path, cache);
+
+		suffix = ".js.map.json";
+		strncpy(path, cache_prefix, prefix_len);
+		path[prefix_len] = '\0';
+		strncat(path, suffix, strlen(suffix));
+		write_contents(path, sourcemap);
+
+		free(cache_prefix);
+		free(source);
+		free(cache);
+		free(sourcemap);
+
+		free(path);
+	}
+
+	return  JSValueMakeNull(ctx);
 }
 
 JSValueRef function_eval(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
@@ -358,6 +413,7 @@ int main(int argc, char **argv) {
 	register_global_function(ctx, "PLANCK_READ_FILE", function_read_file);
 	register_global_function(ctx, "PLANCK_LOAD", function_load);
 	register_global_function(ctx, "PLANCK_LOAD_DEPS_CLJS_FILES", function_load_deps_cljs_files);
+	register_global_function(ctx, "PLANCK_CACHE", function_cache);
 
 	register_global_function(ctx, "PLANCK_EVAL", function_eval);
 
@@ -451,6 +507,23 @@ JSValueRef evaluate_script(JSContextRef ctx, char *script, char *source) {
 ("evaluate_script", ctx, ex);
 
 	return val;
+}
+
+char *value_to_c_string(JSContextRef ctx, JSValueRef val) {
+	if (!JSValueIsString(ctx, val)) {
+#ifdef DEBUG
+		fprintf(stderr, "WARN: not a string\n");
+#endif
+		return NULL;
+	}
+
+	JSStringRef str_ref = JSValueToStringCopy(ctx, val, NULL);
+	size_t len = JSStringGetLength(str_ref);
+	char *str = malloc(len * sizeof(char));
+	JSStringGetUTF8CString(str_ref, str, len);
+	JSStringRelease(str_ref);
+
+	return str;
 }
 
 JSValueRef get_value_on_object(JSContextRef ctx, JSObjectRef obj, char *name) {
@@ -658,4 +731,53 @@ char *get_contents(char *path) {
 err:
 	printf("get_contents(\"%s\"): %s: %s\n", path, err_prefix, strerror(errno));
 	return NULL;
+}
+
+void write_contents(char *path, char *contents) {
+	char *err_prefix;
+
+	char *path_copy = strdup(path);
+	char *dir = dirname(path_copy);
+	if (mkdir_p(dir) < 0) {
+		err_prefix = "mkdir_p";
+		free(path_copy);
+		goto err;
+	}
+	free(path_copy);
+
+	FILE *f = fopen(path, "w");
+	if (f == NULL) {
+		err_prefix = "fopen";
+		goto err;
+	}
+
+	int len = strlen(contents);
+	int offset = 0;
+	do {
+		int res = fwrite(contents+offset, 1, len-offset, f);
+		if (res < 0) {
+			err_prefix = "fwrite";
+			goto err;
+		}
+		offset += res;
+	} while (offset < len);
+
+	if (fclose(f) < 0) {
+		err_prefix = "fclose";
+		goto err;
+	}
+
+	return;
+
+err:
+	printf("write_contents(\"%s\", ...): %s: %s\n", path, err_prefix, strerror(errno));
+	return;
+}
+
+int mkdir_p(char *path) {
+	int res = mkdir(path, 0755);
+	if (res < 0 && errno == EEXIST) {
+		return 0;
+	}
+	return res;
 }
