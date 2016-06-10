@@ -703,7 +703,7 @@ char *get_contents(char *path, time_t *last_modified) {
 	}
 
 	if (last_modified != NULL) {
-		*last_modified = f_stat.st_mtim.tv_sec;
+		*last_modified = f_stat.st_mtime;
 	}
 
 	char *buf = malloc(f_stat.st_size + 1);
