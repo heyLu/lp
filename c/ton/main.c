@@ -38,14 +38,12 @@ int mkdir_p(char *path);
 #define debug_print_value(prefix, ctx, val)
 #endif
 
-void print_value(char *prefix, JSContextRef ctx, JSValueRef exception) {
-	if (exception != NULL) {
-		JSStringRef ex_str = to_string(ctx, exception);
-		char ex_buf[1000];
-		ex_buf[0] = '\0';
-		JSStringGetUTF8CString(ex_str, ex_buf, 1000-1);
-		printf("%s%s\n", prefix, ex_buf);
-		JSStringRelease(ex_str);
+void print_value(char *prefix, JSContextRef ctx, JSValueRef val) {
+	if (val != NULL) {
+		JSStringRef str = to_string(ctx, val);
+		char *ex_str = value_to_c_string(ctx, JSValueMakeString(ctx, str));
+		printf("%s%s\n", prefix, ex_str);
+		free(ex_str);
 	}
 }
 
