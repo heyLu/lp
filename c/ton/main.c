@@ -233,12 +233,12 @@ JSValueRef function_get_term_size(JSContextRef ctx, JSObjectRef function, JSObje
 JSValueRef function_print_fn(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
 		size_t argc, const JSValueRef args[], JSValueRef* exception) {
 	if (argc == 1 && JSValueIsString(ctx, args[0])) {
-		JSStringRef val_str = JSValueToStringCopy(ctx, args[0], NULL);
-		char buf[1000];
-		JSStringGetUTF8CString(val_str, buf, 1000);
+		char *str = value_to_c_string(ctx, args[0]);
 
-		fprintf(stdout, "%s", buf);
+		fprintf(stdout, "%s", str);
 		fflush(stdout);
+
+		free(str);
 	}
 
 	return JSValueMakeNull(ctx);
@@ -247,12 +247,12 @@ JSValueRef function_print_fn(JSContextRef ctx, JSObjectRef function, JSObjectRef
 JSValueRef function_print_err_fn(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
 		size_t argc, const JSValueRef args[], JSValueRef* exception) {
 	if (argc == 1 && JSValueIsString(ctx, args[0])) {
-		JSStringRef val_str = JSValueToStringCopy(ctx, args[0], NULL);
-		char buf[1000];
-		JSStringGetUTF8CString(val_str, buf, 1000);
+		char *str = value_to_c_string(ctx, args[0]);
 
-		fprintf(stderr, "%s", buf);
+		fprintf(stderr, "%s", str);
 		fflush(stderr);
+
+		free(str);
 	}
 
 	return JSValueMakeNull(ctx);
