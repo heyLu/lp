@@ -12,6 +12,7 @@ import (
 var options struct {
 	listFiles bool
 }
+var lsOpts = []string{"--color=auto", "--group-directories-first"}
 
 func init() {
 	flag.BoolVar(&options.listFiles, "l", false, "Always list files")
@@ -39,6 +40,7 @@ func main() {
 
 	if options.listFiles {
 		cmd := exec.Command("ls", dir)
+		cmd.Args = append(cmd.Args, lsOpts...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -67,6 +69,7 @@ func main() {
 
 		if len(rs) == 0 {
 			cmd = exec.Command("ls", dir)
+			cmd.Args = append(cmd.Args, lsOpts...)
 		} else {
 			if options.listFiles {
 				fmt.Println()
