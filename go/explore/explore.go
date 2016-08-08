@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -8,10 +9,20 @@ import (
 	"strings"
 )
 
+var options struct {
+	listFiles bool
+}
+
+func init() {
+	flag.BoolVar(&options.listFiles, "l", false, "Always list files")
+}
+
 func main() {
+	flag.Parse()
+
 	dir := "."
-	if len(os.Args) > 1 {
-		dir = os.Args[1]
+	if flag.NArg() > 0 {
+		dir = flag.Arg(0)
 	}
 
 	f, err := os.Open(dir)
@@ -24,6 +35,14 @@ func main() {
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
+	}
+
+	if options.listFiles {
+		cmd := exec.Command("ls", dir)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Run()
 	}
 
 	var cmd *exec.Cmd
@@ -49,11 +68,19 @@ func main() {
 		if len(rs) == 0 {
 			cmd = exec.Command("ls", dir)
 		} else {
+			if options.listFiles {
+				fmt.Println()
+			}
+
 			fmt.Printf("'%s':\n", rs[0])
 			cmd = exec.Command("head", "-n3", path.Join(dir, rs[0]))
 		}
 	} else {
 		cmd = exec.Command("head", "-n3", path.Join(dir, f.Name()))
+	}
+
+	if options.listFiles && cmd.Path == "ls" {
+		os.Exit(0)
 	}
 
 	cmd.Stdin = os.Stdin
