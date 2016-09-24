@@ -1,0 +1,11 @@
+---
+- title: pacman -Qo $(ls -1t --time=atime /usr/bin | tail -n30)
+  content:
+    Find infrequently used binaries on your system.  `ls --time=atime`
+    is the key here, it uses the access time instead of the modification
+    time, which is the default.
+  type: shell
+- title: XOXO Festival videos (2012-2015)
+  url: https://www.youtube.com/user/xoxofest/videos
+  content: Unfortunately, the ones for 2016 are missing.  I'm not sure if there will be video, I haven't found anything official so far.
+  type: link
