@@ -27,12 +27,30 @@ type Post struct {
 var flags struct {
 	writeBack bool
 	reverse   bool
+	css       string
 }
 var dataPath string = "blog.yaml"
+
+var defaultStyle = `
+article header {
+	display: flex;
+	align-items: center;
+}
+
+article h1 {
+	margin: 0;
+	margin-right: 1em;
+}
+
+article time {
+	color: #666;
+}
+`
 
 func init() {
 	flag.BoolVar(&flags.writeBack, "write-back", false, "Rewrite the YAML file with the generated ids")
 	flag.BoolVar(&flags.reverse, "reverse", false, "Reverse the order of the articles in the file")
+	flag.StringVar(&flags.css, "css", defaultStyle, "Custom styles to use")
 }
 
 func main() {
@@ -63,25 +81,11 @@ func main() {
 <head>
 	<meta charset="utf-8" />
 	<title>A blog</title>
-	<style>
-		article header {
-			display: flex;
-			align-items: center;
-		}
-
-		article h1 {
-			margin: 0;
-			margin-right: 1em;
-		}
-
-		article time {
-			color: #666;
-		}
-	</style>
+	<style>%s</style>
 </head>
 
 <body>
-`)
+`, flags.css)
 
 	if flags.reverse {
 		l := len(posts)
