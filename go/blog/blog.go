@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
+	"flag"
 	"fmt"
 	"html/template"
 	"io"
@@ -22,7 +23,17 @@ type Post struct {
 	Type    string `yaml:"type"`
 }
 
+var flags struct {
+	writeBack bool
+}
+
+func init() {
+	flag.BoolVar(&flags.writeBack, "write-back", false, "Rewrite the YAML file with the generated ids")
+}
+
 func main() {
+	flag.Parse()
+
 	f, err := os.Open("blog.yaml")
 	if err != nil {
 		exit(err)
@@ -72,6 +83,14 @@ func main() {
 	}
 
 	fmt.Printf("\n</body>\n</html>\n")
+
+	if flags.writeBack {
+		out, err := yaml.Marshal(posts)
+		if err != nil {
+			exit(err)
+		}
+		ioutil.WriteFile("blog.yaml", out, 0664)
+	}
 }
 
 var funcs = template.FuncMap{
