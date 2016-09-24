@@ -28,6 +28,7 @@ var flags struct {
 	writeBack bool
 	reverse   bool
 	css       string
+	title     string
 }
 var dataPath string = "blog.yaml"
 
@@ -51,6 +52,7 @@ func init() {
 	flag.BoolVar(&flags.writeBack, "write-back", false, "Rewrite the YAML file with the generated ids")
 	flag.BoolVar(&flags.reverse, "reverse", false, "Reverse the order of the articles in the file")
 	flag.StringVar(&flags.css, "css", defaultStyle, "Custom styles to use")
+	flag.StringVar(&flags.title, "title", "A blog", "Custom title to use")
 }
 
 func main() {
@@ -80,12 +82,12 @@ func main() {
 <html>
 <head>
 	<meta charset="utf-8" />
-	<title>A blog</title>
+	<title>%s</title>
 	<style>%s</style>
 </head>
 
 <body>
-`, flags.css)
+`, flags.title, flags.css)
 
 	if flags.reverse {
 		l := len(posts)
