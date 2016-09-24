@@ -63,6 +63,21 @@ func main() {
 <head>
 	<meta charset="utf-8" />
 	<title>A blog</title>
+	<style>
+		article header {
+			display: flex;
+			align-items: center;
+		}
+
+		article h1 {
+			margin: 0;
+			margin-right: 1em;
+		}
+
+		article time {
+			color: #666;
+		}
+	</style>
 </head>
 
 <body>
