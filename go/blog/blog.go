@@ -26,6 +26,7 @@ type Post struct {
 var flags struct {
 	writeBack bool
 }
+var dataPath string = "blog.yaml"
 
 func init() {
 	flag.BoolVar(&flags.writeBack, "write-back", false, "Rewrite the YAML file with the generated ids")
@@ -34,7 +35,10 @@ func init() {
 func main() {
 	flag.Parse()
 
-	f, err := os.Open("blog.yaml")
+	if flag.NArg() > 0 {
+		dataPath = flag.Arg(0)
+	}
+	f, err := os.Open(dataPath)
 	if err != nil {
 		exit(err)
 	}
@@ -89,7 +93,7 @@ func main() {
 		if err != nil {
 			exit(err)
 		}
-		ioutil.WriteFile("blog.yaml", out, 0664)
+		ioutil.WriteFile(dataPath, out, 0664)
 	}
 }
 
