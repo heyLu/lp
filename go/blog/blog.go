@@ -76,7 +76,7 @@ func main() {
 		exit(err)
 	}
 
-	fmt.Printf(`<doctype html>
+	fmt.Printf(`<!doctype html>
 <html>
 <head>
 	<meta charset="utf-8" />
