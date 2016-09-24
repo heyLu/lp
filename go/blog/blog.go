@@ -25,11 +25,13 @@ type Post struct {
 
 var flags struct {
 	writeBack bool
+	reverse   bool
 }
 var dataPath string = "blog.yaml"
 
 func init() {
 	flag.BoolVar(&flags.writeBack, "write-back", false, "Rewrite the YAML file with the generated ids")
+	flag.BoolVar(&flags.reverse, "reverse", false, "Reverse the order of the articles in the file")
 }
 
 func main() {
@@ -64,6 +66,15 @@ func main() {
 
 <body>
 `)
+
+	if flags.reverse {
+		l := len(posts)
+		reversePosts := make([]Post, l)
+		for i := 0; i < l; i++ {
+			reversePosts[i] = posts[l-i-1]
+		}
+		posts = reversePosts
+	}
 
 	for i, post := range posts {
 		if post.Id == "" {
