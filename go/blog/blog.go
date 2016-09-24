@@ -20,6 +20,7 @@ type Post struct {
 	Title   string `yaml:"title"`
 	URL     string `yaml:"url"`
 	Content string `yaml:"content"`
+	Date    string `yaml:"date"`
 	Type    string `yaml:"type"`
 }
 
@@ -117,7 +118,10 @@ var funcs = template.FuncMap{
 var shellTmpl = template.Must(template.New("shell").
 	Funcs(funcs).Parse(`
 <article id="{{ .Id }}" class="shell">
-	<h1><code class="language-shell">{{ .Title }}</code></h1>
+	<header>
+		<h1><code class="language-shell">{{ .Title }}</code></h1>
+		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
+	</header>
 	{{- if .Content }}
 
 	{{ markdown .Content }}
@@ -128,7 +132,10 @@ var shellTmpl = template.Must(template.New("shell").
 var linkTmpl = template.Must(template.New("link").
 	Funcs(funcs).Parse(`
 <article id="{{ .Id }}" class="link">
-	<h1><a href="{{ .URL }}">{{ .Title }}</a></h1>
+	<header>
+		<h1><a href="{{ .URL }}">{{ .Title }}</a></h1>
+		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
+	</header>
 	{{- if .Content }}
 
 	{{ markdown .Content }}

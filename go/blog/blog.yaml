@@ -4,8 +4,10 @@
     Find infrequently used binaries on your system.  `ls --time=atime`
     is the key here, it uses the access time instead of the modification
     time, which is the default.
+  date: "2016-09-20"
   type: shell
 - title: XOXO Festival videos (2012-2015)
   url: https://www.youtube.com/user/xoxofest/videos
   content: Unfortunately, the ones for 2016 are missing.  I'm not sure if there will be video, I haven't found anything official so far.
+  date: "2016-09-24"
   type: link
