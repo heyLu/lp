@@ -45,10 +45,22 @@ article header {
 
 article h1 {
 	margin: 0;
-	margin-right: 1em;
+}
+
+article header .permalink {
+	margin-left: 0.1em;
+	text-decoration: none;
+	color: #555;
+
+	visibility: hidden;
+}
+
+article header:hover .permalink {
+	visibility: visible;
 }
 
 article time {
+	margin-left: 1em;
 	color: #666;
 }
 
@@ -185,6 +197,7 @@ var shellTmpl = template.Must(template.New("shell").
 <article id="{{ .Id }}" class="shell">
 	<header>
 		<h1><code class="language-shell">{{ .Title }}</code></h1>
+		<a class="permalink" href="#{{ .Id }}">∞</a>
 		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
 	</header>
 	{{- if .Content }}
@@ -199,6 +212,7 @@ var linkTmpl = template.Must(template.New("link").
 <article id="{{ .Id }}" class="link">
 	<header>
 		<h1><a href="{{ .URL }}">{{ .Title }}</a></h1>
+		<a class="permalink" href="#{{ .Id }}">∞</a>
 		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
 	</header>
 	{{- if .Content }}
@@ -214,6 +228,7 @@ var imageTmpl = template.Must(template.New("image").
 	{{- if .Title }}
 	<header>
 		<h1>{{ .Title }}</h1>
+		<a class="permalink" href="#{{ .Id }}">∞</a>
 		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
 	</header>
 	{{- end }}
@@ -231,6 +246,7 @@ var songTmpl = template.Must(template.New("song").
 	{{- if .Title }}
 	<header>
 		<h1>{{ .Title }}</h1>
+		<a class="permalink" href="#{{ .Id }}">∞</a>
 		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
 	</header>
 	{{- end }}
@@ -249,6 +265,7 @@ var textTmpl = template.Must(template.New("text").
 <article id="{{ .Id }}" class="text">
 	<header>
 		<h1>{{ .Title }}</h1>
+		<a class="permalink" href="#{{ .Id }}">∞</a>
 		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
 	</header>
 	{{- if .Content }}
@@ -264,6 +281,7 @@ var videoTmpl = template.Must(template.New("video").
 	{{- if .Title }}
 	<header>
 		<h1>{{ .Title }}</h1>
+		<a class="permalink" href="#{{ .Id }}">∞</a>
 		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
 	</header>
 	{{- end }}
