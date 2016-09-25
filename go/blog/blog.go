@@ -123,6 +123,8 @@ func main() {
 			err = imageTmpl.Execute(os.Stdout, post)
 		case "song":
 			err = songTmpl.Execute(os.Stdout, post)
+		case "text":
+			err = textTmpl.Execute(os.Stdout, post)
 		default:
 			fmt.Fprintf(os.Stderr, "Error: no output for type '%s'\n", post.Type)
 			os.Exit(1)
@@ -209,6 +211,20 @@ var songTmpl = template.Must(template.New("song").
 	<audio src="{{ safe_url .URL }}" controls>
 		Your browser can't play {{ .URL }}.
 	</audio>
+	{{- if .Content }}
+
+	{{ markdown .Content }}
+	{{- end -}}
+</article>
+`))
+
+var textTmpl = template.Must(template.New("text").
+	Funcs(funcs).Parse(`
+<article id="{{ .Id }}" class="text">
+	<header>
+		<h1>{{ .Title }}</h1>
+		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
+	</header>
 	{{- if .Content }}
 
 	{{ markdown .Content }}

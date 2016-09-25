@@ -18,3 +18,38 @@
   content: Shook, by [DRALMS](https://dralms.bandcamp.com/).
   date: "2016-09-25"
   type: song
+- title: Introduction
+  content: |
+    `blog` is a tiny tool that generates your (link)blog.
+    It takes a [YAML](https://yaml.org) file as input, and produces
+    a single HTML file on stdout, which you could then upload to your
+    server, place on your Desktop, or pass along to friends.
+
+    `blog` is not meant to be a feature-rich program.  It does the
+    bare minimum necessary to host a blog with different post types,
+    and not more.  Whichever additional features you need you can
+    add to your version of it.
+
+    ## How to use it
+
+    All posts are written in a single file `blog.yaml`, which contains
+    a list of entries.
+
+    The most basic post type is `text`, written as follows:
+
+        - title: An example post
+          content: You can use *Markdown* here...
+
+    Optionally you can specify a `date` field.
+
+    There are a few other types of posts:
+
+    * `shell`, similar to text, but `title` is a shell command
+    * `link`, with an additional `url` field
+    * `image`, where `url` is the source of an image
+    * `song`, where `url` is the source of the song
+
+    With the exception of the `shell` type, `title` and `content`
+    are optional.
+  date: "2016-09-25"
+  type: text
