@@ -61,8 +61,13 @@ article img {
 func init() {
 	flag.BoolVar(&flags.writeBack, "write-back", false, "Rewrite the YAML file with the generated ids")
 	flag.BoolVar(&flags.reverse, "reverse", false, "Reverse the order of the articles in the file")
-	flag.StringVar(&flags.css, "css", defaultStyle, "Custom styles to use")
-	flag.StringVar(&flags.title, "title", "A blog", "Custom title to use")
+	flag.StringVar(&flags.css, "css", defaultStyle, "Custom `css` styles to use")
+	flag.StringVar(&flags.title, "title", "A blog", "Custom `title` to use")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [flags] [<blog.yaml> [<blog.html>]]\n\n", os.Args[0])
+		flag.PrintDefaults()
+	}
 }
 
 func main() {
