@@ -33,6 +33,10 @@ var flags struct {
 var dataPath string = "blog.yaml"
 
 var defaultStyle = `
+article {
+	margin-bottom: 1em;
+}
+
 article header {
 	display: flex;
 	align-items: center;
@@ -45,6 +49,11 @@ article h1 {
 
 article time {
 	color: #666;
+}
+
+article img {
+	max-width: 80vw;
+	max-height: 50vh;
 }
 `
 
@@ -110,6 +119,8 @@ func main() {
 			err = shellTmpl.Execute(os.Stdout, post)
 		case "link":
 			err = linkTmpl.Execute(os.Stdout, post)
+		case "image":
+			err = imageTmpl.Execute(os.Stdout, post)
 		default:
 			fmt.Fprintf(os.Stderr, "Error: no output for type '%s'\n", post.Type)
 			os.Exit(1)
@@ -134,6 +145,9 @@ var funcs = template.FuncMap{
 	"markdown": func(markdown string) template.HTML {
 		return template.HTML(blackfriday.MarkdownCommon([]byte(markdown)))
 	},
+	"safe_url": func(s string) template.URL {
+		return template.URL(s)
+	},
 }
 
 var shellTmpl = template.Must(template.New("shell").
@@ -157,6 +171,23 @@ var linkTmpl = template.Must(template.New("link").
 		<h1><a href="{{ .URL }}">{{ .Title }}</a></h1>
 		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
 	</header>
+	{{- if .Content }}
+
+	{{ markdown .Content }}
+	{{- end -}}
+</article>
+`))
+
+var imageTmpl = template.Must(template.New("image").
+	Funcs(funcs).Parse(`
+<article id="{{ .Id }}" class="image">
+	{{- if .Title }}
+	<header>
+		<h1>{{ .Title }}</h1>
+		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
+	</header>
+	{{- end }}
+	<img src="{{ safe_url .URL }}" />
 	{{- if .Content }}
 
 	{{ markdown .Content }}
