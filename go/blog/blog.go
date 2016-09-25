@@ -121,6 +121,8 @@ func main() {
 			err = linkTmpl.Execute(os.Stdout, post)
 		case "image":
 			err = imageTmpl.Execute(os.Stdout, post)
+		case "song":
+			err = songTmpl.Execute(os.Stdout, post)
 		default:
 			fmt.Fprintf(os.Stderr, "Error: no output for type '%s'\n", post.Type)
 			os.Exit(1)
@@ -188,6 +190,25 @@ var imageTmpl = template.Must(template.New("image").
 	</header>
 	{{- end }}
 	<img src="{{ safe_url .URL }}" />
+	{{- if .Content }}
+
+	{{ markdown .Content }}
+	{{- end -}}
+</article>
+`))
+
+var songTmpl = template.Must(template.New("song").
+	Funcs(funcs).Parse(`
+<article id="{{ .Id }}" class="song">
+	{{- if .Title }}
+	<header>
+		<h1>{{ .Title }}</h1>
+		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
+	</header>
+	{{- end }}
+	<audio src="{{ safe_url .URL }}" controls>
+		Your browser can't play {{ .URL }}.
+	</audio>
 	{{- if .Content }}
 
 	{{ markdown .Content }}
