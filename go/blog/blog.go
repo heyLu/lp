@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
-	"strings"
 
 	"github.com/russross/blackfriday"
 	"gopkg.in/yaml.v2"
@@ -128,17 +127,13 @@ func main() {
 		case "text":
 			err = textTmpl.Execute(os.Stdout, post)
 		case "video":
-			if !strings.HasPrefix(post.URL, "https://www.youtube.com/watch") {
-				exit(fmt.Errorf("can't handle video '%s'", post.URL))
-			}
-
 			u, err := url.Parse(post.URL)
 			if err != nil {
 				exit(fmt.Errorf("invalid video url '%s'", post.URL))
 			}
 			id := u.Query().Get("v")
-			if id == "" {
-				exit(fmt.Errorf("invalid video url '%s'", post.URL))
+			if (u.Host != "youtube.com" && u.Host != "www.youtube.com") || id == "" {
+				exit(fmt.Errorf("unsupported video url '%s'", post.URL))
 			}
 			post.URL = id
 			err = videoTmpl.Execute(os.Stdout, post)
