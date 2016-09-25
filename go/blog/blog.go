@@ -77,6 +77,14 @@ func main() {
 	}
 	defer f.Close()
 
+	out := os.Stdout
+	if flag.NArg() > 1 {
+		out, err = os.Create(flag.Arg(1))
+		if err != nil {
+			exit(err)
+		}
+	}
+
 	data, err := ioutil.ReadAll(f)
 	if err != nil {
 		exit(err)
@@ -88,7 +96,7 @@ func main() {
 		exit(err)
 	}
 
-	fmt.Printf(`<!doctype html>
+	fmt.Fprintf(out, `<!doctype html>
 <html>
 <head>
 	<meta charset="utf-8" />
@@ -117,15 +125,15 @@ func main() {
 		var err error
 		switch post.Type {
 		case "shell":
-			err = shellTmpl.Execute(os.Stdout, post)
+			err = shellTmpl.Execute(out, post)
 		case "link":
-			err = linkTmpl.Execute(os.Stdout, post)
+			err = linkTmpl.Execute(out, post)
 		case "image":
-			err = imageTmpl.Execute(os.Stdout, post)
+			err = imageTmpl.Execute(out, post)
 		case "song":
-			err = songTmpl.Execute(os.Stdout, post)
+			err = songTmpl.Execute(out, post)
 		case "text":
-			err = textTmpl.Execute(os.Stdout, post)
+			err = textTmpl.Execute(out, post)
 		case "video":
 			u, err := url.Parse(post.URL)
 			if err != nil {
@@ -136,7 +144,7 @@ func main() {
 				exit(fmt.Errorf("unsupported video url '%s'", post.URL))
 			}
 			post.URL = id
-			err = videoTmpl.Execute(os.Stdout, post)
+			err = videoTmpl.Execute(out, post)
 		default:
 			fmt.Fprintf(os.Stderr, "Error: no output for type '%s'\n", post.Type)
 			os.Exit(1)
@@ -146,14 +154,15 @@ func main() {
 		}
 	}
 
-	fmt.Printf("\n</body>\n</html>\n")
+	fmt.Fprintf(out, "\n</body>\n</html>\n")
+	out.Close()
 
 	if flags.writeBack {
-		out, err := yaml.Marshal(posts)
+		dataOut, err := yaml.Marshal(posts)
 		if err != nil {
 			exit(err)
 		}
-		ioutil.WriteFile(dataPath, out, 0664)
+		ioutil.WriteFile(dataPath, dataOut, 0664)
 	}
 }
 
