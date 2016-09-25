@@ -42,6 +42,13 @@
 
     Optionally you can specify a `date` field.
 
+    If `content` starts with a non-alphabetic character, you need to
+    start the value with a vertical bar `|`:
+
+        - title: Special characters...
+          content: |
+            *This* post starts with a special character.
+
     There are a few other types of posts:
 
     * `shell`, similar to text, but `title` is a shell command
