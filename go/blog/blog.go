@@ -211,7 +211,8 @@ var shellTmpl = template.Must(baseTmpl.New("shell").
 	<header>
 		<h1><code class="language-shell">{{ .Title }}</code></h1>
 		<a class="permalink" href="#{{ .Id }}">∞</a>
-		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
+		{{- if .Date }}
+		<time>{{ .Date }}</time>{{ end }}
 	</header>
 	{{- if .Content }}
 
@@ -226,7 +227,8 @@ var linkTmpl = template.Must(baseTmpl.New("link").
 	<header>
 		<h1><a href="{{ .URL }}">{{ .Title }}</a></h1>
 		<a class="permalink" href="#{{ .Id }}">∞</a>
-		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
+		{{- if .Date }}
+		<time>{{ .Date }}</time>{{ end }}
 	</header>
 	{{- if .Content }}
 
