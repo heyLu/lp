@@ -9,7 +9,9 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/russross/blackfriday"
 	"gopkg.in/yaml.v2"
@@ -125,6 +127,21 @@ func main() {
 			err = songTmpl.Execute(os.Stdout, post)
 		case "text":
 			err = textTmpl.Execute(os.Stdout, post)
+		case "video":
+			if !strings.HasPrefix(post.URL, "https://www.youtube.com/watch") {
+				exit(fmt.Errorf("can't handle video '%s'", post.URL))
+			}
+
+			u, err := url.Parse(post.URL)
+			if err != nil {
+				exit(fmt.Errorf("invalid video url '%s'", post.URL))
+			}
+			id := u.Query().Get("v")
+			if id == "" {
+				exit(fmt.Errorf("invalid video url '%s'", post.URL))
+			}
+			post.URL = id
+			err = videoTmpl.Execute(os.Stdout, post)
 		default:
 			fmt.Fprintf(os.Stderr, "Error: no output for type '%s'\n", post.Type)
 			os.Exit(1)
@@ -225,6 +242,23 @@ var textTmpl = template.Must(template.New("text").
 		<h1>{{ .Title }}</h1>
 		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
 	</header>
+	{{- if .Content }}
+
+	{{ markdown .Content }}
+	{{- end -}}
+</article>
+`))
+
+var videoTmpl = template.Must(template.New("video").
+	Funcs(funcs).Parse(`
+<article id="{{ .Id }}" class="video">
+	{{- if .Title }}
+	<header>
+		<h1>{{ .Title }}</h1>
+		{{- if .Date }}<time>{{ .Date }}</time>{{ end -}}
+	</header>
+	{{- end }}
+	<iframe width="560" height="315" src="https://www.youtube.com/embed/{{ .URL }}" frameborder="0" allowfullscreen></iframe>
 	{{- if .Content }}
 
 	{{ markdown .Content }}

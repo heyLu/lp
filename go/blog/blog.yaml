@@ -60,3 +60,6 @@
     are optional.
   date: "2016-09-25"
   type: text
+- url: https://www.youtube.com/watch?v=yLuOzNeHw5I
+  content: Lights, by Archive.
+  type: video
