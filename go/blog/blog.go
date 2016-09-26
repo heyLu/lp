@@ -320,6 +320,18 @@ func main() {
 		document.title = baseTitle + " (Posts tagged '" + tag + "')";
 	}
 
+	function filterId(id) {
+		var articles = document.querySelectorAll("article");
+		for (var i = 0; i < articles.length; i++) {
+			var article = articles[i];
+			if (article.id != id) {
+				article.classList.add("does-not-match");
+			}
+		}
+
+		document.title = baseTitle + " (Only post id '" + id + "')";
+	}
+
 	function clearFilter() {
 		var articles = document.querySelectorAll("article.does-not-match");
 		for (var i = 0; i < articles.length; i++) {
