@@ -88,3 +88,22 @@
             - "stuff:with-interesting!-characters"
   tags: [tags, feature, announcement, "author:lu"]
   type: text
+- title: Filters!  (More of them)
+  content: |
+    Let's write more filters.  Apart from the `tag` filter that we
+    already have.
+
+    Some ideas:
+
+    - `title`: filter by text occurring in the title
+    - `post`: filter a specific post by id (or multiple?)
+    - `type`: filter by post type
+
+    All of them will work similar to the existing `tag` filter, i.e.
+    they can be used as links and will appear in the history.
+
+    If we want to be fancy, we might implement combining filters using
+    `and`.
+  date: 2016-09-26
+  tags: [ideas, feature, "author:lu"]
+  type: text
