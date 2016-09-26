@@ -42,6 +42,7 @@ var dataPath string = "blog.yaml"
 var defaultStyle = `
 article {
 	margin-bottom: 2em;
+	clear: left;
 }
 
 article header {
@@ -98,6 +99,7 @@ article.does-not-match {
 	color: #555;
 	font-size: smaller;
 	margin-bottom: 1em;
+	clear: left;
 }
 `
 
