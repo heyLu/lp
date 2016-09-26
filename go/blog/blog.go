@@ -200,22 +200,46 @@ func main() {
 	fmt.Fprintf(out, `
 
 	<script>
+	var currentFilter = null;
+
+	window.addEventListener("hashchange", function(ev) {
+		filterFromURL(new URL(ev.newURL));
+	});
+
 	window.addEventListener("click", function(ev) {
 		if (ev.target.classList.contains("tag-link")) {
 			if (ev.target.href == "") {
 				return;
 			}
 
-			var u = new URL(ev.target.href);
-			if (!u.hash.startsWith("#tag:")) {
-				return;
+			var tag = tagFromURL(new URL(ev.target.href));
+			if (currentFilter == tag) {
+				clearFilter();
+			} else {
+				filterTag(tag);
 			}
-			var tag = u.hash.substr(5);
+		}
+	});
+
+	function filterFromURL(u) {
+		var tag = tagFromURL(u);
+		if (tag == null) {
+			clearFilter();
+		} else {
 			filterTag(tag);
 		}
-	})
+	}
+
+	function tagFromURL(u) {
+		if (!u.hash.startsWith("#tag:")) {
+			return null;
+		}
+		return u.hash.substr(5);
+	}
 
 	function filterTag(tag) {
+		currentFilter = tag;
+
 		var articles = document.querySelectorAll("article");
 		for (var i = 0; i < articles.length; i++) {
 			var article = articles[i];
@@ -233,6 +257,15 @@ func main() {
 				article.classList.add("does-not-match");
 			}
 		}
+	}
+
+	function clearFilter() {
+		var articles = document.querySelectorAll("article.does-not-match");
+		for (var i = 0; i < articles.length; i++) {
+			articles[i].classList.remove("does-not-match");
+		}
+
+		currentFilter = null;
 	}
 	</script>`)
 	fmt.Fprintf(out, "\n</body>\n</html>\n")
