@@ -348,7 +348,7 @@ var baseTmpl = template.Must(template.New("base").
 
 var shellTmpl = template.Must(baseTmpl.New("shell").
 	Funcs(funcs).Parse(`
-<article id="{{ .Id }}" class="shell">
+<article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	<header>
 		<h1><code class="language-shell">{{ .Title }}</code></h1>
 		<a class="permalink" href="#{{ .Id }}">∞</a>
@@ -359,12 +359,16 @@ var shellTmpl = template.Must(baseTmpl.New("shell").
 
 	{{ markdown .Content }}
 	{{- end -}}
+
+	<footer>
+		{{ template "tags" .Tags }}
+	</footer>
 </article>
 `))
 
 var linkTmpl = template.Must(baseTmpl.New("link").
 	Funcs(funcs).Parse(`
-<article id="{{ .Id }}" class="link">
+<article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	<header>
 		<h1><a href="{{ .URL }}">{{ .Title }}</a></h1>
 		<a class="permalink" href="#{{ .Id }}">∞</a>
@@ -375,24 +379,32 @@ var linkTmpl = template.Must(baseTmpl.New("link").
 
 	{{ markdown .Content }}
 	{{- end -}}
+
+	<footer>
+		{{ template "tags" .Tags }}
+	</footer>
 </article>
 `))
 
 var imageTmpl = template.Must(baseTmpl.New("image").
 	Funcs(funcs).Parse(`
-<article id="{{ .Id }}" class="image">
+<article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
 	<img src="{{ safe_url .URL }}" />
 	{{- if .Content }}
 
 	{{ markdown .Content }}
 	{{- end -}}
+
+	<footer>
+		{{ template "tags" .Tags }}
+	</footer>
 </article>
 `))
 
 var songTmpl = template.Must(baseTmpl.New("song").
 	Funcs(funcs).Parse(`
-<article id="{{ .Id }}" class="song">
+<article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
 	<audio src="{{ safe_url .URL }}" controls>
 		Your browser can't play {{ .URL }}.
@@ -401,12 +413,16 @@ var songTmpl = template.Must(baseTmpl.New("song").
 
 	{{ markdown .Content }}
 	{{- end -}}
+
+	<footer>
+		{{ template "tags" .Tags }}
+	</footer>
 </article>
 `))
 
 var textTmpl = template.Must(baseTmpl.New("text").
 	Funcs(funcs).Parse(`
-<article id="{{ .Id }}" class="text" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
+<article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
 	{{- if .Content }}
 
@@ -420,13 +436,17 @@ var textTmpl = template.Must(baseTmpl.New("text").
 `))
 
 var videoTmpl = template.Must(baseTmpl.New("video").Parse(`
-<article id="{{ .Id }}" class="video">
+<article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
 	<iframe width="560" height="315" src="https://www.youtube.com/embed/{{ .URL }}" frameborder="0" allowfullscreen></iframe>
 	{{- if .Content }}
 
 	{{ markdown .Content }}
 	{{- end -}}
+
+	<footer>
+		{{ template "tags" .Tags }}
+	</footer>
 </article>
 `))
 
