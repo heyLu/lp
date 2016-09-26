@@ -312,7 +312,9 @@ func main() {
 					}
 				}
 			}
-			if (!matches) {
+			if (matches) {
+				article.classList.remove("does-not-match");
+			} else {
 				article.classList.add("does-not-match");
 			}
 		}
