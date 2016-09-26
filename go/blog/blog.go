@@ -202,6 +202,10 @@ func main() {
 	<script>
 	var currentFilter = null;
 
+	window.addEventListener("DOMContentLoaded", function(ev) {
+		filterFromURL(document.location);
+	});
+
 	window.addEventListener("hashchange", function(ev) {
 		filterFromURL(new URL(ev.newURL));
 	});
