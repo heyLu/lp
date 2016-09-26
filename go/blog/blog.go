@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"html/template"
@@ -11,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 	"unicode"
 
@@ -19,12 +21,13 @@ import (
 )
 
 type Post struct {
-	Id      string `yaml:"id"`
-	Title   string `yaml:"title"`
-	URL     string `yaml:"url"`
-	Content string `yaml:"content"`
-	Date    string `yaml:"date"`
-	Type    string `yaml:"type"`
+	Id      string   `yaml:"id"`
+	Title   string   `yaml:"title"`
+	URL     string   `yaml:"url"`
+	Content string   `yaml:"content"`
+	Tags    []string `yaml:"tags"`
+	Date    string   `yaml:"date"`
+	Type    string   `yaml:"type"`
 }
 
 var flags struct {
@@ -38,7 +41,7 @@ var dataPath string = "blog.yaml"
 
 var defaultStyle = `
 article {
-	margin-bottom: 1em;
+	margin-bottom: 2em;
 }
 
 article header {
@@ -70,6 +73,31 @@ article time {
 article img {
 	max-width: 80vw;
 	max-height: 50vh;
+}
+
+.tags {
+	list-style-type: none;
+	padding: 0;
+}
+
+.tags .tag-link {
+	float: left;
+	color: black;
+	margin-right: 0.5em;
+}
+
+article .tags .tag-link:visited {
+	color: #555;
+}
+
+article.does-not-match {
+	display: none;
+}
+
+#tags {
+	color: #555;
+	font-size: smaller;
+	margin-bottom: 1em;
 }
 `
 
@@ -138,10 +166,17 @@ func main() {
 		posts = reversePosts
 	}
 
+	tags := map[string]bool{}
 	for i, post := range posts {
 		if post.Id == "" {
 			posts[i].Id = generateId(post)
 			post = posts[i]
+		}
+
+		if post.Tags != nil {
+			for _, tag := range post.Tags {
+				tags[tag] = true
+			}
 		}
 
 		var err error
@@ -176,6 +211,93 @@ func main() {
 		}
 	}
 
+	sortedTags := []string{}
+	for tag, _ := range tags {
+		sortedTags = append(sortedTags, tag)
+	}
+	sort.Strings(sortedTags)
+	err = tagsTmpl.Execute(out, sortedTags)
+	if err != nil {
+		exit(err)
+	}
+
+	fmt.Fprintf(out, `
+
+	<script>
+	var currentFilter = null;
+
+	window.addEventListener("DOMContentLoaded", function(ev) {
+		filterFromURL(document.location);
+	});
+
+	window.addEventListener("hashchange", function(ev) {
+		filterFromURL(new URL(ev.newURL));
+	});
+
+	window.addEventListener("click", function(ev) {
+		if (ev.target.classList.contains("tag-link")) {
+			if (ev.target.href == "") {
+				return;
+			}
+
+			var tag = tagFromURL(new URL(ev.target.href));
+			if (currentFilter == tag) {
+				clearFilter();
+				location.hash = "";
+				ev.preventDefault();
+			} else {
+				filterTag(tag);
+			}
+		}
+	});
+
+	function filterFromURL(u) {
+		var tag = tagFromURL(u);
+		if (tag == null) {
+			clearFilter();
+		} else {
+			filterTag(tag);
+		}
+	}
+
+	function tagFromURL(u) {
+		if (!u.hash.startsWith("#tag:")) {
+			return null;
+		}
+		return u.hash.substr(5);
+	}
+
+	function filterTag(tag) {
+		currentFilter = tag;
+
+		var articles = document.querySelectorAll("article");
+		for (var i = 0; i < articles.length; i++) {
+			var article = articles[i];
+			var matches = false;
+			if (article && 'tags' in article.dataset) {
+				var tags = JSON.parse(article.dataset.tags);
+				for (var j = 0; j < tags.length; j++) {
+					if (tags[j] == tag) {
+						matches = true;
+						break;
+					}
+				}
+			}
+			if (!matches) {
+				article.classList.add("does-not-match");
+			}
+		}
+	}
+
+	function clearFilter() {
+		var articles = document.querySelectorAll("article.does-not-match");
+		for (var i = 0; i < articles.length; i++) {
+			articles[i].classList.remove("does-not-match");
+		}
+
+		currentFilter = null;
+	}
+	</script>`)
 	fmt.Fprintf(out, "\n</body>\n</html>\n")
 	out.Close()
 
@@ -195,6 +317,10 @@ var funcs = template.FuncMap{
 	"safe_url": func(s string) template.URL {
 		return template.URL(s)
 	},
+	"json": func(v interface{}) (string, error) {
+		buf, err := json.Marshal(v)
+		return string(buf), err
+	},
 }
 
 var baseTmpl = template.Must(template.New("base").
@@ -207,6 +333,14 @@ var baseTmpl = template.Must(template.New("base").
 		{{- if .Date }}
 		<time>{{ .Date }}</time>{{ end }}
 	</header>
+{{ end }}
+
+{{ define "tags" }}
+	<ul class="tags">
+	{{- range . }}
+		<li><a class="tag-link" href="#tag:{{ safe_url . }}">{{ . }}</a></li>
+	{{ end -}}
+	</ul>
 {{ end }}
 `))
 
@@ -270,12 +404,16 @@ var songTmpl = template.Must(baseTmpl.New("song").
 
 var textTmpl = template.Must(baseTmpl.New("text").
 	Funcs(funcs).Parse(`
-<article id="{{ .Id }}" class="text">
+<article id="{{ .Id }}" class="text" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
 	{{- if .Content }}
 
 	{{ markdown .Content }}
 	{{- end -}}
+
+	<footer>
+		{{ template "tags" .Tags }}
+	</footer>
 </article>
 `))
 
@@ -288,6 +426,13 @@ var videoTmpl = template.Must(baseTmpl.Parse(`
 	{{ markdown .Content }}
 	{{- end -}}
 </article>
+`))
+
+var tagsTmpl = template.Must(baseTmpl.New("tags-list").Parse(`
+	<section id="tags">
+		<h1>All tags:</h1>
+		{{ template "tags" . }}
+	</section>
 `))
 
 func exit(err error) {

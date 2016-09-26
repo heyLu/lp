@@ -63,3 +63,22 @@
 - url: https://www.youtube.com/watch?v=yLuOzNeHw5I
   content: Lights, by Archive.
   type: video
+- title: There are tags now!
+  content: |
+    You can now tag articles.  Any kind of string is allowed, have
+    some fun with it...  :)
+
+    Use them as follows:
+
+        - # attributes as usual
+          tags: [fancy, tags, "stuff:with-interesting!-characters"]
+
+    Or alternatively:
+
+        - # as usual
+          tags:
+            - fancy
+            - tags
+            - "stuff:with-interesting!-characters"
+  tags: [tags, feature, announcement, "author:lu"]
+  type: text
