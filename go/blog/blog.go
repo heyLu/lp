@@ -54,7 +54,7 @@ article h1 {
 }
 
 article header .permalink {
-	margin-left: 0.1em;
+	margin-left: 0.5em;
 	text-decoration: none;
 	color: #555;
 
@@ -66,7 +66,7 @@ article header:hover .permalink {
 }
 
 article time {
-	margin-left: 1em;
+	margin-left: 0.5em;
 	color: #666;
 }
 
