@@ -87,6 +87,7 @@
             - tags
             - "stuff:with-interesting!-characters"
   tags: [tags, feature, announcement, "author:lu"]
+  date: 2016-09-26
   type: text
 - title: Filters!  (More of them)
   content: |
