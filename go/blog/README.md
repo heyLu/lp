@@ -18,3 +18,8 @@ Not many.
 - post types (see [blog.yaml](./blog.yaml) for usage examples)
     - `shell`: Write about an interesting shell command
     - `link`: Quickly post a link
+    - `image`: Post an image
+    - `song`: Post a song (using `<audio>`)
+    - `text`: Write an actual blog post (or just a heading)
+    - `video`: Post a video (from YouTube)
+- a simple tagging system
