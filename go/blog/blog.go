@@ -326,7 +326,9 @@ func main() {
 		var articles = document.querySelectorAll("article");
 		for (var i = 0; i < articles.length; i++) {
 			var article = articles[i];
-			if (article.id != id) {
+			if (article.id == id) {
+				article.classList.remove("does-not-match");
+			} else {
 				article.classList.add("does-not-match");
 			}
 		}
