@@ -215,6 +215,8 @@ func main() {
 			var tag = tagFromURL(new URL(ev.target.href));
 			if (currentFilter == tag) {
 				clearFilter();
+				location.hash = "";
+				ev.preventDefault();
 			} else {
 				filterTag(tag);
 			}
