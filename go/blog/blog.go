@@ -417,7 +417,7 @@ var textTmpl = template.Must(baseTmpl.New("text").
 </article>
 `))
 
-var videoTmpl = template.Must(baseTmpl.Parse(`
+var videoTmpl = template.Must(baseTmpl.New("video").Parse(`
 <article id="{{ .Id }}" class="video">
 	{{- template "title" . }}
 	<iframe width="560" height="315" src="https://www.youtube.com/embed/{{ .URL }}" frameborder="0" allowfullscreen></iframe>
