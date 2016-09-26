@@ -41,8 +41,7 @@ var dataPath string = "blog.yaml"
 
 var defaultStyle = `
 article {
-	margin-bottom: 2em;
-	clear: left;
+	margin-bottom: 1em;
 }
 
 article header {
@@ -77,12 +76,12 @@ article img {
 }
 
 .tags {
+	display: flex;
 	list-style-type: none;
 	padding: 0;
 }
 
 .tags .tag-link {
-	float: left;
 	color: black;
 	margin-right: 0.5em;
 }
@@ -99,7 +98,6 @@ article.does-not-match {
 	color: #555;
 	font-size: smaller;
 	margin-bottom: 1em;
-	clear: left;
 }
 `
 
