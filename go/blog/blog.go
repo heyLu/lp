@@ -322,6 +322,22 @@ func main() {
 		document.title = baseTitle + " (Posts tagged '" + tag + "')";
 	}
 
+	function filterTitle(match) {
+		var match = match.toLowerCase();
+		var articles = document.querySelectorAll("article");
+		for (var i = 0; i < articles.length; i++) {
+			var article = articles[i];
+			var title = article.querySelector("header h1");
+			if (title && title.textContent.toLowerCase().match(match)) {
+				article.classList.remove("does-not-match");
+			} else {
+				article.classList.add("does-not-match");
+			}
+		}
+
+		document.title = baseTitle + " (Posts matching '" + match + "')";
+	}
+
 	function filterId(id) {
 		var articles = document.querySelectorAll("article");
 		for (var i = 0; i < articles.length; i++) {
@@ -334,6 +350,20 @@ func main() {
 		}
 
 		document.title = baseTitle + " (Only post id '" + id + "')";
+	}
+
+	function filterType(type) {
+		var articles = document.querySelectorAll("article");
+		for (var i = 0; i < articles.length; i++) {
+			var article = articles[i];
+			if (article.classList.contains(type)) {
+				article.classList.remove("does-not-match");
+			} else {
+				article.classList.add("does-not-match");
+			}
+		}
+
+		document.title = baseTitle + " (Only " + type + " posts)";
 	}
 
 	function clearFilter() {
