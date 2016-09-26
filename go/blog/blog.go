@@ -11,6 +11,8 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"strings"
+	"unicode"
 
 	"github.com/russross/blackfriday"
 	"gopkg.in/yaml.v2"
@@ -27,6 +29,7 @@ type Post struct {
 
 var flags struct {
 	writeBack bool
+	hashIds   bool
 	reverse   bool
 	css       string
 	title     string
@@ -72,6 +75,7 @@ article img {
 
 func init() {
 	flag.BoolVar(&flags.writeBack, "write-back", false, "Rewrite the YAML file with the generated ids")
+	flag.BoolVar(&flags.hashIds, "hash-ids", false, "Use hash-based post ids")
 	flag.BoolVar(&flags.reverse, "reverse", false, "Reverse the order of the articles in the file")
 	flag.StringVar(&flags.css, "css", defaultStyle, "Custom `css` styles to use")
 	flag.StringVar(&flags.title, "title", "A blog", "Custom `title` to use")
@@ -292,6 +296,13 @@ func exit(err error) {
 }
 
 func generateId(p Post) string {
+	if flags.hashIds {
+		return hashId(p)
+	}
+	return slugId(p)
+}
+
+func hashId(p Post) string {
 	h := md5.New()
 	io.WriteString(h, p.Title)
 	io.WriteString(h, p.Content)
@@ -307,4 +318,43 @@ func randomId() string {
 	}
 
 	return hex.EncodeToString(buf)
+}
+
+var usedSlugs = map[string]int{}
+
+func slugId(p Post) string {
+	slug := toSlug(p.Title)
+	n, ok := usedSlugs[slug]
+	if ok {
+		n += 1
+	} else {
+		n = 1
+	}
+	usedSlugs[slug] = n
+
+	if slug != "" && n == 1 {
+		return slug
+	} else if slug == "" {
+		return fmt.Sprintf("%d", n)
+	}
+	return fmt.Sprintf("%s-%d", slug, n)
+}
+
+func toSlug(s string) string {
+	lastChar := ' '
+	s = strings.Map(func(ch rune) rune {
+		var newChar rune
+		switch {
+		case unicode.IsLetter(ch) || unicode.IsDigit(ch):
+			newChar = unicode.ToLower(ch)
+		default:
+			if lastChar == '-' {
+				return -1
+			}
+			newChar = '-'
+		}
+		lastChar = newChar
+		return newChar
+	}, s)
+	return strings.Trim(s, "-")
 }
