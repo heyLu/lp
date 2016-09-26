@@ -57,6 +57,7 @@
     * `link`, with an additional `url` field
     * `image`, where `url` is the source of an image
     * `song`, where `url` is the source of the song
+    * `video`, where `url` is a link to a YouTube video
 
     With the exception of the `shell` type, `title` and `content`
     are optional.
