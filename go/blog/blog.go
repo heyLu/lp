@@ -249,6 +249,8 @@ func main() {
 	fmt.Fprintf(out, `
 
 	<script>
+	var baseTitle = document.title;
+
 	var currentFilter = null;
 
 	window.addEventListener("DOMContentLoaded", function(ev) {
@@ -312,6 +314,8 @@ func main() {
 				article.classList.add("does-not-match");
 			}
 		}
+
+		document.title = baseTitle + " (Posts tagged '" + tag + "')";
 	}
 
 	function clearFilter() {
@@ -321,6 +325,7 @@ func main() {
 		}
 
 		currentFilter = null;
+		document.title = baseTitle;
 	}
 	</script>`)
 	fmt.Fprintf(out, "\n</body>\n</html>\n")
