@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 	"unicode"
 
@@ -74,12 +75,12 @@ article img {
 	max-height: 50vh;
 }
 
-article .tags {
+.tags {
 	list-style-type: none;
 	padding: 0;
 }
 
-article .tags .tag-link {
+.tags .tag-link {
 	float: left;
 	color: black;
 	margin-right: 0.5em;
@@ -91,6 +92,12 @@ article .tags .tag-link:visited {
 
 article.does-not-match {
 	display: none;
+}
+
+#tags {
+	color: #555;
+	font-size: smaller;
+	margin-bottom: 1em;
 }
 `
 
@@ -159,10 +166,17 @@ func main() {
 		posts = reversePosts
 	}
 
+	tags := map[string]bool{}
 	for i, post := range posts {
 		if post.Id == "" {
 			posts[i].Id = generateId(post)
 			post = posts[i]
+		}
+
+		if post.Tags != nil {
+			for _, tag := range post.Tags {
+				tags[tag] = true
+			}
 		}
 
 		var err error
@@ -195,6 +209,16 @@ func main() {
 		if err != nil {
 			exit(err)
 		}
+	}
+
+	sortedTags := []string{}
+	for tag, _ := range tags {
+		sortedTags = append(sortedTags, tag)
+	}
+	sort.Strings(sortedTags)
+	err = tagsTmpl.Execute(out, sortedTags)
+	if err != nil {
+		exit(err)
 	}
 
 	fmt.Fprintf(out, `
@@ -402,6 +426,13 @@ var videoTmpl = template.Must(baseTmpl.Parse(`
 	{{ markdown .Content }}
 	{{- end -}}
 </article>
+`))
+
+var tagsTmpl = template.Must(baseTmpl.New("tags-list").Parse(`
+	<section id="tags">
+		<h1>All tags:</h1>
+		{{ template "tags" . }}
+	</section>
 `))
 
 func exit(err error) {
