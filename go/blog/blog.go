@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"html/template"
@@ -19,12 +20,13 @@ import (
 )
 
 type Post struct {
-	Id      string `yaml:"id"`
-	Title   string `yaml:"title"`
-	URL     string `yaml:"url"`
-	Content string `yaml:"content"`
-	Date    string `yaml:"date"`
-	Type    string `yaml:"type"`
+	Id      string   `yaml:"id"`
+	Title   string   `yaml:"title"`
+	URL     string   `yaml:"url"`
+	Content string   `yaml:"content"`
+	Tags    []string `yaml:"tags"`
+	Date    string   `yaml:"date"`
+	Type    string   `yaml:"type"`
 }
 
 var flags struct {
@@ -38,7 +40,7 @@ var dataPath string = "blog.yaml"
 
 var defaultStyle = `
 article {
-	margin-bottom: 1em;
+	margin-bottom: 2em;
 }
 
 article header {
@@ -70,6 +72,25 @@ article time {
 article img {
 	max-width: 80vw;
 	max-height: 50vh;
+}
+
+article .tags {
+	list-style-type: none;
+	padding: 0;
+}
+
+article .tags .tag-link {
+	float: left;
+	color: black;
+	margin-right: 0.5em;
+}
+
+article .tags .tag-link:visited {
+	color: #555;
+}
+
+article.does-not-match {
+	display: none;
 }
 `
 
@@ -176,6 +197,44 @@ func main() {
 		}
 	}
 
+	fmt.Fprintf(out, `
+
+	<script>
+	window.addEventListener("click", function(ev) {
+		if (ev.target.classList.contains("tag-link")) {
+			if (ev.target.href == "") {
+				return;
+			}
+
+			var u = new URL(ev.target.href);
+			if (!u.hash.startsWith("#tag:")) {
+				return;
+			}
+			var tag = u.hash.substr(5);
+			filterTag(tag);
+		}
+	})
+
+	function filterTag(tag) {
+		var articles = document.querySelectorAll("article");
+		for (var i = 0; i < articles.length; i++) {
+			var article = articles[i];
+			var matches = false;
+			if (article && 'tags' in article.dataset) {
+				var tags = JSON.parse(article.dataset.tags);
+				for (var j = 0; j < tags.length; j++) {
+					if (tags[j] == tag) {
+						matches = true;
+						break;
+					}
+				}
+			}
+			if (!matches) {
+				article.classList.add("does-not-match");
+			}
+		}
+	}
+	</script>`)
 	fmt.Fprintf(out, "\n</body>\n</html>\n")
 	out.Close()
 
@@ -195,6 +254,10 @@ var funcs = template.FuncMap{
 	"safe_url": func(s string) template.URL {
 		return template.URL(s)
 	},
+	"json": func(v interface{}) (string, error) {
+		buf, err := json.Marshal(v)
+		return string(buf), err
+	},
 }
 
 var baseTmpl = template.Must(template.New("base").
@@ -207,6 +270,14 @@ var baseTmpl = template.Must(template.New("base").
 		{{- if .Date }}
 		<time>{{ .Date }}</time>{{ end }}
 	</header>
+{{ end }}
+
+{{ define "tags" }}
+	<ul class="tags">
+	{{- range . }}
+		<li><a class="tag-link" href="#tag:{{ safe_url . }}">{{ . }}</a></li>
+	{{ end -}}
+	</ul>
 {{ end }}
 `))
 
@@ -270,12 +341,16 @@ var songTmpl = template.Must(baseTmpl.New("song").
 
 var textTmpl = template.Must(baseTmpl.New("text").
 	Funcs(funcs).Parse(`
-<article id="{{ .Id }}" class="text">
+<article id="{{ .Id }}" class="text" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
 	{{- if .Content }}
 
 	{{ markdown .Content }}
 	{{- end -}}
+
+	<footer>
+		{{ template "tags" .Tags }}
+	</footer>
 </article>
 `))
 
