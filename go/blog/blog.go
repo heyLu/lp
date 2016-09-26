@@ -254,11 +254,11 @@ func main() {
 	var currentFilter = null;
 
 	window.addEventListener("DOMContentLoaded", function(ev) {
-		filterFromURL(document.location);
+		runFilterFromURL(document.location);
 	});
 
 	window.addEventListener("hashchange", function(ev) {
-		filterFromURL(new URL(ev.newURL));
+		runFilterFromURL(new URL(ev.newURL));
 	});
 
 	window.addEventListener("click", function(ev) {
@@ -270,8 +270,8 @@ func main() {
 			return;
 		}
 
-		var tag = tagFromURL(new URL(ev.target.href));
-		if (currentFilter == tag) {
+		var filter = filterFromURL(new URL(ev.target.href));
+		if (isSameFilter(currentFilter, filter)) {
 			clearFilter();
 			location.hash = "";
 			ev.preventDefault();
@@ -280,25 +280,35 @@ func main() {
 		}
 	});
 
-	function filterFromURL(u) {
-		var tag = tagFromURL(u);
-		if (tag == null) {
+	function isSameFilter(f1, f2) {
+		return f1 && f2 && f1.type == f2.type && f1.argument == f2.argument;
+	}
+
+	function runFilterFromURL(u) {
+		var filter = filterFromURL(u);
+		if (filter == null) {
 			clearFilter();
 		} else {
-			filterTag(tag);
+			filter.run(filter.argument);
+			currentFilter = filter;
 		}
 	}
 
-	function tagFromURL(u) {
-		if (!u.hash.startsWith("#tag:")) {
+	function filterFromURL(u) {
+		if (u.hash.startsWith("#tag:")) {
+			return { type: "tag", run: filterTag, argument: u.hash.substr(5) };
+		} else if (u.hash.startsWith("#title:")) {
+			return { type: "title", run: filterTitle, argument: u.hash.substr(7) };
+		} else if (u.hash.startsWith("#id:")) {
+			return { type: "id", run: filterId, argument: u.hash.substr(4) };
+		} else if (u.hash.startsWith("#type:")) {
+			return { type: "type", run: filterType, argument: u.hash.substr(6) };
+		} else {
 			return null;
 		}
-		return u.hash.substr(5);
 	}
 
 	function filterTag(tag) {
-		currentFilter = tag;
-
 		var articles = document.querySelectorAll("article");
 		for (var i = 0; i < articles.length; i++) {
 			var article = articles[i];
