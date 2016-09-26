@@ -262,19 +262,21 @@ func main() {
 	});
 
 	window.addEventListener("click", function(ev) {
-		if (ev.target.classList.contains("tag-link")) {
-			if (ev.target.href == "") {
-				return;
-			}
+		if (!ev.target.classList.contains("tag-link")) {
+			return;
+		}
 
-			var tag = tagFromURL(new URL(ev.target.href));
-			if (currentFilter == tag) {
-				clearFilter();
-				location.hash = "";
-				ev.preventDefault();
-			} else {
-				filterTag(tag);
-			}
+		if (ev.target.href == "") {
+			return;
+		}
+
+		var tag = tagFromURL(new URL(ev.target.href));
+		if (currentFilter == tag) {
+			clearFilter();
+			location.hash = "";
+			ev.preventDefault();
+		} else {
+			filterTag(tag);
 		}
 	});
 
