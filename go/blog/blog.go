@@ -77,6 +77,7 @@ article img {
 
 .tags {
 	display: flex;
+	flex-wrap: wrap;
 	list-style-type: none;
 	padding: 0;
 }
@@ -99,6 +100,30 @@ article.does-not-match {
 	font-size: smaller;
 	margin-bottom: 1em;
 }
+
+@media(max-width: 25em) {
+	article h1 {
+		margin-right: 0;
+		text-align: center;
+	}
+
+	article header {
+		flex-direction: column;
+	}
+
+	article header .permalink {
+		visibility: visible;
+	}
+
+	article pre {
+		white-space: pre-wrap;
+	}
+
+	iframe {
+		max-width: 95vw;
+	}
+}
+
 `
 
 func init() {
