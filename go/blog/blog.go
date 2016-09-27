@@ -38,6 +38,7 @@ var flags struct {
 	noDefaultStyle    bool
 	printDefaultStyle bool
 	title             string
+	after             string
 }
 var dataPath string = "blog.yaml"
 
@@ -136,6 +137,7 @@ func init() {
 	flag.BoolVar(&flags.noDefaultStyle, "no-default-style", false, "Don't use the default styles")
 	flag.BoolVar(&flags.printDefaultStyle, "print-default-style", false, "Print the default styles")
 	flag.StringVar(&flags.title, "title", "A blog", "Custom `title` to use")
+	flag.StringVar(&flags.after, "after", "", "Insert additional `html` at the end of the generated page")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags] [<blog.yaml> [<blog.html>]]\n\n", os.Args[0])
@@ -412,6 +414,11 @@ func main() {
 		document.title = baseTitle;
 	}
 	</script>`)
+
+	if flags.after != "" {
+		fmt.Fprintf(out, "\n%s\n", flags.after)
+	}
+
 	fmt.Fprintf(out, "\n</body>\n</html>\n")
 	out.Close()
 
