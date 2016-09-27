@@ -31,11 +31,13 @@ type Post struct {
 }
 
 var flags struct {
-	writeBack bool
-	hashIds   bool
-	reverse   bool
-	css       string
-	title     string
+	writeBack         bool
+	hashIds           bool
+	reverse           bool
+	css               string
+	noDefaultStyle    bool
+	printDefaultStyle bool
+	title             string
 }
 var dataPath string = "blog.yaml"
 
@@ -130,7 +132,9 @@ func init() {
 	flag.BoolVar(&flags.writeBack, "write-back", false, "Rewrite the YAML file with the generated ids")
 	flag.BoolVar(&flags.hashIds, "hash-ids", false, "Use hash-based post ids")
 	flag.BoolVar(&flags.reverse, "reverse", false, "Reverse the order of the articles in the file")
-	flag.StringVar(&flags.css, "css", defaultStyle, "Custom `css` styles to use")
+	flag.StringVar(&flags.css, "css", "", "Use custom `css` styles")
+	flag.BoolVar(&flags.noDefaultStyle, "no-default-style", false, "Don't use the default styles")
+	flag.BoolVar(&flags.printDefaultStyle, "print-default-style", false, "Print the default styles")
 	flag.StringVar(&flags.title, "title", "A blog", "Custom `title` to use")
 
 	flag.Usage = func() {
@@ -141,6 +145,11 @@ func init() {
 
 func main() {
 	flag.Parse()
+
+	if flags.printDefaultStyle {
+		fmt.Print(defaultStyle)
+		os.Exit(0)
+	}
 
 	if flag.NArg() > 0 {
 		dataPath = flag.Arg(0)
@@ -170,6 +179,9 @@ func main() {
 		exit(err)
 	}
 
+	if flags.noDefaultStyle {
+		defaultStyle = ""
+	}
 	fmt.Fprintf(out, `<!doctype html>
 <html>
 <head>
@@ -177,10 +189,11 @@ func main() {
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title>%s</title>
 	<style>%s</style>
+	<style>%s</style>
 </head>
 
 <body>
-`, template.HTMLEscapeString(flags.title), flags.css)
+`, template.HTMLEscapeString(flags.title), defaultStyle, flags.css)
 
 	if flags.reverse {
 		l := len(posts)
