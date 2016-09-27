@@ -180,7 +180,7 @@ func main() {
 </head>
 
 <body>
-`, flags.title, flags.css)
+`, template.HTMLEscapeString(flags.title), flags.css)
 
 	if flags.reverse {
 		l := len(posts)
