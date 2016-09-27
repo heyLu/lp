@@ -234,12 +234,22 @@ func main() {
 			if err != nil {
 				exit(fmt.Errorf("invalid video url '%s'", post.URL))
 			}
-			id := u.Query().Get("v")
-			if (u.Host != "youtube.com" && u.Host != "www.youtube.com") || id == "" {
+
+			var provider string
+			switch {
+			case strings.HasSuffix(u.Path, ".mp4") || strings.HasSuffix(u.Path, ".ogv"):
+				provider = "native"
+			case (u.Host == "youtube.com" || u.Host == "www.youtube.com") && u.Query().Get("v") != "":
+				provider = "youtube"
+				post.URL = fmt.Sprintf("https://www.youtube.com/embed/%s", u.Query().Get("v"))
+			default:
 				exit(fmt.Errorf("unsupported video url '%s'", post.URL))
 			}
-			post.URL = id
-			err = videoTmpl.Execute(out, post)
+			p := struct {
+				Post
+				Provider string
+			}{post, provider}
+			err = videoTmpl.Execute(out, p)
 		default:
 			fmt.Fprintf(os.Stderr, "Error: no output for type '%s'\n", post.Type)
 			os.Exit(1)
@@ -537,7 +547,11 @@ var textTmpl = template.Must(baseTmpl.New("text").
 var videoTmpl = template.Must(baseTmpl.New("video").Parse(`
 <article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
-	<iframe width="560" height="315" src="https://www.youtube.com/embed/{{ .URL }}" frameborder="0" allowfullscreen></iframe>
+	{{ if (eq .Provider "youtube") -}}
+	<iframe width="560" height="315" src="{{ safe_url .URL }}" frameborder="0" allowfullscreen></iframe>
+	{{- else -}}
+	<video src="{{ safe_url .URL }}" controls></video>
+	{{- end }}
 	{{- if .Content }}
 
 	{{ markdown .Content }}
