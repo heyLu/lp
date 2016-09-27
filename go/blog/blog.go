@@ -242,6 +242,9 @@ func main() {
 			case (u.Host == "youtube.com" || u.Host == "www.youtube.com") && u.Query().Get("v") != "":
 				provider = "youtube"
 				post.URL = fmt.Sprintf("https://www.youtube.com/embed/%s", u.Query().Get("v"))
+			case u.Host == "vimeo.com" && getVimeoId(u.Path) != "":
+				provider = "vimeo"
+				post.URL = fmt.Sprintf("https://player.vimeo.com/video/%s", getVimeoId(u.Path))
 			default:
 				exit(fmt.Errorf("unsupported video url '%s'", post.URL))
 			}
@@ -547,9 +550,9 @@ var textTmpl = template.Must(baseTmpl.New("text").
 var videoTmpl = template.Must(baseTmpl.New("video").Parse(`
 <article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
-	{{ if (eq .Provider "youtube") -}}
+	{{ if (eq .Provider "youtube" "vimeo") -}}
 	<iframe width="560" height="315" src="{{ safe_url .URL }}" frameborder="0" allowfullscreen></iframe>
-	{{- else -}}
+	{{- else if (eq .Provider "native") -}}
 	<video src="{{ safe_url .URL }}" controls></video>
 	{{- end }}
 	{{- if .Content }}
@@ -637,4 +640,13 @@ func toSlug(s string) string {
 		return newChar
 	}, s)
 	return strings.Trim(s, "-")
+}
+
+func getVimeoId(p string) string {
+	i := strings.LastIndex(p, "/")
+	if i == -1 || len(p) == i+1 {
+		return ""
+	}
+
+	return p[i+1:]
 }
