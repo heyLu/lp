@@ -39,6 +39,9 @@ func parseTime(s string) (time.Time, error) {
 	now := time.Now().Round(time.Second)
 
 	parts := strings.Fields(s)
+	// more indicates the parts index where there might be "more"
+	// parsable data
+	more := 0
 
 	if len(parts) == 0 {
 		return t, fmt.Errorf("empty date spec")
@@ -46,15 +49,17 @@ func parseTime(s string) (time.Time, error) {
 
 	switch parts[0] {
 	case "today":
-		if len(parts) == 1 {
-			return now, nil
+		if len(parts) >= 1 {
+			t = now
+			more = 1
 		}
 	case "tomorrow":
-		if len(parts) == 1 {
-			return now.AddDate(0, 0, 1), nil
+		if len(parts) >= 1 {
+			t = now.AddDate(0, 0, 1)
+			more = 1
 		}
 	case "in":
-		if len(parts) == 3 {
+		if len(parts) >= 3 {
 			n, err := parseNumber(parts[1])
 			if err != nil {
 				return t, err
@@ -63,18 +68,24 @@ func parseTime(s string) (time.Time, error) {
 			if err != nil {
 				return t, err
 			}
-			return modifier(n, now), nil
+			t = modifier(n, now)
+			more = 3
 		}
 	case "next":
-		if len(parts) == 2 {
+		if len(parts) >= 2 {
 			modifier, err := parseModifier(parts[1])
 			if err != nil {
 				return t, err
 			}
-			return modifier(1, now), nil
+			t = modifier(1, now)
+			more = 2
 		}
 	default:
 		return t, fmt.Errorf("unknown date spec '%s'", s)
+	}
+
+	if len(parts) == more {
+		return t, nil
 	}
 
 	return t, fmt.Errorf("unknown date spec '%s' (unexpected)", s)
