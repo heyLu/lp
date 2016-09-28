@@ -132,6 +132,11 @@ func GetCanonicalFavicon(u string) (string, error) {
 	if resp.StatusCode >= 400 || resp.Header.Get("Content-Length") == "0" {
 		return "", errors.New("no /favicon.ico")
 	}
+	buf := make([]byte, 0, 1)
+	n, err := resp.Body.Read(buf)
+	if err != nil || n == 0 {
+		return "", errors.New("can't read /favicon.ico")
+	}
 	fmt.Println("favicon.ico", resp.Request.URL.String(), faviconUrl)
 	return resp.Request.URL.String(), nil
 }
