@@ -22,7 +22,7 @@ func TestParse(t *testing.T) {
 		{"next month", now.AddDate(0, 1, 0)},
 		{"in two weeks", now.AddDate(0, 0, 2*7)},
 		{"in 3 weeks", now.AddDate(0, 0, 3*7)},
-		//"2016-09-28",
+		{"2016-09-28", time.Date(2016, 9, 28, 0, 0, 0, 0, time.UTC)},
 		{"3pm", truncateHours(now).Add(15 * time.Hour)},
 		{"3 pm", truncateHours(now).Add(15 * time.Hour)},
 		{"in 4 days at 10 pm", truncateHours(now).AddDate(0, 0, 4).Add(22 * time.Hour)},

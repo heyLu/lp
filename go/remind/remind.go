@@ -34,6 +34,11 @@ func main() {
 	}
 }
 
+var timeLayouts = []string{
+	time.RFC3339,
+	"2006-01-02",
+}
+
 func parseTime(s string) (time.Time, error) {
 	now := time.Now().Round(time.Second)
 	return parseTimeRelative(s, now)
@@ -121,6 +126,13 @@ func parseTimeRelative(s string, now time.Time) (time.Time, error) {
 
 		t = truncateHours(now)
 		return t.Add(h), nil
+	}
+
+	for _, layout := range timeLayouts {
+		t, err := time.Parse(layout, s)
+		if err == nil {
+			return t, nil
+		}
 	}
 
 	return t, fmt.Errorf("unknown date spec '%s' (unexpected)", s)
