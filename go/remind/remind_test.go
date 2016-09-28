@@ -14,7 +14,7 @@ func TestParse(t *testing.T) {
 	}{
 		{"today", now},
 		{"tomorrow", now.AddDate(0, 0, 1)},
-		//"tomorrow at 3am"
+		{"tomorrow at 3am", truncateHours(now).AddDate(0, 0, 1).Add(3 * time.Hour)},
 		{"in 3 days", now.AddDate(0, 0, 3)},
 		{"in a month", now.AddDate(0, 1, 0)},
 		{"in 3 months", now.AddDate(0, 3, 0)},
@@ -24,7 +24,7 @@ func TestParse(t *testing.T) {
 		{"in 3 weeks", now.AddDate(0, 0, 3*7)},
 		//"2016-09-28",
 		//"3pm",
-		//"in 4 days at 10 pm",
+		{"in 4 days at 10 pm", truncateHours(now).AddDate(0, 0, 4).Add(22 * time.Hour)},
 	}
 
 	for _, example := range examples {

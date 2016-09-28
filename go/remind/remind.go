@@ -90,6 +90,23 @@ func parseTimeRelative(s string, now time.Time) (time.Time, error) {
 
 	if len(parts) == more {
 		return t, nil
+	} else if len(parts) == more+2 && parts[more] == "at" {
+		h, err := parseHours(parts[more+1])
+		if err != nil {
+			return t, err
+		}
+
+		t = truncateHours(t)
+		return t.Add(h), nil
+	} else if len(parts) == more+3 && parts[more] == "at" &&
+		(parts[more+2] == "am" || parts[more+2] == "pm") {
+		h, err := parseHours(parts[more+1] + parts[more+2])
+		if err != nil {
+			return t, err
+		}
+
+		t = truncateHours(t)
+		return t.Add(h), nil
 	}
 
 	return t, fmt.Errorf("unknown date spec '%s' (unexpected)", s)
@@ -153,4 +170,38 @@ func dateModifier(years, months, days int) func(int, time.Time) time.Time {
 	return func(n int, t time.Time) time.Time {
 		return t.AddDate(n*years, n*months, n*days)
 	}
+}
+
+func parseHours(s string) (time.Duration, error) {
+	var d time.Duration
+
+	isPm := false
+	switch {
+	case strings.HasSuffix(s, "am"):
+		s = s[0 : len(s)-2]
+	case strings.HasSuffix(s, "pm"):
+		isPm = true
+		s = s[0 : len(s)-2]
+	default:
+		return d, fmt.Errorf("unknown hours '%s'", s)
+	}
+
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return d, err
+	}
+
+	if n < 1 || n > 12 {
+		return d, fmt.Errorf("invalid hour: %d (must be between 1 and 12)", n)
+	}
+
+	if isPm {
+		n += 12
+	}
+
+	return time.Duration(n) * time.Hour, nil
+}
+
+func truncateHours(t time.Time) time.Time {
+	return t.Truncate(time.Hour).Add(-time.Duration(t.Hour()) * time.Hour)
 }
