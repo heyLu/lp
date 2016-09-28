@@ -26,13 +26,18 @@ var flags struct {
 
 func init() {
 	flag.BoolVar(&flags.showAll, "all", false, "Show all reminders")
+
+func isCommand(s string) bool {
+	return s == "list" || s == "l" || s == "add"
 }
 
 func main() {
 	flag.Parse()
 
+	start := 0
 	cmd := "list"
-	if flag.NArg() >= 1 {
+	if flag.NArg() >= 1 && isCommand(flag.Arg(0)) {
+		start = 1
 		cmd = flag.Arg(0)
 	}
 
@@ -53,24 +58,6 @@ func main() {
 	}
 
 	switch cmd {
-	case "list", "l":
-		min := time.Now()
-		max := min.AddDate(0, 0, 7)
-
-		if flag.NArg() > 1 {
-			switch flag.Arg(1) {
-			case "today":
-				min = truncateHours(time.Now())
-				max = min.Add(24 * time.Hour)
-			}
-		}
-
-		sort.Sort(byDate(reminders))
-		for _, r := range reminders {
-			if flags.showAll || (r.Date.After(min) && r.Date.Before(max)) {
-				fmt.Printf("%s - %s\n", r.Date, r.Description)
-			}
-		}
 	case "add":
 		if flag.NArg() != 3 {
 			flag.Usage()
@@ -84,9 +71,29 @@ func main() {
 		description := flag.Arg(2)
 		reminders = append(reminders, Reminder{Date: date, Description: description})
 		needWrite = true
+	case "list", "l":
+		fallthrough
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command '%s'\n", cmd)
-		os.Exit(1)
+		min := time.Now()
+		max := min.AddDate(0, 0, 7)
+
+		if flag.NArg() > start {
+			switch flag.Arg(start) {
+			case "today":
+				min = truncateHours(time.Now())
+				max = min.Add(24 * time.Hour)
+			default:
+				fmt.Fprintf(os.Stderr, "unknown command '%s'\n", cmd)
+				os.Exit(1)
+			}
+		}
+
+		sort.Sort(byDate(reminders))
+		for _, r := range reminders {
+			if flags.showAll || (r.Date.After(min) && r.Date.Before(max)) {
+				fmt.Printf("%s - %s\n", r.Date, r.Description)
+			}
+		}
 	}
 
 	if needWrite {
