@@ -16,6 +16,7 @@ import (
 
 var port = flag.Int("p", 8080, "port [8080]")
 var cacheSize = flag.Int("s", 10000, "cache size [10000]")
+var debug = flag.Bool("debug", false, "Print out debug info")
 
 var faviconCache *lru.Cache
 var lock sync.RWMutex
@@ -43,6 +44,7 @@ func HandleGetFavicon(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.Query()["url"][0]
 	favicon, err := GetFaviconCached(url)
 	if err != nil {
+		fmt.Printf("Error: '%s': %s\n", url, err)
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(fmt.Sprint(err)))
 		return
@@ -87,17 +89,23 @@ func GetFavicon(url string) (string, error) {
 	if favicon, err := GetCanonicalFavicon(url); err == nil {
 		fmt.Println("found favicon.ico")
 		return favicon, nil
+	} else if *debug {
+		fmt.Printf("Error: getting /favicon.ico: %s\n", err)
 	}
 
 	resp, err := http.Get(url)
-	fmt.Println("get html", resp, err)
+	if *debug {
+		fmt.Println("get html", resp, err)
+	}
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	tree, err := html.Parse(resp.Body)
-	fmt.Println("parse html", tree, err)
+	if *debug {
+		fmt.Println("parse html", tree, err)
+	}
 	if err != nil {
 		return "", err
 	}
@@ -124,7 +132,9 @@ func GetCanonicalFavicon(u string) (string, error) {
 	faviconUrl := fmt.Sprintf("%s://%s/favicon.ico", parsed.Scheme, parsed.Host)
 
 	resp, err := http.Get(faviconUrl)
-	fmt.Println("get favicon.ico", resp, err)
+	if *debug {
+		fmt.Println("get favicon.ico", resp, err)
+	}
 	if err != nil {
 		return "", err
 	}
@@ -137,7 +147,9 @@ func GetCanonicalFavicon(u string) (string, error) {
 	if err != nil || n == 0 {
 		return "", errors.New("can't read /favicon.ico")
 	}
-	fmt.Println("favicon.ico", resp.Request.URL.String(), faviconUrl)
+	if *debug {
+		fmt.Println("favicon.ico", resp.Request.URL.String(), faviconUrl)
+	}
 	return resp.Request.URL.String(), nil
 }
 
