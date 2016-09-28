@@ -84,8 +84,6 @@ func parseTimeRelative(s string, now time.Time) (time.Time, error) {
 			t = modifier(1, now)
 			more = 2
 		}
-	default:
-		return t, fmt.Errorf("unknown date spec '%s'", s)
 	}
 
 	if len(parts) == more {
@@ -106,6 +104,22 @@ func parseTimeRelative(s string, now time.Time) (time.Time, error) {
 		}
 
 		t = truncateHours(t)
+		return t.Add(h), nil
+	}
+
+	l := len(parts)
+	if (l == 1 || l == 2) && (strings.HasSuffix(parts[l-1], "am") || strings.HasSuffix(parts[l-1], "pm")) {
+		s = parts[0]
+		if l == 2 {
+			s += parts[1]
+		}
+
+		h, err := parseHours(s)
+		if err != nil {
+			return t, err
+		}
+
+		t = truncateHours(now)
 		return t.Add(h), nil
 	}
 
