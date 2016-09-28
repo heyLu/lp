@@ -35,8 +35,12 @@ func main() {
 }
 
 func parseTime(s string) (time.Time, error) {
-	var t time.Time
 	now := time.Now().Round(time.Second)
+	return parseTimeRelative(s, now)
+}
+
+func parseTimeRelative(s string, now time.Time) (time.Time, error) {
+	var t time.Time
 
 	parts := strings.Fields(s)
 	// more indicates the parts index where there might be "more"
