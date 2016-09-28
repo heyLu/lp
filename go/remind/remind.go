@@ -27,6 +27,21 @@ var flags struct {
 func init() {
 	flag.BoolVar(&flags.showAll, "all", false, "Show all reminders")
 
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "%s <cmd>\n", os.Args[0])
+		fmt.Fprintln(os.Stderr)
+
+		fmt.Fprintf(os.Stderr, "Available commands:\n")
+		fmt.Fprintf(os.Stderr, "  add  <date> <description>\n")
+		fmt.Fprintf(os.Stderr, "  list <when>\n")
+		fmt.Fprintf(os.Stderr, "    where `when` is empty or one of: today\n")
+		fmt.Fprintf(os.Stderr, "  l    (alias for `list`)\n")
+
+		fmt.Fprintln(os.Stderr)
+		flag.PrintDefaults()
+	}
+}
+
 func isCommand(s string) bool {
 	return s == "list" || s == "l" || s == "add"
 }
