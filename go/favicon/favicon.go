@@ -94,6 +94,8 @@ func GetFavicon(url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
+
 	tree, err := html.Parse(resp.Body)
 	fmt.Println("parse html", tree, err)
 	if err != nil {
@@ -126,6 +128,7 @@ func GetCanonicalFavicon(u string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode >= 400 || resp.Header.Get("Content-Length") == "0" {
 		return "", errors.New("no /favicon.ico")
 	}
