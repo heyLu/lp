@@ -1,3 +1,5 @@
+title: A test blog
+reverse: true
 ---
 - title: pacman -Qo $(ls -1t --time=atime /usr/bin | tail -n30)
   content:

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
@@ -31,13 +32,13 @@ type Post struct {
 }
 
 type Options struct {
-	WriteBack      bool
-	HashIds        bool
-	Reverse        bool
-	Css            string
-	NoDefaultStyle bool
-	Title          string
-	After          string
+	WriteBack      bool   `yaml:"write_back"`
+	HashIds        bool   `yaml:"hash_ids"`
+	Reverse        bool   `yaml:"reverse"`
+	Css            string `yaml:"css"`
+	NoDefaultStyle bool   `yaml:"no_default_style"`
+	Title          string `yaml:"title"`
+	After          string `yaml:"after"`
 }
 
 var flags struct {
@@ -178,6 +179,47 @@ func main() {
 	data, err := ioutil.ReadAll(f)
 	if err != nil {
 		exit(err)
+	}
+
+	i := bytes.Index(data, []byte{'\n', '-', '-', '-', '\n'})
+	if i != -1 && i != 0 {
+		var opts Options
+		err = yaml.Unmarshal(data[0:i+1], &opts)
+		if err != nil {
+			exit(err)
+		}
+		data = data[i+5:]
+
+		isSet := map[string]bool{}
+		flag.Visit(func(f *flag.Flag) {
+			isSet[f.Name] = true
+		})
+
+		flag.VisitAll(func(f *flag.Flag) {
+			_, ok := isSet[f.Name]
+			if ok {
+				return
+			}
+
+			switch f.Name {
+			case "write-back":
+				flags.WriteBack = opts.WriteBack
+			case "hash-ids":
+				flags.HashIds = opts.HashIds
+			case "reverse":
+				flags.Reverse = opts.Reverse
+			case "css":
+				flags.Css = opts.Css
+			case "no-default-style":
+				flags.NoDefaultStyle = opts.NoDefaultStyle
+			case "title":
+				if opts.Title != "" {
+					flags.Title = opts.Title
+				}
+			case "after":
+				flags.After = opts.After
+			}
+		})
 	}
 
 	var posts []Post
