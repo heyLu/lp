@@ -30,16 +30,21 @@ type Post struct {
 	Type    string   `yaml:"type"`
 }
 
-var flags struct {
-	writeBack         bool
-	hashIds           bool
-	reverse           bool
-	css               string
-	noDefaultStyle    bool
-	printDefaultStyle bool
-	title             string
-	after             string
+type Options struct {
+	WriteBack      bool
+	HashIds        bool
+	Reverse        bool
+	Css            string
+	NoDefaultStyle bool
+	Title          string
+	After          string
 }
+
+var flags struct {
+	Options
+	PrintDefaultStyle bool
+}
+
 var dataPath string = "blog.yaml"
 
 var defaultStyle = `
@@ -130,14 +135,14 @@ article.does-not-match {
 `
 
 func init() {
-	flag.BoolVar(&flags.writeBack, "write-back", false, "Rewrite the YAML file with the generated ids")
-	flag.BoolVar(&flags.hashIds, "hash-ids", false, "Use hash-based post ids")
-	flag.BoolVar(&flags.reverse, "reverse", false, "Reverse the order of the articles in the file")
-	flag.StringVar(&flags.css, "css", "", "Use custom `css` styles")
-	flag.BoolVar(&flags.noDefaultStyle, "no-default-style", false, "Don't use the default styles")
-	flag.BoolVar(&flags.printDefaultStyle, "print-default-style", false, "Print the default styles")
-	flag.StringVar(&flags.title, "title", "A blog", "Custom `title` to use")
-	flag.StringVar(&flags.after, "after", "", "Insert additional `html` at the end of the generated page")
+	flag.BoolVar(&flags.WriteBack, "write-back", false, "Rewrite the YAML file with the generated ids")
+	flag.BoolVar(&flags.HashIds, "hash-ids", false, "Use hash-based post ids")
+	flag.BoolVar(&flags.Reverse, "reverse", false, "Reverse the order of the articles in the file")
+	flag.StringVar(&flags.Css, "css", "", "Use custom `css` styles")
+	flag.BoolVar(&flags.NoDefaultStyle, "no-default-style", false, "Don't use the default styles")
+	flag.BoolVar(&flags.PrintDefaultStyle, "print-default-style", false, "Print the default styles")
+	flag.StringVar(&flags.Title, "title", "A blog", "Custom `title` to use")
+	flag.StringVar(&flags.After, "after", "", "Insert additional `html` at the end of the generated page")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags] [<blog.yaml> [<blog.html>]]\n\n", os.Args[0])
@@ -148,7 +153,7 @@ func init() {
 func main() {
 	flag.Parse()
 
-	if flags.printDefaultStyle {
+	if flags.PrintDefaultStyle {
 		fmt.Print(defaultStyle)
 		os.Exit(0)
 	}
@@ -181,7 +186,7 @@ func main() {
 		exit(err)
 	}
 
-	if flags.noDefaultStyle {
+	if flags.NoDefaultStyle {
 		defaultStyle = ""
 	}
 	fmt.Fprintf(out, `<!doctype html>
@@ -195,9 +200,9 @@ func main() {
 </head>
 
 <body>
-`, template.HTMLEscapeString(flags.title), defaultStyle, flags.css)
+`, template.HTMLEscapeString(flags.Title), defaultStyle, flags.Css)
 
-	if flags.reverse {
+	if flags.Reverse {
 		l := len(posts)
 		reversePosts := make([]Post, l)
 		for i := 0; i < l; i++ {
@@ -415,14 +420,14 @@ func main() {
 	}
 	</script>`)
 
-	if flags.after != "" {
-		fmt.Fprintf(out, "\n%s\n", flags.after)
+	if flags.After != "" {
+		fmt.Fprintf(out, "\n%s\n", flags.After)
 	}
 
 	fmt.Fprintf(out, "\n</body>\n</html>\n")
 	out.Close()
 
-	if flags.writeBack {
+	if flags.WriteBack {
 		dataOut, err := yaml.Marshal(posts)
 		if err != nil {
 			exit(err)
@@ -586,7 +591,7 @@ func exit(err error) {
 }
 
 func generateId(p Post) string {
-	if flags.hashIds {
+	if flags.HashIds {
 		return hashId(p)
 	}
 	return slugId(p)
