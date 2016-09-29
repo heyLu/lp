@@ -39,6 +39,10 @@ type Options struct {
 	NoDefaultStyle bool   `yaml:"no_default_style"`
 	Title          string `yaml:"title"`
 	After          string `yaml:"after"`
+
+	// options only in the YAML prefix:
+
+	Output string `yaml:"output"`
 }
 
 var flags struct {
@@ -220,6 +224,14 @@ func main() {
 				flags.After = opts.After
 			}
 		})
+
+		// write to specified `output` file if none was given as an argument
+		if opts.Output != "" && out == os.Stdout {
+			out, err = os.Create(opts.Output)
+			if err != nil {
+				exit(err)
+			}
+		}
 	}
 
 	var posts []Post
