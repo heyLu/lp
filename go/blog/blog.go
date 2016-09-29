@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"path"
 	"sort"
 	"strings"
 	"unicode"
@@ -227,6 +228,12 @@ func main() {
 
 		// write to specified `output` file if none was given as an argument
 		if opts.Output != "" && out == os.Stdout {
+			// write to same directory as the input file if opts.Output is
+			// just the file name
+			if path.Base(opts.Output) == opts.Output && path.Dir(dataPath) != "." {
+				opts.Output = path.Join(path.Dir(dataPath), opts.Output)
+			}
+
 			out, err = os.Create(opts.Output)
 			if err != nil {
 				exit(err)
