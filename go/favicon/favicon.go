@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,12 +22,17 @@ var debug = flag.Bool("debug", false, "Print out debug info")
 var faviconCache *lru.Cache
 var lock sync.RWMutex
 
+var imageCache *lru.Cache
+var imageLock sync.RWMutex
+
 func main() {
 	flag.Parse()
 
 	faviconCache = lru.New(*cacheSize)
+	imageCache = lru.New(*cacheSize)
 
 	http.HandleFunc("/favicon", HandleGetFavicon)
+	http.HandleFunc("/favicon_proxy", HandleProxy)
 	if p := os.Getenv("PORT"); p != "" {
 		flag.Set("p", p)
 	}
@@ -38,6 +44,54 @@ func main() {
 		fmt.Println("error: ", err)
 		os.Exit(1)
 	}
+}
+
+func HandleProxy(w http.ResponseWriter, r *http.Request) {
+	url := r.URL.Query()["url"][0]
+	favicon, err := GetFaviconCached(url)
+	if err != nil {
+		fmt.Printf("Error: '%s': %s\n", url, err)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(fmt.Sprint(err)))
+		return
+	}
+
+	image, err := GetImageCached(favicon)
+	if err != nil {
+		fmt.Printf("Error: '%s': %s\n", url, err)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(fmt.Sprint(err)))
+		return
+	}
+
+	w.Write(image)
+}
+
+func GetImageCached(u string) ([]byte, error) {
+	imageLock.RLock()
+	image, cached := imageCache.Get(u)
+	imageLock.RUnlock()
+
+	if cached {
+		return image.([]byte), nil
+	}
+
+	resp, err := http.Get(u)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	imageData, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	imageLock.Lock()
+	imageCache.Add(u, imageData)
+	imageLock.Unlock()
+	return imageData, nil
+
 }
 
 func HandleGetFavicon(w http.ResponseWriter, r *http.Request) {
