@@ -16,6 +16,19 @@ import (
 	"github.com/golang/groupcache/lru"
 )
 
+var transparentPixelPNG = []byte{
+	0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+	0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+	0x01, 0x03, 0x00, 0x00, 0x00, 0x25, 0xdb, 0x56, 0xca, 0x00, 0x00, 0x00,
+	0x03, 0x50, 0x4c, 0x54, 0x45, 0x00, 0x00, 0x00, 0xa7, 0x7a, 0x3d, 0xda,
+	0x00, 0x00, 0x00, 0x01, 0x74, 0x52, 0x4e, 0x53, 0x00, 0x40, 0xe6, 0xd8,
+	0x66, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x08, 0xd7, 0x63,
+	0x60, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0xe2, 0x21, 0xbc, 0x33, 0x00,
+	0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+}
+
+const transparentPixelMD5 = "71a50dbba44c78128b221b7df7bb51f1"
+
 var port = flag.Int("p", 8080, "port [8080]")
 var cacheSize = flag.Int("s", 10000, "cache size [10000]")
 var debug = flag.Bool("debug", false, "Print out debug info")
@@ -56,18 +69,31 @@ func HandleProxy(w http.ResponseWriter, r *http.Request) {
 	favicon, err := GetFaviconCached(url)
 	if err != nil {
 		fmt.Printf("Error: '%s': %s\n", url, err)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(fmt.Sprint(err)))
+		if r.URL.Query().Get("error") != "" {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(fmt.Sprint(err)))
+		} else {
+			sendBytes(w, r, transparentPixelPNG, transparentPixelMD5)
+		}
 		return
 	}
 
 	image, hash, err := GetImageCached(favicon)
 	if err != nil {
 		fmt.Printf("Error: '%s': %s\n", url, err)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(fmt.Sprint(err)))
+		if r.URL.Query().Get("error") != "" {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(fmt.Sprint(err)))
+		} else {
+			sendBytes(w, r, transparentPixelPNG, transparentPixelMD5)
+		}
 		return
 	}
+
+	sendBytes(w, r, image, hash)
+}
+
+func sendBytes(w http.ResponseWriter, r *http.Request, data []byte, hash string) {
 	w.Header().Set("ETag", hash)
 
 	ifNoneMatch := r.Header.Get("If-None-Match")
@@ -76,8 +102,8 @@ func HandleProxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(image)))
-	w.Write(image)
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
+	w.Write(data)
 }
 
 func GetImageCached(u string) ([]byte, string, error) {
