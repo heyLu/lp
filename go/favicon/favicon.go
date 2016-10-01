@@ -71,18 +71,26 @@ func GetFaviconCached(u string) (string, error) {
 	lock.RUnlock()
 
 	if cached {
-		return fu.(string), nil
+		switch fu.(type) {
+		case string:
+			return fu.(string), nil
+		case error:
+			return "", fu.(error)
+		default:
+			panic("unexpected type")
+		}
 	}
 
 	faviconUrl, err := GetFavicon(u)
-	if err != nil {
-		return faviconUrl, err
-	}
 
 	lock.Lock()
-	faviconCache.Add(host, faviconUrl)
+	if err != nil {
+		faviconCache.Add(host, err)
+	} else {
+		faviconCache.Add(host, faviconUrl)
+	}
 	lock.Unlock()
-	return faviconUrl, nil
+	return faviconUrl, err
 }
 
 func GetFavicon(url string) (string, error) {
