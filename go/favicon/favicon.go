@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/md5"
 	"errors"
 	"flag"
 	"fmt"
@@ -23,6 +24,7 @@ var faviconCache *lru.Cache
 var lock sync.RWMutex
 
 var imageCache *lru.Cache
+var imageHashes *lru.Cache
 var imageLock sync.RWMutex
 
 func main() {
@@ -30,6 +32,7 @@ func main() {
 
 	faviconCache = lru.New(*cacheSize)
 	imageCache = lru.New(*cacheSize)
+	imageHashes = lru.New(*cacheSize)
 
 	http.HandleFunc("/favicon", HandleGetFavicon)
 	http.HandleFunc("/favicon_proxy", HandleProxy)
@@ -47,6 +50,8 @@ func main() {
 }
 
 func HandleProxy(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "max-age=2419200")
+
 	url := r.URL.Query()["url"][0]
 	favicon, err := GetFaviconCached(url)
 	if err != nil {
@@ -56,41 +61,52 @@ func HandleProxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	image, err := GetImageCached(favicon)
+	image, hash, err := GetImageCached(favicon)
 	if err != nil {
 		fmt.Printf("Error: '%s': %s\n", url, err)
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(fmt.Sprint(err)))
 		return
 	}
+	w.Header().Set("ETag", hash)
 
+	ifNoneMatch := r.Header.Get("If-None-Match")
+	if ifNoneMatch != "" && hash == ifNoneMatch {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(image)))
 	w.Write(image)
 }
 
-func GetImageCached(u string) ([]byte, error) {
+func GetImageCached(u string) ([]byte, string, error) {
 	imageLock.RLock()
 	image, cached := imageCache.Get(u)
+	hash, _ := imageHashes.Get(u)
 	imageLock.RUnlock()
 
 	if cached {
-		return image.([]byte), nil
+		return image.([]byte), hash.(string), nil
 	}
 
 	resp, err := http.Get(u)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer resp.Body.Close()
 
 	imageData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
+	imageHash := fmt.Sprintf("%x", md5.Sum(imageData))
 
 	imageLock.Lock()
 	imageCache.Add(u, imageData)
+	imageHashes.Add(u, imageHash)
 	imageLock.Unlock()
-	return imageData, nil
+	return imageData, imageHash, nil
 
 }
 
