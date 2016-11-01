@@ -210,7 +210,7 @@ func runOnce(args []string) {
 		f, err = tempFile("/tmp", "linguaevalia", lang.Extension())
 		_, err = io.Copy(f, os.Stdin)
 		if err != nil {
-			fmt.Printf("Error: ", err)
+			fmt.Printf("Error: %s\n", err)
 			os.Exit(1)
 		}
 		defer os.Remove(f.Name())
@@ -219,6 +219,7 @@ func runOnce(args []string) {
 	res, err := lang.RunFile(f)
 	os.Stdout.Write(res)
 	if err != nil {
+		fmt.Printf("Error: %s\n", err)
 		os.Exit(1)
 	}
 }
