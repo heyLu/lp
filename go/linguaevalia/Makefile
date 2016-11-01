@@ -1,4 +1,10 @@
-all: lib/codemirror.js lib/codemirror.css
+DESTDIR = $(HOME)/.local/bin
+
+RUNNERS = $(wildcard bin/run-*)
+
+all: deps
+
+deps: lib/codemirror.js lib/codemirror.css
 
 lib:
 	mkdir lib
@@ -21,6 +27,12 @@ lib/codemirror.js: lib
 
 lib/codemirror.css: lib
 	curl -o $@ http://codemirror.net/lib/codemirror.css
+
+linguaevalia: *.go
+	go build .
+
+install: linguaevalia
+	install -t $(DESTDIR) linguaevalia $(RUNNERS)
 
 clean:
 	rm -rf lib
