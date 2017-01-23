@@ -145,7 +145,6 @@ var homePageTemplate = template.Must(template.New("homepage").Parse(homePageTemp
 
 func runServer() {
 	address := fmt.Sprintf("%s:%d", *host, *port)
-	fmt.Printf("running on %s\n", address)
 
 	http.HandleFunc("/run", runCodeHandler)
 	http.HandleFunc("/codemirror.js", func(w http.ResponseWriter, r *http.Request) {
@@ -156,6 +155,7 @@ func runServer() {
 	})
 	http.HandleFunc("/", homePageHandler)
 
+	fmt.Printf("Running on http://%s\n", address)
 	err := http.ListenAndServe(address, nil)
 	if err != nil {
 		log.Fatal(err)
