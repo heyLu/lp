@@ -239,21 +239,18 @@ help		- Display this help message.
 		os.Args[0])
 }
 
-func parseCommand() (string, []string) {
-	if len(os.Args) == 1 {
-		return "server", []string{}
-	} else {
-		return os.Args[1], os.Args[2:]
-	}
-}
-
 var language = flag.String("l", "", "The language to use for code passed via stdin.")
 var host = flag.String("h", "localhost", "The host to listen on.")
 var port = flag.Int("p", 8000, "The port to listen on.")
 
 func main() {
-	cmd, args := parseCommand()
-	flag.CommandLine.Parse(args)
+	var cmd string
+	if len(os.Args) == 1 {
+		cmd = "server"
+	} else {
+		cmd = os.Args[1]
+	}
+	flag.Parse()
 
 	switch cmd {
 	case "server":
