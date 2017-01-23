@@ -18,6 +18,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"time"
 )
 
 type Language interface {
@@ -242,6 +243,7 @@ help		- Display this help message.
 var language = flag.String("l", "", "The language to use for code passed via stdin.")
 var host = flag.String("h", "localhost", "The host to listen on.")
 var port = flag.Int("p", 8000, "The port to listen on.")
+var openBrowser = flag.Bool("open", false, "Whether to open a browser with the server url.")
 
 func main() {
 	var cmd string
@@ -253,7 +255,13 @@ func main() {
 	flag.Parse()
 
 	switch cmd {
-	case "server":
+	case "server", "-open":
+		if *openBrowser {
+			go func() {
+				time.Sleep(100 * time.Millisecond)
+				exec.Command("xdg-open", fmt.Sprintf("http://localhost:%d", *port)).Run()
+			}()
+		}
 		runServer()
 	case "run":
 		runOnce(flag.Args())
