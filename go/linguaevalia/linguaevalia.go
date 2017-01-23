@@ -49,13 +49,13 @@ var Python = LanguageGeneral{"Python", "py", "python", []string{}}
 var Ruby = LanguageGeneral{"Ruby", "rb", "ruby", []string{}}
 var JavaScript = LanguageGeneral{"JavaScript", "js", "node", []string{}}
 var Haskell = LanguageGeneral{"Haskell", "hs", "runhaskell", []string{}}
-var Rust = LanguageGeneral{"Rust", "rs", "./bin/run-rust", []string{}}
+var Rust = LanguageGeneral{"Rust", "rs", "run-rust", []string{}}
 var Julia = LanguageGeneral{"Julia", "jl", "julia", []string{}}
 var Pixie = LanguageGeneral{"Pixie", "pxi", "pixie-vm", []string{}}
-var C = LanguageGeneral{"C", "c", "./bin/run-c", []string{}}
+var C = LanguageGeneral{"C", "c", "run-c", []string{}}
 var Bash = LanguageGeneral{"Bash", "bash", "bash", []string{}}
 var Lua = LanguageGeneral{"Lua", "lua", "lua", []string{}}
-var CPlusPlus = LanguageGeneral{"C++", "cpp", "./bin/run-c++", []string{}}
+var CPlusPlus = LanguageGeneral{"C++", "cpp", "run-c++", []string{}}
 
 var languageMappings = map[string]Language{
 	"go":         Go,
