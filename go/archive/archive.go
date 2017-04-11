@@ -116,4 +116,5 @@ func main() {
 
 func exit(msg string, err error) {
 	fmt.Fprintf(os.Stderr, "Error: %s: %s\n", msg, err)
+	os.Exit(1)
 }
