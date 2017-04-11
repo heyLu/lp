@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/url"
 	"os"
@@ -11,12 +12,22 @@ import (
 	"path/filepath"
 )
 
+var flags struct {
+	open bool
+}
+
 type Archive struct {
 	Mappings map[string]string `json:"mappings"`
 }
 
+func init() {
+	flag.BoolVar(&flags.open, "open", false, "Open the archived page")
+}
+
 func main() {
-	u, err := url.Parse(os.Args[1])
+	flag.Parse()
+
+	u, err := url.Parse(flag.Arg(0))
 	if err != nil {
 		exit("url.Parse", err)
 	}
@@ -37,6 +48,12 @@ func main() {
 	p, ok := archive.Mappings[u.String()]
 	if ok {
 		fmt.Println("==> Archived at", p)
+
+		if flags.open {
+			fmt.Println("==> Opening archive of", u)
+			open(u, p)
+		}
+
 		return
 	}
 
@@ -112,6 +129,21 @@ func main() {
 	f.Close()
 
 	fmt.Println("==> Archived at", p)
+
+	if flags.open {
+		fmt.Println("==> Opening archive of", u)
+		open(u, p)
+	}
+}
+
+func open(u *url.URL, path string) {
+	cmd := exec.Command("xdg-open", path)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	err := cmd.Start()
+	if err != nil {
+		exit("cmd.Start", err)
+	}
 }
 
 func exit(msg string, err error) {
