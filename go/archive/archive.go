@@ -75,6 +75,11 @@ func main() {
 	cmd := exec.Command("prince", "--javascript", "--raster-output", fmt.Sprintf(".archive/%x-%%02d.png", buf), u.String())
 	cmd.Stderr = prefixWriter("    | ", os.Stderr)
 	cmd.Stdout = prefixWriter("    | ", os.Stdout)
+	fmt.Print("    ", cmd.Args[0])
+	for _, arg := range cmd.Args[1:] {
+		fmt.Print(" ", arg)
+	}
+	fmt.Println()
 	err = cmd.Run()
 	if err != nil {
 		exit("prince", err)
