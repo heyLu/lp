@@ -83,6 +83,10 @@ func main() {
 		exit("filepath.Glob", err)
 	}
 
+	if len(parts) == 0 {
+		exit("filepath.Glob", fmt.Errorf("no matches"))
+	}
+
 	h := fmt.Sprintf(".archive/%x.html", buf)
 	f, err = os.OpenFile(h, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0660)
 	if err != nil {
