@@ -16,6 +16,8 @@ import (
 
 var flags struct {
 	open bool
+
+	archiveDir string
 }
 
 type Archive struct {
@@ -24,6 +26,12 @@ type Archive struct {
 
 func init() {
 	flag.BoolVar(&flags.open, "open", false, "Open the archived page")
+
+	wd, err := os.Getwd()
+	if err != nil {
+		exit("os.Getwd", err)
+	}
+	flags.archiveDir = path.Join(wd, ".archive")
 }
 
 func main() {
@@ -66,65 +74,15 @@ func main() {
 
 	fmt.Println("==> Archiving", u)
 
-	buf := make([]byte, 16)
-	_, err = rand.Read(buf)
-	if err != nil {
-		exit("rand.Read", err)
-	}
-
-	cmd := exec.Command("prince", "--javascript", "--raster-output", fmt.Sprintf(".archive/%x-%%02d.png", buf), u.String())
-	cmd.Stderr = prefixWriter("    | ", os.Stderr)
-	cmd.Stdout = prefixWriter("    | ", os.Stdout)
-	fmt.Print("    ", cmd.Args[0])
-	for _, arg := range cmd.Args[1:] {
-		fmt.Print(" ", arg)
-	}
-	fmt.Println()
-	err = cmd.Run()
+	resultPath, err := archiveWithPrince(flags.archiveDir, u)
 	if err != nil {
 		exit("prince", err)
 	}
 
-	parts, err := filepath.Glob(fmt.Sprintf(".archive/%x-*.png", buf))
-	if err != nil {
-		exit("filepath.Glob", err)
-	}
-
-	if len(parts) == 0 {
-		exit("filepath.Glob", fmt.Errorf("no matches"))
-	}
-
-	h := fmt.Sprintf(".archive/%x.html", buf)
-	f, err = os.OpenFile(h, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0660)
-	if err != nil {
-		exit("os.OpenFile", err)
-	}
-
-	fmt.Fprintf(f, `<doctype html>
-<html>
-	<head>
-		<title>%s</title>
-	</head>
-
-	<body>
-`, u)
-
-	wd, err := os.Getwd()
-	if err != nil {
-		exit("os.Getwd", err)
-	}
-
-	for _, p := range parts {
-		fmt.Fprintf(f, "<img src=%q />\n", path.Join(wd, p))
-	}
-
-	fmt.Fprintf(f, "\n\t</body>\n</html>")
-	f.Close()
-
 	if archive.Mappings == nil {
 		archive.Mappings = make(map[string]string, 1)
 	}
-	p = fmt.Sprintf("file://%s", path.Join(wd, h))
+	p = fmt.Sprintf("file://%s", resultPath)
 	archive.Mappings[u.String()] = p
 
 	f, err = os.OpenFile("archive.json", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0660)
@@ -145,6 +103,61 @@ func main() {
 		fmt.Println("==> Opening archive of", u)
 		open(u, p)
 	}
+}
+
+func archiveWithPrince(dir string, u *url.URL) (resultPath string, err error) {
+	buf := make([]byte, 16)
+	_, err = rand.Read(buf)
+	if err != nil {
+		exit("rand.Read", err)
+	}
+
+	cmd := exec.Command("prince", "--javascript", "--raster-output", fmt.Sprintf("%x-%%02d.png", buf), u.String())
+	cmd.Dir = dir
+	cmd.Stderr = prefixWriter("    | ", os.Stderr)
+	cmd.Stdout = prefixWriter("    | ", os.Stdout)
+	fmt.Print("    ", cmd.Args[0])
+	for _, arg := range cmd.Args[1:] {
+		fmt.Print(" ", arg)
+	}
+	fmt.Println()
+	err = cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
+	parts, err := filepath.Glob(path.Join(dir, fmt.Sprintf("%x-*.png", buf)))
+	if err != nil {
+		return "", fmt.Errorf("filepath.Glob: %s", err)
+	}
+
+	if len(parts) == 0 {
+		return "", fmt.Errorf("filepath.Glob: no matches")
+	}
+
+	h := path.Join(dir, fmt.Sprintf("%x.html", buf))
+	f, err := os.OpenFile(h, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0660)
+	if err != nil {
+		return "", fmt.Errorf("os.OpenFile: %s", err)
+	}
+
+	fmt.Fprintf(f, `<doctype html>
+<html>
+	<head>
+		<title>%s</title>
+	</head>
+
+	<body>
+`, u)
+
+	for _, p := range parts {
+		fmt.Fprintf(f, "<img src=%q />\n", p)
+	}
+
+	fmt.Fprintf(f, "\n\t</body>\n</html>")
+	f.Close()
+
+	return h, nil
 }
 
 func open(u *url.URL, path string) {
