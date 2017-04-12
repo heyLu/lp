@@ -78,6 +78,9 @@ func main() {
 	var archiveFunc func(string, *url.URL) (string, error)
 
 	switch {
+	case u.Host == "youtube.com" || u.Host == "www.youtube.com" || u.Host == "youtu.be" ||
+		u.Host == "vimeo.com":
+		archiver, archiveFunc = "youtube-dl", archiveWithYoutubeDL
 	default:
 		archiver, archiveFunc = "prince", archiveWithPrince
 	}
@@ -111,6 +114,41 @@ func main() {
 		fmt.Println("==> Opening archive of", u)
 		open(u, p)
 	}
+}
+
+func archiveWithYoutubeDL(dir string, u *url.URL) (resultPath string, err error) {
+	cmd := exec.Command("youtube-dl", "--get-filename", u.String(), "--output", "%(url)s.%(ext)s")
+	cmd.Dir = dir
+	cmd.Stderr = prefixWriter("    | ", os.Stderr)
+	buf := new(bytes.Buffer)
+	cmd.Stdout = buf
+	fmt.Print("    ", cmd.Args[0])
+	for _, arg := range cmd.Args[1:] {
+		fmt.Print(" ", arg)
+	}
+	fmt.Println()
+	err = cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
+	p := path.Join(dir, buf.String())
+
+	cmd = exec.Command("youtube-dl", u.String(), "--output", "%(url)s.%(ext)s")
+	cmd.Dir = dir
+	cmd.Stderr = prefixWriter("    | ", os.Stderr)
+	cmd.Stdout = prefixWriter("    | ", os.Stdout)
+	fmt.Print("    ", cmd.Args[0])
+	for _, arg := range cmd.Args[1:] {
+		fmt.Print(" ", arg)
+	}
+	fmt.Println()
+	err = cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
+	return p, nil
 }
 
 func archiveWithPrince(dir string, u *url.URL) (resultPath string, err error) {
