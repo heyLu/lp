@@ -70,7 +70,7 @@ func main() {
 		exit("rand.Read", err)
 	}
 
-	cmd := exec.Command("prince", "--javascript", "--raster-output", fmt.Sprintf(".archive/%x-%%d.png", buf), u.String())
+	cmd := exec.Command("prince", "--javascript", "--raster-output", fmt.Sprintf(".archive/%x-%%02d.png", buf), u.String())
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	err = cmd.Run()
