@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -97,6 +98,15 @@ func main() {
 			case "today":
 				min = truncateHours(time.Now())
 				max = min.Add(24 * time.Hour)
+			case "this":
+				if flag.NArg() > start+1 && flag.Arg(start+1) == "week" {
+					min = truncateHours(time.Now())
+					min = min.AddDate(0, 0, -int(min.Weekday()))
+					max = min.AddDate(0, 0, 7)
+				} else {
+					fmt.Fprintf(os.Stderr, "invalid specifier: '%s'\n", strings.Join(flag.Args()[start:], " "))
+					os.Exit(1)
+				}
 			default:
 				fmt.Fprintf(os.Stderr, "unknown command '%s'\n", cmd)
 				os.Exit(1)
