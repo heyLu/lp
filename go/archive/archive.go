@@ -74,9 +74,17 @@ func main() {
 
 	fmt.Println("==> Archiving", u)
 
-	resultPath, err := archiveWithPrince(flags.archiveDir, u)
+	var archiver string
+	var archiveFunc func(string, *url.URL) (string, error)
+
+	switch {
+	default:
+		archiver, archiveFunc = "prince", archiveWithPrince
+	}
+
+	resultPath, err := archiveFunc(flags.archiveDir, u)
 	if err != nil {
-		exit("prince", err)
+		exit(archiver, err)
 	}
 
 	if archive.Mappings == nil {
