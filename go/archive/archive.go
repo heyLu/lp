@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -71,8 +73,8 @@ func main() {
 	}
 
 	cmd := exec.Command("prince", "--javascript", "--raster-output", fmt.Sprintf(".archive/%x-%%02d.png", buf), u.String())
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
+	cmd.Stderr = prefixWriter("    | ", os.Stderr)
+	cmd.Stdout = prefixWriter("    | ", os.Stdout)
 	err = cmd.Run()
 	if err != nil {
 		exit("prince", err)
@@ -153,4 +155,50 @@ func open(u *url.URL, path string) {
 func exit(msg string, err error) {
 	fmt.Fprintf(os.Stderr, "Error: %s: %s\n", msg, err)
 	os.Exit(1)
+}
+
+type prefixLineWriter struct {
+	prefix      string
+	needsPrefix bool
+
+	w io.Writer
+}
+
+func prefixWriter(prefix string, w io.Writer) io.Writer {
+	return &prefixLineWriter{
+		prefix:      prefix,
+		needsPrefix: true,
+
+		w: w,
+	}
+}
+
+func (p *prefixLineWriter) Write(b []byte) (n int, err error) {
+	if p.needsPrefix {
+		p.w.Write([]byte(p.prefix))
+		p.needsPrefix = false
+	}
+
+	n = 0
+	for {
+		i := bytes.IndexByte(b, '\n')
+		if i == -1 {
+			nn, err := p.w.Write(b)
+			return n + nn, err
+		}
+
+		if i+1 == len(b) {
+			p.needsPrefix = true
+			nn, err := p.w.Write(b)
+			return n + nn, err
+		}
+
+		nn, err := p.w.Write(b[:i+1])
+		if err != nil {
+			return n + nn, err
+		}
+		n += nn
+		p.w.Write([]byte(p.prefix))
+		b = b[i+1:]
+	}
 }
