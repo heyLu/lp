@@ -66,7 +66,7 @@ func main() {
 func HandleProxy(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "max-age=2419200")
 
-	url := r.URL.Query()["url"][0]
+	url := r.URL.Query().Get("url")
 	favicon, err := GetFaviconCached(url)
 	if err != nil {
 		fmt.Printf("Error: '%s': %s\n", url, err)
@@ -138,7 +138,7 @@ func GetImageCached(u string) ([]byte, string, error) {
 }
 
 func HandleGetFavicon(w http.ResponseWriter, r *http.Request) {
-	url := r.URL.Query()["url"][0]
+	url := r.URL.Query().Get("url")
 	favicon, err := GetFaviconCached(url)
 	if err != nil {
 		fmt.Printf("Error: '%s': %s\n", url, err)
