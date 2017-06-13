@@ -11,9 +11,9 @@ import (
 	"os"
 	"sync"
 
-	"code.google.com/p/cascadia"
-	"code.google.com/p/go.net/html"
+	"github.com/andybalholm/cascadia"
 	"github.com/golang/groupcache/lru"
+	"golang.org/x/net/html"
 )
 
 // from https://commons.wikimedia.org/wiki/File:1x1.png
