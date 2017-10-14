@@ -4,8 +4,9 @@
   (display "\n"))
 
 (define (compile-program x)
-  (display "\t.globl scheme_entry\n\n")
+  (display ".globl scheme_entry\n\n")
   (display "scheme_entry:\n")
+
   (emit "movl $~a, %eax" x)
   (emit "ret"))
 
