@@ -1,17 +1,12 @@
-(define (emit1 instr arg)
+(define (emit instr . args)
   (display "\t")
-  (display (format instr arg))
-  (display "\n"))
-
-(define (emit0 instr)
-  (display "\t")
-  (display instr)
+  (display (apply format instr args))
   (display "\n"))
 
 (define (compile-program x)
   (display "\t.globl scheme_entry\n\n")
   (display "scheme_entry:\n")
-  (emit1 "movl $~a, %eax" x)
-  (emit0 "ret"))
+  (emit "movl $~a, %eax" x)
+  (emit "ret"))
 
 (compile-program 42)
