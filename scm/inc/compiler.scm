@@ -25,4 +25,4 @@
   (emit "movl $~a, %eax" (immediate-rep x))
   (emit "ret"))
 
-(compile-program 42)
+(compile-program '())
