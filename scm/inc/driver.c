@@ -11,6 +11,7 @@
 #define char_shift 8
 
 #define boolean_mask  96 // 1100000
+#define boolean_tag   31 // 0011111
 #define boolean_shift 7
 
 #define empty_list   47 // 00101111
