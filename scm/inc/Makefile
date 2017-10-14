@@ -4,6 +4,9 @@ run-scheme: scheme
 scheme: scheme.s driver.c
 	gcc -O3 scheme.s driver.c -o $@
 
+asm: scheme.s
+	cat scheme.s
+
 scheme.s: compiler.scm
 	petite --script compiler.scm > $@
 
