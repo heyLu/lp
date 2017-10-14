@@ -38,7 +38,14 @@
      (case (primcall-op x)
        ((add1)
         (emit-expr (primcall-operand1 x))
-        (emit "addl $~a, %eax" (immediate-rep 1)))))))
+        (emit "addl $~a, %eax" (immediate-rep 1)))
+       ((integer->char)
+        (emit-expr (primcall-operand1 x))
+        (emit "shl $6, %eax")
+        (emit "xorl $15, %eax"))
+       ((char->integer)
+        (emit-expr (primcall-operand1 x))
+        (emit "shrl $6, %eax"))))))
 
 (define (compile-program x)
   (display ".globl scheme_entry\n\n")
@@ -47,4 +54,4 @@
   (emit-expr x)
   (emit "ret"))
 
-(compile-program '(add1 41))
+(compile-program '(char->integer #\y))
