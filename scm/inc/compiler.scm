@@ -11,7 +11,7 @@
   (define (immediate-rep x)
     (cond
       ((integer? x) (bitwise-arithmetic-shift x fixnum-shift))
-      ((char? x) (bitwise-xor (bitwise-arithmetic-shift (char->integer x) 8) char-shift))
+      ((char? x) (bitwise-xor (bitwise-arithmetic-shift (char->integer x) char-shift) #b00001111))
       ((boolean? x) (bitwise-xor (bitwise-arithmetic-shift (cond
                                                              ((boolean=? x #t) 1)
                                                              ((boolean=? x #f) 0))
