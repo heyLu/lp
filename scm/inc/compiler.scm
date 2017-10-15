@@ -45,7 +45,15 @@
         (emit "xorl $15, %eax"))
        ((char->integer)
         (emit-expr (primcall-operand1 x))
-        (emit "shrl $6, %eax"))))))
+        (emit "shrl $6, %eax"))
+       ((zero?)
+        (emit-expr (primcall-operand1 x))
+        (emit "cmpl $0,  %eax")                ; x == 0
+        (emit "movl $0,  %eax")                ; zero %eax to put the result of the comparison into
+        (emit "sete %al")                      ; set low byte of %eax to 1 if cmp succeeded
+        (emit "sall $~a,  %eax" boolean-shift) ; construct correctly tagged boolean value
+        (emit "xorl $31, %eax"))
+       ))))
 
 (define (compile-program x)
   (display ".globl scheme_entry\n\n")
@@ -54,4 +62,4 @@
   (emit-expr x)
   (emit "ret"))
 
-(compile-program '(char->integer #\y))
+(compile-program '(zero? -1))
