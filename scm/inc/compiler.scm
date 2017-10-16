@@ -1,3 +1,6 @@
+;; assembly resources:
+;;  - https://en.wikipedia.org/wiki/X86_instruction_listings
+
 (define (emit instr . args)
   (display "\t")
   (display (apply format instr args))
