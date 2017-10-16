@@ -2,7 +2,7 @@ run-scheme: scheme
 	./scheme
 
 scheme: scheme.s driver.c
-	gcc -O3 scheme.s driver.c -o $@
+	gcc -O3 -g scheme.s driver.c -o $@
 
 asm: scheme.s
 	cat scheme.s
