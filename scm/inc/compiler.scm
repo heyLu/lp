@@ -56,6 +56,21 @@
         (emit "sete %al")                      ; set low byte of %eax to 1 if cmp succeeded
         (emit "sall $~a,  %eax" boolean-shift) ; construct correctly tagged boolean value
         (emit "xorl $31, %eax"))
+       ((integer?)
+        (emit-expr (primcall-operand1 x))
+        (emit "andl $~a, %eax" #b11)
+        (emit "movl $0,  %eax")
+        (emit "sete %al")
+        (emit "sall $~a,  %eax" boolean-shift)
+        (emit "xorl $31, %eax"))
+       ((boolean?)
+        (emit-expr (primcall-operand1 x))
+        (emit "andl $~a, %eax" #b0011111)
+        (emit "cmpl $~a,  %eax" #b0011111)
+        (emit "movl $0,  %eax")
+        (emit "sete %al")
+        (emit "sall $~a,  %eax" boolean-shift)
+        (emit "xorl $31, %eax"))
        ))))
 
 (define (compile-program x)
@@ -65,4 +80,4 @@
   (emit-expr x)
   (emit "ret"))
 
-(compile-program '(zero? -1))
+(compile-program '(boolean? #f))
