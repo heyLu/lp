@@ -37,7 +37,7 @@
   (emit "movl $0,  %eax")                ; zero %eax to put the result of the comparison into
   (emit "sete %al")                      ; set low byte of %eax to 1 if cmp succeeded
   (emit "sall $~a,  %eax" boolean-shift) ; construct correctly tagged boolean value
-  (emit "xorl $31, %eax"))
+  (emit "xorl $~a, %eax" #b0011111))
 
 (define (emit-expr x)
   (cond
@@ -66,7 +66,7 @@
        ((boolean?)
         (emit-expr (primcall-operand1 x))
         (emit "andl $~a, %eax" #b0011111)
-        (emit "cmpl $~a,  %eax" #b0011111)
+        (emit "cmpl $~a, %eax" #b0011111)
         (emit-compare))
        ))))
 
