@@ -7,6 +7,9 @@ scheme: scheme.s driver.c
 scheme-static: scheme.s driver.c
 	gcc -O3 -static scheme.s driver.c -o $@
 
+test: scheme.s driver.c
+	petite --script tests.scm
+
 asm: scheme.s
 	cat scheme.s
 
