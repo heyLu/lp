@@ -33,6 +33,12 @@
 (define (primcall-operand1 x)
   (cadr x))
 
+(define (emit-compare)
+  (emit "movl $0,  %eax")                ; zero %eax to put the result of the comparison into
+  (emit "sete %al")                      ; set low byte of %eax to 1 if cmp succeeded
+  (emit "sall $~a,  %eax" boolean-shift) ; construct correctly tagged boolean value
+  (emit "xorl $31, %eax"))
+
 (define (emit-expr x)
   (cond
     ((immediate? x)
@@ -51,26 +57,17 @@
         (emit "shrl $6, %eax"))
        ((zero?)
         (emit-expr (primcall-operand1 x))
-        (emit "cmpl $0,  %eax")                ; x == 0
-        (emit "movl $0,  %eax")                ; zero %eax to put the result of the comparison into
-        (emit "sete %al")                      ; set low byte of %eax to 1 if cmp succeeded
-        (emit "sall $~a,  %eax" boolean-shift) ; construct correctly tagged boolean value
-        (emit "xorl $31, %eax"))
+        (emit "cmpl $0,  %eax") ; x == 0
+        (emit-compare))
        ((integer?)
         (emit-expr (primcall-operand1 x))
         (emit "andl $~a, %eax" #b11)
-        (emit "movl $0,  %eax")
-        (emit "sete %al")
-        (emit "sall $~a,  %eax" boolean-shift)
-        (emit "xorl $31, %eax"))
+        (emit-compare))
        ((boolean?)
         (emit-expr (primcall-operand1 x))
         (emit "andl $~a, %eax" #b0011111)
         (emit "cmpl $~a,  %eax" #b0011111)
-        (emit "movl $0,  %eax")
-        (emit "sete %al")
-        (emit "sall $~a,  %eax" boolean-shift)
-        (emit "xorl $31, %eax"))
+        (emit-compare))
        ))))
 
 (define (compile-program x)
