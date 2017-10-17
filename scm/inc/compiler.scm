@@ -59,6 +59,10 @@
         (emit-expr (primcall-operand1 x))
         (emit "cmpl $0,  %eax") ; x == 0
         (emit-compare))
+       ((null?)
+        (emit-expr (primcall-operand1 x))
+        (emit "cmpl $~a, %eax" #b00101111)
+        (emit-compare))
        ((integer?)
         (emit-expr (primcall-operand1 x))
         (emit "andl $~a, %eax" #b11)
@@ -77,4 +81,4 @@
   (emit-expr x)
   (emit "ret"))
 
-(compile-program '(boolean? #f))
+(compile-program '(null? ()))
