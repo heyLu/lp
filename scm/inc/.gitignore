@@ -1,3 +1,6 @@
 scheme
+scheme-static
 scheme.s
 integers.s
+current-test*
+tests-output
