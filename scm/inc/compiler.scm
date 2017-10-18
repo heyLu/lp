@@ -1,6 +1,5 @@
 ;; assembly resources:
 ;;  - https://en.wikipedia.org/wiki/X86_instruction_listings
-
 (define (emit instr . args)
   (display "\t")
   (display (apply format instr args))
@@ -69,7 +68,7 @@
         (emit-compare))
        ((char?)
         (emit-expr (primcall-operand1 x))
-        (emit "andl $~a, %eax" #b00001111)
+        (emit "andl $~a, %eax" #b11111111)
         (emit "cmpl $~a, %eax" #b00001111)
         (emit-compare))
        ((boolean?)
