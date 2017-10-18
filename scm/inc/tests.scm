@@ -87,4 +87,16 @@
     ["(boolean? 12421)" "#f\n"]
     ["(boolean? #\\y)" "#f\n"]
     ["(boolean? ())" "#f\n"]
+
+    ["(char? #\\y)" "#t\n"]
+    ["(char? #\\a)" "#t\n"]
+    ["(char? #\\0)" "#t\n"]
+    ["(char? #\\z)" "#t\n"]
+    ["(char? 0)" "#f\n"]
+    ["(char? 1412)" "#f\n"]
+    ["(char? 10)" "#f\n"]
+    ["(char? -1421)" "#f\n"]
+    ;["(char? #t)" "#f\n"]
+    ;["(char? #f)" "#f\n"]
+    ;["(char? ())" "#f\n"]
     ])
