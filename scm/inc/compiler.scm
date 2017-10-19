@@ -84,5 +84,3 @@
 
   (emit-expr x)
   (emit "ret"))
-
-(compile-program '(null? ()))

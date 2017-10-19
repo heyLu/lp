@@ -13,8 +13,8 @@ test: scheme.s driver.c
 asm: scheme.s
 	cat scheme.s
 
-scheme.s: compiler.scm
-	petite --script compiler.scm > $@
+scheme.s: compiler.scm program.scm
+	petite --script program.scm > $@
 
 integers.s: integers.c
 	gcc -O3 --omit-frame-pointer -S $<
