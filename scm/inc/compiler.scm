@@ -73,7 +73,7 @@
         (emit-compare))
        ((boolean?)
         (emit-expr (primcall-operand1 x))
-        (emit "andl $~a, %eax" #b0011111)
+        (emit "andl $~a, %eax" #b1111111)
         (emit "cmpl $~a, %eax" #b0011111)
         (emit-compare))
        ))))
