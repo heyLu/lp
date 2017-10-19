@@ -5,6 +5,8 @@
   (display (apply format instr args))
   (display "\n"))
 
+(define wordsize 4)
+
 (define fixnum-shift 2)
 (define char-shift 8)
 (define boolean-shift 7)
@@ -31,6 +33,9 @@
 
 (define (primcall-operand1 x)
   (cadr x))
+
+(define (primcall-operand2 x)
+  (caddr x))
 
 (define (emit-compare)
   (emit "movl $0,  %eax")                ; zero %eax to put the result of the comparison into
@@ -77,11 +82,17 @@
      (emit-expr (primcall-operand1 x) si)
      (emit "andl $~a, %eax" #b1111111)
      (emit "cmpl $~a, %eax" #b0011111)
-     (emit-compare))))
+     (emit-compare))
+    ((+)
+     (emit-expr (primcall-operand2 x) si)
+     (emit "movl %eax, ~a(%rbp)" si) ; move second arg on the stack
+     (emit-expr (primcall-operand1 x) (- si wordsize))
+     (emit "addl ~a(%rbp), %eax" si))
+    ))
 
 (define (compile-program x)
   (display ".globl scheme_entry\n\n")
   (display "scheme_entry:\n")
 
-  (emit-expr x 0)
+  (emit-expr x (- wordsize))
   (emit "ret"))

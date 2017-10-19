@@ -1,3 +1,3 @@
 (load "compiler.scm")
 
-(compile-program '(null? 0))
+(compile-program '(+ 1 2))
