@@ -5,6 +5,13 @@
   (display (apply format instr args))
   (display "\n"))
 
+(define label-counter 0)
+
+(define (unique-label)
+  (let ((c label-counter))
+    (set! label-counter (+ c 1))
+    (format "label_~d" c)))
+
 (define wordsize 4)
 
 (define fixnum-shift 2)
@@ -48,6 +55,9 @@
 (define (let? x)
   (and (list? x) (eq? (car x) 'let) (list? (cadr x)) (list? (caadr x))))
 
+(define (if? x)
+  (and (list? x) (eq? (car x) 'if)))
+
 (define (emit-expr x si env)
   (cond
     ((immediate? x)
@@ -56,6 +66,8 @@
      (emit "movl ~a(%rsp), %eax" (lookup x env)))
     ((let? x)
      (emit-let (bindings x) (body x) si env))
+    ((if? x)
+     (emit-if (test x) (conseq x) (altern x) si env))
     ((primcall? x) (emit-primitive-call x si env))))
 
 (define (lookup x env)
@@ -89,6 +101,24 @@
 
 (define (lhs binding) (car binding))
 (define (rhs binding) (cadr binding))
+
+(define (emit-if test conseq altern si env)
+  (let ((L0 (unique-label)) (L1 (unique-label)))
+    (emit-expr test si env)
+    (emit "cmpl $~a, %eax" (immediate-rep #f))
+    (emit "je ~a" L0)
+    (emit-expr conseq si env)
+    (emit "jmp ~a" L1)
+    (emit-label L0)
+    (emit-expr altern si env)
+    (emit-label L1)))
+
+(define (emit-label L)
+  (display (format "~a:\n" L)))
+
+(define (test if-expr)   (cadr if-expr))
+(define (conseq if-expr) (caddr if-expr))
+(define (altern if-expr) (cadddr if-expr))
 
 (define (emit-primitive-call x si env)
   (case (primcall-op x)
