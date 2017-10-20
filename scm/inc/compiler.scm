@@ -85,9 +85,9 @@
      (emit-compare))
     ((+)
      (emit-expr (primcall-operand2 x) si)
-     (emit "movl %eax, ~a(%rbp)" si) ; move second arg on the stack
+     (emit "movl %eax, ~a(%rsp)" si) ; move second arg on the stack
      (emit-expr (primcall-operand1 x) (- si wordsize))
-     (emit "addl ~a(%rbp), %eax" si))
+     (emit "addl ~a(%rsp), %eax" si))
     ))
 
 (define (compile-program x)
