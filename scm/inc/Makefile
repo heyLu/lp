@@ -1,11 +1,14 @@
+CC=gcc
+CFLAGS=-Wall -g -O3
+
 run-scheme: scheme
 	./scheme
 
 scheme: scheme.s driver.c
-	gcc -g scheme.s driver.c -o $@
+	$(CC) $(CFLAGS) scheme.s driver.c -o $@
 
 scheme-static: scheme.s driver.c
-	gcc -O3 -static scheme.s driver.c -o $@
+	$(CC) $(CFLAGS) -static scheme.s driver.c -o $@
 
 test: scheme.s driver.c
 	petite --script tests.scm
