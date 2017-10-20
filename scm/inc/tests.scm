@@ -110,4 +110,6 @@
 
 (do-tests "3.5 - local variables"
   '[["(let ((x 3) (y 4)) (+ x y))" "7\n"]
-    ["(let ((b #t)) (boolean? b))" "#t\n"]])
+    ["(let ((b #t)) (boolean? b))" "#t\n"]
+    ["(let ((x 3) (x 4)) x)" "4\n"]
+    ["(let ((x 3)) (let ((x 4)) x))" "4\n"]])
