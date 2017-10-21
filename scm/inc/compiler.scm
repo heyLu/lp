@@ -159,11 +159,20 @@
      (emit "movl %eax, ~a(%rsp)" si) ; move second arg on the stack
      (emit-expr (primcall-operand1 x) (- si wordsize) env)
      (emit "addl ~a(%rsp), %eax" si))
+    ((cons)
+     (emit-expr (primcall-operand1 x) si env)
+     (emit "movl %eax, 0(%rsi)") ; set the car
+     (emit-expr (primcall-operand2 x) si env)
+     (emit "movl %eax, 4(%rsi)") ; set the cdr
+     (emit "movq %rsi, %rax") ; rax = rsi | 1  (cons cell/pair tag)
+     (emit "orq  $~a, %rax" #b001)
+     (emit "addq $8,  %rsi")) ; bump rsi
     ))
 
 (define (compile-program x)
   (display ".globl scheme_entry\n\n")
   (display "scheme_entry:\n")
 
+  (emit "movq %rax, %rsi") ; store pointer to heap memory
   (emit-expr x (- wordsize) '())
   (emit "ret"))
