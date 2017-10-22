@@ -41,7 +41,7 @@ void print_value(int *val) {
 		printf("?");
 		printf(")");
 	} else {
-		printf("\nError: unhandled value: %d\n", *val);
+		printf("\nError: unhandled value: %d 0x%x 0x%p\n", *val, *val, val);
 		exit(1);
 	}
 }
