@@ -25,6 +25,11 @@
 
 int scheme_entry(int *memory);
 
+int print_hex(int i) {
+	printf("0x%x\n", i);
+	return i;
+}
+
 void print_value(int *val) {
 	if ((*val & fixnum_mask) == fixnum_tag) {
 		printf("%d", *val >> fixnum_shift);
