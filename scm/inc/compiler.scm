@@ -188,6 +188,6 @@
   (display ".globl scheme_entry\n\n")
   (display "scheme_entry:\n")
 
-  (emit "movq %rax, %rsi") ; store pointer to heap memory
+  (emit "movq %rdi, %rsi") ; store pointer to heap memory
   (emit-expr x (- wordsize) '())
   (emit "ret"))
