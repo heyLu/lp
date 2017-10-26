@@ -23,30 +23,27 @@
 
 #define MAX_MEMORY (1 << 20)
 
-int scheme_entry(int *memory);
+typedef long ptr;
 
-int print_hex(int i) {
-	printf("0x%x\n", i);
-	return i;
-}
+ptr scheme_entry(int *heap);
 
-void print_value(int *val) {
-	if ((*val & fixnum_mask) == fixnum_tag) {
-		printf("%d", *val >> fixnum_shift);
-	} else if ((*val & char_mask) == char_tag) {
-		printf("#\\%c", *val >> char_shift);
-	} else if ((*val & boolean_mask) == boolean_tag) {
-		printf("#%s", (*val >> boolean_shift) == 1 ? "t" : "f");
-	} else if (*val == empty_list) {
+void print_value(ptr val) {
+	if ((val & fixnum_mask) == fixnum_tag) {
+		printf("%d", (int)val >> fixnum_shift);
+	} else if ((val & char_mask) == char_tag) {
+		printf("#\\%c", (int)val >> char_shift);
+	} else if ((val & boolean_mask) == boolean_tag) {
+		printf("#%s", (val >> boolean_shift) == 1 ? "t" : "f");
+	} else if (val == empty_list) {
 		printf("()");
-	} else if ((*val & cons_mask) == cons_tag) {
+	} else if ((val & cons_mask) == cons_tag) {
 		printf("(");
-		printf("?");
+		print_value(*(int*)(val-1));
 		printf(" ");
-		printf("?");
+		print_value(*(int*)(val+3));
 		printf(")");
 	} else {
-		printf("\nError: unhandled value: %d 0x%x 0x%p\n", *val, *val, val);
+		printf("\nError: unhandled value: %d 0x%x 0x%p\n", (int)val, (int)val, (int*)val);
 		exit(1);
 	}
 }
@@ -58,8 +55,8 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	memset(mem, 0, MAX_MEMORY * sizeof(int));
-	int val = scheme_entry(mem);
-	print_value(&val);
+	ptr val = scheme_entry(mem);
+	print_value(val);
 	printf("\n");
 	return 0;
 }
