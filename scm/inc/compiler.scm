@@ -163,7 +163,7 @@
      (emit-expr (primcall-operand1 x) si env)
      (emit "movl %eax, 0(%rsi)") ; set the car
      (emit-expr (primcall-operand2 x) si env)
-     (emit "movl %eax, 4(%rsi)") ; set the cdr
+     (emit "movl %eax, ~a(%rsi)" wordsize) ; set the cdr
      (emit "movq %rsi, %rax") ; rax = rsi | 1  (cons cell/pair tag)
      (emit "orq  $~a, %rax" #b001)
      (emit "addq $8,  %rsi")) ; bump rsi
