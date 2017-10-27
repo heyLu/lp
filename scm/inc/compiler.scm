@@ -159,6 +159,16 @@
      (emit "movl %eax, ~a(%rsp)" si) ; move second arg on the stack
      (emit-expr (primcall-operand1 x) (- si wordsize) env)
      (emit "addl ~a(%rsp), %eax" si))
+    ((-)
+     (emit-expr (primcall-operand2 x) si env)
+     (emit "movl %eax, ~a(%rsp)" si) ; move second arg on the stack
+     (emit-expr (primcall-operand1 x) (- si wordsize) env)
+     (emit "subl ~a(%rsp), %eax" si))
+    ((*)
+     (emit-expr (primcall-operand2 x) si env)
+     (emit "movl %eax, ~a(%rsp)" si) ; move second arg on the stack
+     (emit-expr (primcall-operand1 x) (- si wordsize) env)
+     (emit "mull ~a(%rsp), %eax" si))
     ((cons)
      (emit-expr (primcall-operand1 x) si env)
      (emit "movl %eax, 0(%rsi)") ; set the car
