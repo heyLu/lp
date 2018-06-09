@@ -243,7 +243,6 @@ func prettyfyJSON(r io.Reader) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return json.MarshalIndent(val, "", "    ")
 }
 
@@ -253,16 +252,6 @@ func renderYAML(w http.ResponseWriter, responses []Response) error {
 		return err
 	}
 	w.Write(out)
-	return nil
-}
-
-func renderHTML(w http.ResponseWriter, responses []Response) error {
-	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(w, "<!doctype html><html><head><style>pre{max-width:100vw;padding:0.5em;background-color:#eee;white-space:pre-wrap;}</style></head><body><ul>\n")
-	for _, resp := range responses {
-		fmt.Fprintf(w, "<li><pre>%s</pre></li>\n", resp.String())
-	}
-	fmt.Fprintf(w, "\n</ul></body></html>")
 	return nil
 }
 
@@ -338,19 +327,6 @@ func asResponse(req *http.Request, resp *http.Response) Response {
 type Header struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
-}
-
-func readResponse(form url.Values) Response {
-	r := Response{}
-	r.Method = form.Get("method")
-	r.Path = form.Get("path")
-	r.Status = 200
-	headers := make([]Header, 0)
-	for i, name := range form["header"] {
-		headers = append(headers, Header{Name: name, Value: form["value"][i]})
-	}
-	r.Body = form.Get("body")
-	return r
 }
 
 // Load loads responses from the YAML file at path.
