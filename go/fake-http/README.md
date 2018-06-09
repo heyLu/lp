@@ -1,5 +1,7 @@
 # fake-http
 
+`fake-http` pretends to be other HTTP APIs.
+
 ## TODO
 
 - /_clear endpoint
