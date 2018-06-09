@@ -13,6 +13,9 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"os/exec"
+	"path"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -23,6 +26,8 @@ var flags struct {
 	proxyURL        string
 	proxyClientCert string
 	proxyClientKey  string
+
+	proxyMinikube bool
 }
 
 func init() {
@@ -30,12 +35,21 @@ func init() {
 	flag.StringVar(&flags.proxyURL, "proxy-url", "", "Proxy requests to this URL")
 	flag.StringVar(&flags.proxyClientCert, "proxy-client-cert", "", "Client certificate to use when connecting to proxy")
 	flag.StringVar(&flags.proxyClientKey, "proxy-client-key", "", "Client key to use when connecting to proxy")
+
+	flag.BoolVar(&flags.proxyMinikube, "proxy-minikube", false, "Shortcut for -proxy-url=https://$(minikube ip):8443 -proxy-client-cert ~/.minikube/client.crt -proxy-client-key ~/.minikube/client.key")
 }
 
 var responses = []Response{}
 
 func main() {
 	flag.Parse()
+
+	if flags.proxyMinikube {
+		err := proxyMinikube()
+		if err != nil {
+			log.Fatalf("Error: Setting up Minikube proxy: %s", err)
+		}
+	}
 
 	if flag.NArg() == 1 {
 		rs, err := loadResponses(flag.Arg(0))
@@ -163,6 +177,20 @@ func main() {
 	log.Printf("Listening on http://%s", flags.addr)
 	log.Printf("See http://%s/_help", flags.addr)
 	log.Fatal(http.ListenAndServe(flags.addr, nil))
+}
+
+func proxyMinikube() error {
+	out, err := exec.Command("minikube", "ip").Output()
+	if err != nil {
+		return err
+	}
+	flags.proxyURL = fmt.Sprintf("https://%s:8443", strings.TrimSpace(string(out)))
+
+	homeDir := os.Getenv("HOME")
+	flags.proxyClientCert = path.Join(homeDir, ".minikube/client.crt")
+	flags.proxyClientKey = path.Join(homeDir, ".minikube/client.key")
+
+	return nil
 }
 
 func matchResponse(req *http.Request, responses []Response) *Response {

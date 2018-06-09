@@ -6,6 +6,7 @@ This needs a running Minikube instance, which can be started with
 `minikube start`.
 
 ```
+# shortcut for the cmdline below: fake-http -proxy-minikube
 $ fake-http -proxy-url=https://$(minikube ip):8443 -proxy-client-cert ~/.minikube/client.crt -proxy-client-key ~/.minikube/client.key
 2018/06/09 13:21:19 Listening on http://localhost:8080
 2018/06/09 13:21:19 See http://localhost:8080/_help
