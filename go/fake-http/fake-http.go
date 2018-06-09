@@ -39,9 +39,6 @@ func init() {
 
 var responses Responses
 
-// Responses is a list of responses that will be stubbed/faked.
-type Responses []Response
-
 func main() {
 	flag.Parse()
 
@@ -140,17 +137,8 @@ func proxyMinikube() error {
 	return nil
 }
 
-func matchResponse(req *http.Request, responses []Response) *Response {
-	for _, resp := range responses {
-		if req.Method == resp.Method && req.URL.Path == resp.Path {
-			return &resp
-		}
-	}
-	return nil
-}
-
-func respondWithStub(responses []Response, w http.ResponseWriter, req *http.Request) *http.Response {
-	resp := matchResponse(req, responses)
+func respondWithStub(responses Responses, w http.ResponseWriter, req *http.Request) *http.Response {
+	resp := responses.Match(req)
 	if resp == nil {
 		resp = &Response{Status: 404, Body: "Not found"}
 	}
@@ -356,6 +344,19 @@ func asResponse(req *http.Request, resp *http.Response) Response {
 type Header struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
+}
+
+// Responses is a list of responses that will be stubbed/faked.
+type Responses []Response
+
+// Match returns a response definition matching the request.
+func (rs *Responses) Match(req *http.Request) *Response {
+	for _, resp := range *rs {
+		if req.Method == resp.Method && req.URL.Path == resp.Path {
+			return &resp
+		}
+	}
+	return nil
 }
 
 // Load loads responses from the YAML file at path.
