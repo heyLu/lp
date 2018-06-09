@@ -221,15 +221,6 @@ func respondWithStub(responses []Response, w http.ResponseWriter, req *http.Requ
 }
 
 func respondWithProxy(proxyURL string, w http.ResponseWriter, req *http.Request) *http.Response {
-	/*proxyReq, err := http.NewRequest(req.Method, proxyURL+req.URL.Path, nil)
-	if err != nil {
-		log.Printf("Error: Creating proxy request: %s", err)
-		return nil
-	}
-	for name, vals := range req.Header {
-		proxyReq.Header[name] = vals
-	}*/
-
 	proxyTransport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			GetClientCertificate: func(info *tls.CertificateRequestInfo) (*tls.Certificate, error) {
@@ -378,17 +369,6 @@ func asResponse(req *http.Request, resp *http.Response) Response {
 type Header struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
-}
-
-// JSONResponse creates a Response with "Content-Type: application/json".
-func JSONResponse(method, path, body string) Response {
-	return Response{
-		Method:  method,
-		Path:    path,
-		Status:  200,
-		Headers: []Header{Header{Name: "Content-Type", Value: "application/json"}},
-		Body:    body,
-	}
 }
 
 func readResponse(form url.Values) Response {
