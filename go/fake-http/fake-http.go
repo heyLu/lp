@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -115,35 +114,10 @@ func main() {
 		}
 	})
 
-	http.HandleFunc("/_stub", func(w http.ResponseWriter, req *http.Request) {
-		switch req.Method {
-		case "GET":
-			err := stubTmpl.Execute(w, nil)
-			if err != nil {
-				log.Printf("Error: Rendering stub template: %s", err)
-				return
-			}
-		case "POST":
-			err := req.ParseForm()
-			if err != nil {
-				log.Printf("Error: Parsing form: %s", err)
-				return
-			}
-			responses = append(responses, readResponse(req.Form))
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
-
 	http.HandleFunc("/_stubs", func(w http.ResponseWriter, req *http.Request) {
 		responses = loadResponses(responsesPath, false, responses)
 
-		var err error
-		if strings.Contains(req.Header.Get("Accept"), "application/yaml") {
-			err = renderYAML(w, responses)
-		} else {
-			err = renderHTML(w, responses)
-		}
+		err := renderYAML(w, responses)
 		if err != nil {
 			log.Printf("Error: Rendering stubs: %s", err)
 		}
@@ -409,24 +383,3 @@ func loadResponsesRaw(path string) ([]Response, error) {
 
 	return responses, nil
 }
-
-var stubTmpl = template.Must(template.New("").Parse(`<!doctype html>
-<html>
-	<head>
-	</head>
-
-	<body>
-		<form method="POST" action="/_stub">
-			<input type="text" name="method" placeholder="GET" />
-			<input type="text" name="path" placeholder="/request/path?query" />
-			<ul>
-				<li>
-					<input type="text" name="header" placeholder="Content-Type" />
-					<input type="text" name="value" placeholder="application/json" />
-				</li>
-			</ul>
-			<textarea name="body" placeholder="{}"></textarea>
-			<input type="submit" />
-		</form>
-	</body>
-</html>`))
