@@ -1,4 +1,10 @@
 - method: GET
+  path: /api/v1/namespaces/default/pods?labelSelector=app%3Dhellogo
+  status: 307
+  headers:
+  - name: Location
+    value: /api/v1/namespaces/default/pods
+- method: GET
   path: /api
   body: |
     {
