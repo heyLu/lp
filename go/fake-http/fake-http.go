@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -58,7 +57,7 @@ func main() {
 		responsesPath = flag.Arg(0)
 	}
 
-	requestLog := make([]LogEntry, 0)
+	requestLog := Log(make([]LogEntry, 0))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		responses.Load(responsesPath)
@@ -73,12 +72,6 @@ func main() {
 		userAgent := req.Header.Get("User-Agent")
 		log.Printf("%s %s - %d (%s, %q)", req.Method, req.URL, resp.StatusCode, req.RemoteAddr, userAgent)
 
-		out, err := httputil.DumpRequest(req, true)
-		if err != nil {
-			log.Printf("Error: Dumping request: %s", err)
-			return
-		}
-
 		if resp.Header.Get("Content-Type") == "application/json" {
 			pretty, err := prettyfyJSON(resp.Body)
 			if err != nil {
@@ -89,17 +82,14 @@ func main() {
 			}
 		}
 
-		requestLog = append(requestLog, LogEntry{
-			Request:  out,
-			Response: asResponse(req, resp),
-		})
+		requestLog.Log(req, resp)
 	})
 
 	http.HandleFunc("/_log", func(w http.ResponseWriter, req *http.Request) {
 		if strings.Contains(req.Header.Get("Accept"), "application/yaml") {
 			rs := make([]Response, len(requestLog))
 			for i, log := range requestLog {
-				rs[i] = log.Response
+				rs[i] = log.AsResponse()
 			}
 			err := renderYAML(w, rs)
 			if err != nil {
@@ -110,9 +100,9 @@ func main() {
 
 		for i := len(requestLog) - 1; i >= 0; i-- {
 			w.Write([]byte("------------------------------------------------------\n"))
-			w.Write(requestLog[i].Request)
-			w.Write([]byte("\n\n"))
-			requestLog[i].Response.AsHTTP().Write(w)
+			requestLog[i].Request().Write(w)
+			w.Write([]byte("\n"))
+			requestLog[i].Response().Write(w)
 			w.Write([]byte("\n"))
 		}
 	})
@@ -253,10 +243,51 @@ func renderYAML(w http.ResponseWriter, responses []Response) error {
 	return nil
 }
 
-// LogEntry is a request/respond pair for logging.
+// Log collects HTTP requests/responses for later display and
+// processing.
+type Log []LogEntry
+
+// Log logs the request/response pair.
+func (l *Log) Log(req *http.Request, resp *http.Response) {
+	e := LogEntry{
+		request:      req,
+		requestBody:  new(bytes.Buffer),
+		response:     resp,
+		responseBody: new(bytes.Buffer),
+	}
+	io.Copy(e.requestBody, req.Body)
+	io.Copy(e.responseBody, resp.Body)
+	*l = append(*l, e)
+}
+
+// LogEntry is a request/response pair for logging.
 type LogEntry struct {
-	Request  Request
-	Response Response
+	request      *http.Request
+	requestBody  *bytes.Buffer
+	response     *http.Response
+	responseBody *bytes.Buffer
+}
+
+// AsResponse returns a Response representation of the entry.
+func (e LogEntry) AsResponse() Response {
+	return Response{
+		Method: e.request.Method,
+		Path:   e.request.URL.Path,
+		Status: e.response.StatusCode,
+		Body:   e.responseBody.String(),
+	}
+}
+
+// Request returns the stored http.Request.
+func (e LogEntry) Request() *http.Request {
+	e.request.Body = ioutil.NopCloser(bytes.NewReader(e.requestBody.Bytes()))
+	return e.request
+}
+
+// Response returns the stored http.Response.
+func (e LogEntry) Response() *http.Response {
+	e.response.Body = ioutil.NopCloser(bytes.NewReader(e.responseBody.Bytes()))
+	return e.response
 }
 
 // Request is a stored serialized HTTP request.
