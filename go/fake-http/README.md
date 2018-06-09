@@ -2,7 +2,6 @@
 
 ## TODO
 
-- support matching query strings
 - refactoring
 - /_clear endpoint
 - some kind of templating (request info + random functions?)

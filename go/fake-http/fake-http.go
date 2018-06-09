@@ -335,7 +335,7 @@ type Responses []Response
 // Match returns a response definition matching the request.
 func (rs *Responses) Match(req *http.Request) *Response {
 	for _, resp := range *rs {
-		if req.Method == resp.Method && req.URL.Path == resp.Path {
+		if req.Method == resp.Method && req.URL.String() == resp.Path {
 			return &resp
 		}
 	}
