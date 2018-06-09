@@ -39,8 +39,6 @@ func init() {
 	flag.BoolVar(&flags.proxyMinikube, "proxy-minikube", false, "Shortcut for -proxy-url https://$(minikube ip):8443 -proxy-client-cert ~/.minikube/client.crt -proxy-client-key ~/.minikube/client.key")
 }
 
-var responses Responses
-
 func main() {
 	flag.Parse()
 
@@ -56,6 +54,7 @@ func main() {
 		responsesPath = flag.Arg(0)
 	}
 
+	var responses Responses
 	requestLog := Log(make([]LogEntry, 0))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
@@ -361,6 +360,7 @@ func (rs *Responses) loadFile(path string) ([]Response, error) {
 		return nil, err
 	}
 
+	var responses Responses
 	err = yaml.Unmarshal(out, &responses)
 	if err != nil {
 		return nil, err
