@@ -214,16 +214,13 @@ func respondWithProxy(proxyURL string, w http.ResponseWriter, req *http.Request)
 	proxyTransport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			GetClientCertificate: func(info *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-				log.Printf("TLS: client cert requested: %#v", info)
 				if flags.proxyClientCert != "" && flags.proxyClientKey != "" {
-					log.Printf("TLS: Loading client cert and key for proxy: %s, %s", flags.proxyClientCert, flags.proxyClientKey)
 					cert, err := tls.LoadX509KeyPair(flags.proxyClientCert, flags.proxyClientKey)
 					if err != nil {
 						return nil, err
 					}
 					return &cert, nil
 				}
-				log.Println("TLS: No client cert configured, returning empty cert")
 				return &tls.Certificate{}, nil
 			},
 			InsecureSkipVerify: true,
