@@ -5,7 +5,6 @@
 - support matching query strings
 - refactoring
 - /_clear endpoint
-- (randomized) delays
 - some kind of templating (request info + random functions?)
 - lua integration? ;)
 

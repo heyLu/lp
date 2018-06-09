@@ -9,12 +9,14 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
@@ -134,6 +136,11 @@ func respondWithStub(responses Responses, w http.ResponseWriter, req *http.Reque
 	resp := responses.Match(req)
 	if resp == nil {
 		resp = &Response{Status: 404, Body: "Not found"}
+	}
+
+	time.Sleep(resp.Delay)
+	if resp.RandomDelay > 0 {
+		time.Sleep(time.Duration(rand.Intn(int(resp.RandomDelay))))
 	}
 
 	for _, header := range resp.Headers {
@@ -291,6 +298,9 @@ type Response struct {
 	Status  int      `yaml:"status"`
 	Headers []Header `yaml:"headers"`
 	Body    string   `yaml:"body"`
+
+	Delay       time.Duration `yaml:"delay"`
+	RandomDelay time.Duration `yaml:"randomDelay"`
 }
 
 func (resp Response) String() string {
