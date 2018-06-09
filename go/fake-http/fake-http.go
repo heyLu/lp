@@ -66,9 +66,6 @@ func main() {
 			resp = respondWithStub(responses, w, req)
 		}
 
-		userAgent := req.Header.Get("User-Agent")
-		log.Printf("%s %s - %d (%s, %q)", req.Method, req.URL, resp.StatusCode, req.RemoteAddr, userAgent)
-
 		requestLog.Log(req, resp)
 	})
 
@@ -227,6 +224,9 @@ type Log []LogEntry
 
 // Log logs the request/response pair.
 func (l *Log) Log(req *http.Request, resp *http.Response) {
+	userAgent := req.Header.Get("User-Agent")
+	log.Printf("%s %s - %d (%s, %q)", req.Method, req.URL, resp.StatusCode, req.RemoteAddr, userAgent)
+
 	e := LogEntry{
 		request:      req,
 		requestBody:  new(bytes.Buffer),
