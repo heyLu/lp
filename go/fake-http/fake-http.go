@@ -14,6 +14,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 var flags struct {
@@ -30,15 +32,18 @@ func init() {
 	flag.StringVar(&flags.proxyClientKey, "proxy-client-key", "", "Client key to use when connecting to proxy")
 }
 
-var responses = []Response{
-	JSONResponse("GET", "/api", `{"kind": "APIVersions", "versions": ["v1"]}`),
-	JSONResponse("GET", "/apis", `{}`),
-	JSONResponse("GET", "/api/v1", `{"kind": "APIResourceList", "resources": [{"name": "pods", "namespaced": true, "kind": "Pod", "verbs": ["get", "list"], "categories": ["all"]}]}`),
-	JSONResponse("GET", "/api/v1/namespaces/default/pods", `{"kind": "PodList", "apiVersion": "v1", "items": [{"metadata": {"name": "oops-v1-214fbj25k"}, "status": {"phase": "Running", "conditions": [{"type": "Ready", "status": "True"}], "startTime": "2018-06-08T09:48:22Z"}}]}`),
-}
+var responses = []Response{}
 
 func main() {
 	flag.Parse()
+
+	if flag.NArg() == 1 {
+		rs, err := loadResponses(flag.Arg(0))
+		if err != nil {
+			log.Fatalf("Error: Parsing %s: %s", flag.Arg(0), err)
+		}
+		responses = rs
+	}
 
 	requestLog := make([]Request, 0)
 
@@ -166,6 +171,9 @@ func respondWithStub(responses []Response, w http.ResponseWriter, req *http.Requ
 	for _, header := range resp.Headers {
 		w.Header().Set(header.Name, header.Value)
 	}
+	if resp.Status == 0 {
+		resp.Status = 200
+	}
 	w.WriteHeader(resp.Status)
 	w.Write([]byte(resp.Body))
 
@@ -247,12 +255,12 @@ type Request []byte
 
 // Response is a mocked HTTP response.
 type Response struct {
-	Method string
-	Path   string
+	Method string `yaml:"method"`
+	Path   string `yaml:"path"`
 
-	Status  int
-	Headers []Header
-	Body    string
+	Status  int      `yaml:"status"`
+	Headers []Header `yaml:"headers"`
+	Body    string   `yaml:"body"`
 }
 
 func (resp Response) String() string {
@@ -288,8 +296,8 @@ func (resp Response) AsHTTP() *http.Response {
 
 // Header is a single-valued HTTP header name and value
 type Header struct {
-	Name  string
-	Value string
+	Name  string `yaml:"name"`
+	Value string `yaml:"value"`
 }
 
 // JSONResponse creates a Response with "Content-Type: application/json".
@@ -314,6 +322,20 @@ func readResponse(form url.Values) Response {
 	}
 	r.Body = form.Get("body")
 	return r
+}
+
+func loadResponses(path string) ([]Response, error) {
+	out, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.Unmarshal(out, &responses)
+	if err != nil {
+		return nil, err
+	}
+
+	return responses, nil
 }
 
 var stubTmpl = template.Must(template.New("").Parse(`<!doctype html>
