@@ -71,11 +71,7 @@ func main() {
 
 	http.HandleFunc("/_log", func(w http.ResponseWriter, req *http.Request) {
 		if strings.Contains(req.Header.Get("Accept"), "application/yaml") {
-			rs := make([]Response, len(requestLog))
-			for i, log := range requestLog {
-				rs[i] = log.AsResponse()
-			}
-			err := renderYAML(w, rs)
+			err := renderYAML(w, requestLog.AsResponses())
 			if err != nil {
 				log.Printf("Error: Render log: %s", err)
 			}
@@ -245,6 +241,15 @@ func (l *Log) Log(req *http.Request, resp *http.Response) {
 	}
 	io.Copy(e.responseBody, resp.Body)
 	*l = append(*l, e)
+}
+
+// AsResponses returns the log as a list of response definition.
+func (l *Log) AsResponses() []Response {
+	rs := make([]Response, len(*l))
+	for i, log := range *l {
+		rs[i] = log.AsResponse()
+	}
+	return rs
 }
 
 // LogEntry is a request/response pair for logging.
