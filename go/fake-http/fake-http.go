@@ -303,16 +303,6 @@ type Response struct {
 	RandomDelay time.Duration `yaml:"randomDelay"`
 }
 
-func (resp Response) String() string {
-	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, "%s %s\r\n", resp.Method, resp.Path)
-	for _, header := range resp.Headers {
-		fmt.Fprintf(buf, "%s: %s\r\n", header.Name, header.Value)
-	}
-	fmt.Fprintf(buf, "\r\n%s", resp.Body)
-	return buf.String()
-}
-
 // AsHTTP returns a http.Response representation.
 func (resp Response) AsHTTP() *http.Response {
 	headers := make(map[string][]string)
