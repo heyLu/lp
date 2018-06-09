@@ -38,7 +38,10 @@ func init() {
 	flag.BoolVar(&flags.proxyMinikube, "proxy-minikube", false, "Shortcut for -proxy-url https://$(minikube ip):8443 -proxy-client-cert ~/.minikube/client.crt -proxy-client-key ~/.minikube/client.key")
 }
 
-var responses = []Response{}
+var responses Responses
+
+// Responses is a list of responses that will be stubbed/faked.
+type Responses []Response
 
 func main() {
 	flag.Parse()
@@ -58,7 +61,7 @@ func main() {
 	requestLog := make([]LogEntry, 0)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		responses = loadResponses(flag.Arg(0), false, responses)
+		responses.Load(responsesPath)
 
 		var resp *http.Response
 		if flags.proxyURL != "" {
@@ -111,15 +114,6 @@ func main() {
 			w.Write([]byte("\n\n"))
 			requestLog[i].Response.AsHTTP().Write(w)
 			w.Write([]byte("\n"))
-		}
-	})
-
-	http.HandleFunc("/_stubs", func(w http.ResponseWriter, req *http.Request) {
-		responses = loadResponses(responsesPath, false, responses)
-
-		err := renderYAML(w, responses)
-		if err != nil {
-			log.Printf("Error: Rendering stubs: %s", err)
 		}
 	})
 
@@ -359,18 +353,16 @@ func readResponse(form url.Values) Response {
 	return r
 }
 
-func loadResponses(path string, abort bool, prevResponses []Response) []Response {
-	rs, err := loadResponsesRaw(path)
+// Load loads responses from the YAML file at path.
+func (rs *Responses) Load(path string) {
+	responses, err := rs.loadFile(path)
 	if err != nil {
-		if abort {
-			log.Fatalf("Error: Parsing %s: %s", flag.Arg(0), err)
-		}
-		return prevResponses
+		log.Printf("Error: Parsing %s: %s", path, err)
 	}
-	return rs
+	*rs = responses
 }
 
-func loadResponsesRaw(path string) ([]Response, error) {
+func (rs *Responses) loadFile(path string) ([]Response, error) {
 	out, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
