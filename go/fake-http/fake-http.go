@@ -45,7 +45,7 @@ func main() {
 		responses = rs
 	}
 
-	requestLog := make([]Request, 0)
+	requestLog := make([]LogEntry, 0)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		var resp *http.Response
@@ -83,13 +83,31 @@ func main() {
 		buf.Write(respOut)
 		buf.Write([]byte("\n"))
 
-		requestLog = append(requestLog, buf.Bytes())
+		requestLog = append(requestLog, LogEntry{
+			Request:  out,
+			Response: asResponse(req, resp),
+		})
 	})
 
 	http.HandleFunc("/_log", func(w http.ResponseWriter, req *http.Request) {
+		if strings.Contains(req.Header.Get("Accept"), "application/yaml") {
+			rs := make([]Response, len(requestLog))
+			for i, log := range requestLog {
+				rs[i] = log.Response
+			}
+			err := renderYAML(w, rs)
+			if err != nil {
+				log.Printf("Error: Render log: %s", err)
+			}
+			return
+		}
+
 		for i := len(requestLog) - 1; i >= 0; i-- {
 			w.Write([]byte("------------------------------------------------------\n"))
-			w.Write(requestLog[i])
+			w.Write(requestLog[i].Request)
+			w.Write([]byte("\n\n"))
+			requestLog[i].Response.AsHTTP().Write(w)
+			w.Write([]byte("\n"))
 		}
 	})
 
@@ -272,6 +290,12 @@ func renderHTML(w http.ResponseWriter, responses []Response) error {
 	return nil
 }
 
+// LogEntry is a request/respond pair for logging.
+type LogEntry struct {
+	Request  Request
+	Response Response
+}
+
 // Request is a stored serialized HTTP request.
 type Request []byte
 
@@ -313,6 +337,24 @@ func (resp Response) AsHTTP() *http.Response {
 		StatusCode: resp.Status,
 		Header:     headers,
 		Body:       ioutil.NopCloser(strings.NewReader(resp.Body)),
+	}
+}
+
+func asResponse(req *http.Request, resp *http.Response) Response {
+	headers := make([]Header, 0)
+	for name, vals := range resp.Header {
+		for _, val := range vals {
+			headers = append(headers, Header{Name: name, Value: val})
+		}
+	}
+	buf := new(bytes.Buffer)
+	io.Copy(buf, resp.Body)
+	return Response{
+		Method:  req.Method,
+		Path:    req.URL.Path,
+		Status:  resp.StatusCode,
+		Headers: headers,
+		Body:    buf.String(),
 	}
 }
 
