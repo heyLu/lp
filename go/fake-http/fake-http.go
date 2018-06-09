@@ -58,13 +58,11 @@ func main() {
 		userAgent := req.Header.Get("User-Agent")
 		log.Printf("%s %s - %d (%s, %q)", req.Method, req.URL, resp.StatusCode, req.RemoteAddr, userAgent)
 
-		buf := new(bytes.Buffer)
 		out, err := httputil.DumpRequest(req, true)
 		if err != nil {
 			log.Printf("Error: Dumping request: %s", err)
 			return
 		}
-		buf.Write(out)
 
 		if resp.Header.Get("Content-Type") == "application/json" {
 			pretty, err := prettyfyJSON(resp.Body)
@@ -74,14 +72,6 @@ func main() {
 				resp.Body = ioutil.NopCloser(bytes.NewReader(pretty))
 			}
 		}
-		respOut, err := httputil.DumpResponse(resp, true)
-		if err != nil {
-			log.Printf("Error: Dumping response: %s", err)
-			return
-		}
-		buf.Write([]byte("\n"))
-		buf.Write(respOut)
-		buf.Write([]byte("\n"))
 
 		requestLog = append(requestLog, LogEntry{
 			Request:  out,
