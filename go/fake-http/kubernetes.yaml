@@ -1,0 +1,46 @@
+- method: GET
+  path: /api
+  body: |
+    {
+      "kind": "APIVersions",
+      "versions": ["v1"]
+    }
+- method: GET
+  path: /apis
+  body: "{}"
+- method: GET
+  path: /api/v1
+  body: |
+    {
+      "kind": "APIResourceList",
+      "resources": [{
+        "name": "pods",
+        "namespaced": true,
+        "kind": "Pod",
+        "verbs": ["get", "list"],
+        "categories": ["all"]
+      }]
+    }
+- method: GET
+  path: /api/v1/namespaces/default/pods
+  headers:
+    - name: "Content-Type"
+      value: "application/json"
+  body: |
+    {
+      "apiVersion": "v1",
+      "items": [{
+        "metadata": {
+          "name": "oops-v1-214fbj25k"
+        },
+        "status": {
+          "conditions": [{
+            "status": "True",
+            "type": "Ready"
+          }],
+          "phase": "Running",
+          "startTime": "2018-06-08T09:48:22Z"
+        }
+      }],
+      "kind": "PodList"
+    }
