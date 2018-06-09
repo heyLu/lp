@@ -51,17 +51,16 @@ func main() {
 		}
 	}
 
+	var responsesPath string
 	if flag.NArg() == 1 {
-		rs, err := loadResponses(flag.Arg(0))
-		if err != nil {
-			log.Fatalf("Error: Parsing %s: %s", flag.Arg(0), err)
-		}
-		responses = rs
+		responsesPath = flag.Arg(0)
 	}
 
 	requestLog := make([]LogEntry, 0)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		responses = loadResponses(flag.Arg(0), false, responses)
+
 		var resp *http.Response
 		if flags.proxyURL != "" {
 			resp = respondWithProxy(flags.proxyURL, w, req)
@@ -137,6 +136,8 @@ func main() {
 	})
 
 	http.HandleFunc("/_stubs", func(w http.ResponseWriter, req *http.Request) {
+		responses = loadResponses(responsesPath, false, responses)
+
 		var err error
 		if strings.Contains(req.Header.Get("Accept"), "application/yaml") {
 			err = renderYAML(w, responses)
@@ -384,7 +385,18 @@ func readResponse(form url.Values) Response {
 	return r
 }
 
-func loadResponses(path string) ([]Response, error) {
+func loadResponses(path string, abort bool, prevResponses []Response) []Response {
+	rs, err := loadResponsesRaw(path)
+	if err != nil {
+		if abort {
+			log.Fatalf("Error: Parsing %s: %s", flag.Arg(0), err)
+		}
+		return prevResponses
+	}
+	return rs
+}
+
+func loadResponsesRaw(path string) ([]Response, error) {
 	out, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
