@@ -123,8 +123,6 @@ func main() {
 			Summary string
 		}{
 			{URL: "/_log", Summary: "View all received requests with responses"},
-			{URL: "/_stub", Summary: "Add a new response stub"},
-			{URL: "/_stubs", Summary: "View all defined stubs"},
 			{URL: "/_help", Summary: "This help"},
 		}
 		fmt.Fprint(w, `<!doctype html>
