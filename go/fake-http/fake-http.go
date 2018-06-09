@@ -114,12 +114,15 @@ func main() {
 	})
 
 	http.HandleFunc("/_stubs", func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprintf(w, "<!doctype html><html><head><style>pre{max-width:100vw;padding:0.5em;background-color:#eee;white-space:pre-wrap;}</style></head><body><ul>\n")
-		for _, resp := range responses {
-			fmt.Fprintf(w, "<li><pre>%s</pre></li>\n", resp.String())
+		var err error
+		if strings.Contains(req.Header.Get("Accept"), "application/yaml") {
+			err = renderYAML(w, responses)
+		} else {
+			err = renderHTML(w, responses)
 		}
-		fmt.Fprintf(w, "\n</ul></body></html>")
+		if err != nil {
+			log.Printf("Error: Rendering stubs: %s", err)
+		}
 	})
 
 	http.HandleFunc("/_help", func(w http.ResponseWriter, req *http.Request) {
@@ -248,6 +251,25 @@ func prettyfyJSON(r io.Reader) ([]byte, error) {
 	}
 
 	return json.MarshalIndent(val, "", "    ")
+}
+
+func renderYAML(w http.ResponseWriter, responses []Response) error {
+	out, err := yaml.Marshal(responses)
+	if err != nil {
+		return err
+	}
+	w.Write(out)
+	return nil
+}
+
+func renderHTML(w http.ResponseWriter, responses []Response) error {
+	w.Header().Set("Content-Type", "text/html")
+	fmt.Fprintf(w, "<!doctype html><html><head><style>pre{max-width:100vw;padding:0.5em;background-color:#eee;white-space:pre-wrap;}</style></head><body><ul>\n")
+	for _, resp := range responses {
+		fmt.Fprintf(w, "<li><pre>%s</pre></li>\n", resp.String())
+	}
+	fmt.Fprintf(w, "\n</ul></body></html>")
+	return nil
 }
 
 // Request is a stored serialized HTTP request.
