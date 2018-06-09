@@ -1,5 +1,14 @@
 # fake-http
 
+## TODO
+
+- support matching query strings
+- refactoring
+- /_clear endpoint
+- (randomized) delays
+- some kind of templating (request info + random functions?)
+- lua integration? ;)
+
 ## Example: Record and replay kubernetes traffic
 
 This needs a running Minikube instance, which can be started with
