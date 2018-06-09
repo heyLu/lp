@@ -2,7 +2,6 @@
 
 ## TODO
 
-- refactoring
 - /_clear endpoint
 - some kind of templating (request info + random functions?)
 - lua integration? ;)
