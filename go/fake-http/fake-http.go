@@ -69,6 +69,7 @@ func main() {
 			if err != nil {
 				log.Printf("Error: Prettyfying JSON: %s", err)
 			} else {
+				resp.Header.Set("Content-Length", fmt.Sprintf("%d", len(pretty)))
 				resp.Body = ioutil.NopCloser(bytes.NewReader(pretty))
 			}
 		}
