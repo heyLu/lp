@@ -329,6 +329,9 @@ type Header struct {
 
 // Load loads responses from the YAML file at path.
 func (rs *Responses) Load(path string) {
+	if path == "" {
+		return
+	}
 	responses, err := rs.loadFile(path)
 	if err != nil {
 		log.Printf("Error: Parsing %s: %s", path, err)
