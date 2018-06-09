@@ -118,11 +118,14 @@ func main() {
 	})
 
 	http.HandleFunc("/_help", func(w http.ResponseWriter, req *http.Request) {
-		urls := []string{
-			"/_log",
-			"/_stub",
-			"/_stubs",
-			"/_help",
+		urls := []struct {
+			URL     string
+			Summary string
+		}{
+			{URL: "/_log", Summary: "View all received requests with responses"},
+			{URL: "/_stub", Summary: "Add a new response stub"},
+			{URL: "/_stubs", Summary: "View all defined stubs"},
+			{URL: "/_help", Summary: "This help"},
 		}
 		fmt.Fprint(w, `<!doctype html>
 <html>
@@ -132,7 +135,7 @@ func main() {
 	<body>
 		<ul>`)
 		for _, url := range urls {
-			fmt.Fprintf(w, "<li><pre><a href=\"%s\">%s</a></pre></li>", url, url)
+			fmt.Fprintf(w, "<li><pre><a href=\"%s\">%s</a> - %s</pre></li>", url.URL, url.URL, url.Summary)
 		}
 		fmt.Fprint(w, `
 		</ul>
