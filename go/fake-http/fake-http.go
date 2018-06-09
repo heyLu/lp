@@ -278,9 +278,6 @@ func (e LogEntry) Response() *http.Response {
 	return e.response
 }
 
-// Request is a stored serialized HTTP request.
-type Request []byte
-
 // Response is a mocked HTTP response.
 type Response struct {
 	Method string `yaml:"method"`
@@ -319,24 +316,6 @@ func (resp Response) AsHTTP() *http.Response {
 		StatusCode: resp.Status,
 		Header:     headers,
 		Body:       ioutil.NopCloser(strings.NewReader(resp.Body)),
-	}
-}
-
-func asResponse(req *http.Request, resp *http.Response) Response {
-	headers := make([]Header, 0)
-	for name, vals := range resp.Header {
-		for _, val := range vals {
-			headers = append(headers, Header{Name: name, Value: val})
-		}
-	}
-	buf := new(bytes.Buffer)
-	io.Copy(buf, resp.Body)
-	return Response{
-		Method:  req.Method,
-		Path:    req.URL.Path,
-		Status:  resp.StatusCode,
-		Headers: headers,
-		Body:    buf.String(),
 	}
 }
 
