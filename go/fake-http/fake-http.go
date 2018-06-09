@@ -72,16 +72,6 @@ func main() {
 		userAgent := req.Header.Get("User-Agent")
 		log.Printf("%s %s - %d (%s, %q)", req.Method, req.URL, resp.StatusCode, req.RemoteAddr, userAgent)
 
-		if resp.Header.Get("Content-Type") == "application/json" {
-			pretty, err := prettyfyJSON(resp.Body)
-			if err != nil {
-				log.Printf("Error: Prettyfying JSON: %s", err)
-			} else {
-				resp.Header.Set("Content-Length", fmt.Sprintf("%d", len(pretty)))
-				resp.Body = ioutil.NopCloser(bytes.NewReader(pretty))
-			}
-		}
-
 		requestLog.Log(req, resp)
 	})
 
@@ -256,6 +246,15 @@ func (l *Log) Log(req *http.Request, resp *http.Response) {
 		responseBody: new(bytes.Buffer),
 	}
 	io.Copy(e.requestBody, req.Body)
+	if resp.Header.Get("Content-Type") == "application/json" {
+		pretty, err := prettyfyJSON(resp.Body)
+		if err != nil {
+			log.Printf("Error: Prettyfying JSON: %s", err)
+		} else {
+			resp.ContentLength = int64(len(pretty))
+			resp.Body = ioutil.NopCloser(bytes.NewReader(pretty))
+		}
+	}
 	io.Copy(e.responseBody, resp.Body)
 	*l = append(*l, e)
 }
@@ -287,6 +286,7 @@ func (e LogEntry) Request() *http.Request {
 // Response returns the stored http.Response.
 func (e LogEntry) Response() *http.Response {
 	e.response.Body = ioutil.NopCloser(bytes.NewReader(e.responseBody.Bytes()))
+	e.response.ContentLength = int64(e.responseBody.Len())
 	return e.response
 }
 
