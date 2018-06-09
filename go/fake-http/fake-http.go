@@ -36,7 +36,7 @@ func init() {
 	flag.StringVar(&flags.proxyClientCert, "proxy-client-cert", "", "Client certificate to use when connecting to proxy")
 	flag.StringVar(&flags.proxyClientKey, "proxy-client-key", "", "Client key to use when connecting to proxy")
 
-	flag.BoolVar(&flags.proxyMinikube, "proxy-minikube", false, "Shortcut for -proxy-url=https://$(minikube ip):8443 -proxy-client-cert ~/.minikube/client.crt -proxy-client-key ~/.minikube/client.key")
+	flag.BoolVar(&flags.proxyMinikube, "proxy-minikube", false, "Shortcut for -proxy-url https://$(minikube ip):8443 -proxy-client-cert ~/.minikube/client.crt -proxy-client-key ~/.minikube/client.key")
 }
 
 var responses = []Response{}
