@@ -87,8 +87,15 @@ func main() {
 	})
 
 	http.HandleFunc("/_log", func(w http.ResponseWriter, req *http.Request) {
-		if strings.Contains(req.Header.Get("Accept"), "application/yaml") {
-			err := renderYAML(w, requestLog.AsResponses())
+		showCache := flags.cache && req.URL.Query().Get("cache") == "true"
+		if showCache || strings.Contains(req.Header.Get("Accept"), "application/yaml") {
+			var rs []Response
+			if showCache {
+				rs = responses.responses
+			} else {
+				rs = requestLog.AsResponses()
+			}
+			err := renderYAML(w, rs)
 			if err != nil {
 				log.Printf("Error: Render log: %s", err)
 			}
