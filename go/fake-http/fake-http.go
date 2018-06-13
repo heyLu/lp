@@ -49,6 +49,15 @@ func main() {
 		}
 	}
 
+	cert := tls.Certificate{}
+	if flags.proxyClientCert != "" && flags.proxyClientKey != "" {
+		var err error
+		cert, err = tls.LoadX509KeyPair(flags.proxyClientCert, flags.proxyClientKey)
+		if err != nil {
+			log.Fatalf("Error: parsing client cert and key: %s", err)
+		}
+	}
+
 	var responsesPath string
 	if flag.NArg() == 1 {
 		responsesPath = flag.Arg(0)
@@ -62,7 +71,7 @@ func main() {
 
 		var resp *http.Response
 		if flags.proxyURL != "" {
-			resp = respondWithProxy(flags.proxyURL, w, req)
+			resp = respondWithProxy(flags.proxyURL, &cert, w, req)
 		} else {
 			resp = respondWithStub(responses, w, req)
 		}
@@ -154,18 +163,11 @@ func respondWithStub(responses Responses, w http.ResponseWriter, req *http.Reque
 	return resp.AsHTTP()
 }
 
-func respondWithProxy(proxyURL string, w http.ResponseWriter, req *http.Request) *http.Response {
+func respondWithProxy(proxyURL string, cert *tls.Certificate, w http.ResponseWriter, req *http.Request) *http.Response {
 	proxyTransport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			GetClientCertificate: func(info *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-				if flags.proxyClientCert != "" && flags.proxyClientKey != "" {
-					cert, err := tls.LoadX509KeyPair(flags.proxyClientCert, flags.proxyClientKey)
-					if err != nil {
-						return nil, err
-					}
-					return &cert, nil
-				}
-				return &tls.Certificate{}, nil
+				return cert, nil
 			},
 			InsecureSkipVerify: true,
 		},
