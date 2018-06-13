@@ -342,11 +342,15 @@ type Header struct {
 }
 
 // Responses is a list of responses that will be stubbed/faked.
-type Responses []Response
+type Responses struct {
+	responses []Response
+
+	seen map[string]bool
+}
 
 // Match returns a response definition matching the request.
 func (rs *Responses) Match(req *http.Request) *Response {
-	for _, resp := range *rs {
+	for _, resp := range rs.responses {
 		if req.Method == resp.Method && req.URL.String() == resp.Path {
 			return &resp
 		}
@@ -357,7 +361,14 @@ func (rs *Responses) Match(req *http.Request) *Response {
 // Add adds the response to the log, to include it in future Match
 // calls.
 func (rs *Responses) Add(r Response) {
-	*rs = append(*rs, r)
+	if rs.seen[r.Method+" "+r.Path] {
+		return
+	}
+	rs.responses = append(rs.responses, r)
+	if rs.seen == nil {
+		rs.seen = make(map[string]bool)
+	}
+	rs.seen[r.Method+" "+r.Path] = true
 }
 
 // Load loads responses from the YAML file at path.
@@ -369,7 +380,7 @@ func (rs *Responses) Load(path string) {
 	if err != nil {
 		log.Printf("Error: Parsing %s: %s", path, err)
 	}
-	*rs = responses
+	rs.responses = responses
 }
 
 func (rs *Responses) loadFile(path string) ([]Response, error) {
@@ -378,7 +389,7 @@ func (rs *Responses) loadFile(path string) ([]Response, error) {
 		return nil, err
 	}
 
-	var responses Responses
+	var responses []Response
 	err = yaml.Unmarshal(out, &responses)
 	if err != nil {
 		return nil, err
