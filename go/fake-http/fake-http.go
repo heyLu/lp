@@ -307,8 +307,8 @@ type Response struct {
 	Headers []Header `yaml:"headers"`
 	Body    string   `yaml:"body"`
 
-	Delay       time.Duration `yaml:"delay"`
-	RandomDelay time.Duration `yaml:"randomDelay"`
+	Delay       time.Duration `yaml:"delay,omitempty"`
+	RandomDelay time.Duration `yaml:"randomDelay,omitempty"`
 }
 
 // AsHTTP returns a http.Response representation.
