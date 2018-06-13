@@ -270,11 +270,18 @@ type LogEntry struct {
 
 // AsResponse returns a Response representation of the entry.
 func (e LogEntry) AsResponse() Response {
+	headers := make([]Header, 0, len(e.response.Header))
+	for name, vals := range e.response.Header {
+		for _, val := range vals {
+			headers = append(headers, Header{Name: name, Value: val})
+		}
+	}
 	return Response{
-		Method: e.request.Method,
-		Path:   e.request.URL.Path,
-		Status: e.response.StatusCode,
-		Body:   e.responseBody.String(),
+		Method:  e.request.Method,
+		Path:    e.request.URL.Path,
+		Status:  e.response.StatusCode,
+		Headers: headers,
+		Body:    e.responseBody.String(),
 	}
 }
 
