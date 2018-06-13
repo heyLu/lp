@@ -28,6 +28,7 @@ var flags struct {
 	proxyClientKey  string
 
 	proxyMinikube bool
+	cache         bool
 }
 
 func init() {
@@ -37,6 +38,7 @@ func init() {
 	flag.StringVar(&flags.proxyClientKey, "proxy-client-key", "", "Client key to use when connecting to proxy")
 
 	flag.BoolVar(&flags.proxyMinikube, "proxy-minikube", false, "Shortcut for -proxy-url https://$(minikube ip):8443 -proxy-client-cert ~/.minikube/client.crt -proxy-client-key ~/.minikube/client.key")
+	flag.BoolVar(&flags.cache, "cache", false, "Cache all requests")
 }
 
 func main() {
@@ -69,14 +71,19 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		responses.Load(responsesPath)
 
+		stub := responses.Match(req)
+		haveCachedStub := flags.cache && stub != nil
 		var resp *http.Response
-		if flags.proxyURL != "" {
+		if flags.proxyURL != "" && !haveCachedStub {
 			resp = respondWithProxy(flags.proxyURL, &cert, w, req)
 		} else {
-			resp = respondWithStub(responses, w, req)
+			resp = respondWithStub(stub, w, req)
 		}
 
-		requestLog.Log(req, resp)
+		e := requestLog.Log(req, resp)
+		if flags.cache {
+			responses.Add(e.AsResponse())
+		}
 	})
 
 	http.HandleFunc("/_log", func(w http.ResponseWriter, req *http.Request) {
@@ -140,12 +147,7 @@ func proxyMinikube() error {
 	return nil
 }
 
-func respondWithStub(responses Responses, w http.ResponseWriter, req *http.Request) *http.Response {
-	resp := responses.Match(req)
-	if resp == nil {
-		resp = &Response{Status: 404, Body: "Not found"}
-	}
-
+func respondWithStub(resp *Response, w http.ResponseWriter, req *http.Request) *http.Response {
 	time.Sleep(resp.Delay)
 	if resp.RandomDelay > 0 {
 		time.Sleep(time.Duration(rand.Intn(int(resp.RandomDelay))))
@@ -227,7 +229,7 @@ func renderYAML(w http.ResponseWriter, responses []Response) error {
 type Log []LogEntry
 
 // Log logs the request/response pair.
-func (l *Log) Log(req *http.Request, resp *http.Response) {
+func (l *Log) Log(req *http.Request, resp *http.Response) *LogEntry {
 	userAgent := req.Header.Get("User-Agent")
 	log.Printf("%s %s - %d (%s, %q)", req.Method, req.URL, resp.StatusCode, req.RemoteAddr, userAgent)
 
@@ -249,6 +251,7 @@ func (l *Log) Log(req *http.Request, resp *http.Response) {
 	}
 	io.Copy(e.responseBody, resp.Body)
 	*l = append(*l, e)
+	return &e
 }
 
 // AsResponses returns the log as a list of response definition.
@@ -349,6 +352,12 @@ func (rs *Responses) Match(req *http.Request) *Response {
 		}
 	}
 	return nil
+}
+
+// Add adds the response to the log, to include it in future Match
+// calls.
+func (rs *Responses) Add(r Response) {
+	*rs = append(*rs, r)
 }
 
 // Load loads responses from the YAML file at path.
