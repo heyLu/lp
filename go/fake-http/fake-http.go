@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sort"
 	"strings"
 	"time"
 
@@ -278,6 +279,12 @@ type LogEntry struct {
 	responseBody *bytes.Buffer
 }
 
+type byHeaderName []Header
+
+func (hs byHeaderName) Len() int           { return len(hs) }
+func (hs byHeaderName) Swap(i, j int)      { hs[i], hs[j] = hs[j], hs[i] }
+func (hs byHeaderName) Less(i, j int) bool { return hs[i].Name < hs[j].Name }
+
 // AsResponse returns a Response representation of the entry.
 func (e LogEntry) AsResponse() Response {
 	headers := make([]Header, 0, len(e.response.Header))
@@ -286,6 +293,7 @@ func (e LogEntry) AsResponse() Response {
 			headers = append(headers, Header{Name: name, Value: val})
 		}
 	}
+	sort.Sort(byHeaderName(headers))
 	return Response{
 		Method:  e.request.Method,
 		Path:    e.request.URL.Path,
