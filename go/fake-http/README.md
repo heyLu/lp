@@ -4,15 +4,6 @@
 
 ## TODO
 
-- replay from log instantly (i.e. operate like a request cache)
-    - ensure every request is cached max once?  at least in the response
-      defn?
-    - make it possible to download the cache
-        - /_cache, analogous to /_log?
-        - or reuse /_log, which wouldn't need new code, but would make
-          it impossible to download the log.  damn...
-            - how about /_log?cache=true?
-            - or make /_log redirect to /_cache if `-cache` is enabled
 - /_clear endpoint
 - some kind of templating (request info + random functions?)
 - lua integration? ;)
