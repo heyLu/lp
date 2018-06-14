@@ -80,6 +80,9 @@ func main() {
 		} else {
 			resp = respondWithStub(stub, w, req)
 		}
+		if resp == nil {
+			return
+		}
 
 		e := requestLog.Log(req, resp)
 		if flags.cache {
