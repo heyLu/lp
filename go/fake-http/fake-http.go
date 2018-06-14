@@ -29,6 +29,7 @@ var flags struct {
 	proxyClientKey  string
 
 	proxyMinikube bool
+	proxy         bool
 	cache         bool
 }
 
@@ -39,6 +40,7 @@ func init() {
 	flag.StringVar(&flags.proxyClientKey, "proxy-client-key", "", "Client key to use when connecting to proxy")
 
 	flag.BoolVar(&flags.proxyMinikube, "proxy-minikube", false, "Shortcut for -proxy-url https://$(minikube ip):8443 -proxy-client-cert ~/.minikube/client.crt -proxy-client-key ~/.minikube/client.key")
+	flag.BoolVar(&flags.proxy, "proxy", false, "Proxy requests to any website")
 	flag.BoolVar(&flags.cache, "cache", false, "Cache all requests")
 }
 
@@ -75,8 +77,12 @@ func main() {
 		stub := responses.Match(req)
 		haveCachedStub := flags.cache && stub != nil
 		var resp *http.Response
-		if flags.proxyURL != "" && !haveCachedStub {
-			resp = respondWithProxy(flags.proxyURL, &cert, w, req)
+		if (flags.proxy || flags.proxyURL != "") && !haveCachedStub {
+			proxyURL := flags.proxyURL
+			if flags.proxy {
+				proxyURL = req.RequestURI
+			}
+			resp = respondWithProxy(proxyURL, &cert, w, req)
 		} else {
 			resp = respondWithStub(stub, w, req)
 		}
