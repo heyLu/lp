@@ -25,12 +25,12 @@ func main() {
 
 	if os.Args[1] == "serve" {
 		addr := os.Args[2]
-		fileName := os.Args[3]
 
 		mux := http.NewServeMux()
 		mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 			lastVisit = time.Now()
 
+			fileName := req.URL.Path[1:]
 			data, err := ioutil.ReadFile(fileName)
 			if err != nil {
 				http.Error(w, "could not read file", http.StatusNotFound)
