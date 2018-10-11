@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/russross/blackfriday"
@@ -39,7 +41,14 @@ func main() {
 
 			style := `body { max-width: 50em; margin: 0 auto; }`
 			fmt.Fprintf(w, "<!doctype html><html><head><meta charset=\"utf-8\" /><title>%s</title><style>%s</style></head><body>\n\n\n", fileName, style)
-			w.Write(blackfriday.MarkdownCommon(data))
+			switch {
+			case strings.HasSuffix(strings.ToLower(fileName), ".md"):
+				w.Write(blackfriday.MarkdownCommon(data))
+			default:
+				fmt.Fprint(w, "<pre>\n")
+				template.HTMLEscape(w, data)
+				fmt.Fprint(w, "\n</pre>")
+			}
 			fmt.Fprintf(w, "\n\n\n</body></html>")
 		})
 
