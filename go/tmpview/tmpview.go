@@ -39,6 +39,11 @@ func main() {
 				log.Println(err)
 			}
 
+			if strings.HasSuffix(strings.ToLower(fileName), ".pdf") {
+				w.Write(data)
+				return
+			}
+
 			style := `body { max-width: 50em; margin: 0 auto; }`
 			fmt.Fprintf(w, "<!doctype html><html><head><meta charset=\"utf-8\" /><title>%s</title><style>%s</style></head><body>\n\n\n", fileName, style)
 			switch {
