@@ -624,7 +624,7 @@ var videoTmpl = template.Must(baseTmpl.New("video").Parse(`
 <article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
 	{{ if (eq .Provider "youtube" "vimeo") -}}
-	<iframe width="560" height="315" src="{{ safe_url .URL }}" frameborder="0" allowfullscreen></iframe>
+	<iframe width="560" height="315" src="{{ safe_url .URL }}" frameborder="0" allowfullscreen loading="lazy"></iframe>
 	{{- else if (eq .Provider "native") -}}
 	<video src="{{ safe_url .URL }}" controls></video>
 	{{- end }}
