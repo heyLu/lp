@@ -39,20 +39,17 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	char *msg = "howdy there, enby!🐘";
+	SDL_Surface *surface = SDL_GetWindowSurface(window);
+
+	char *msg = "howdy there, enby! 🐘";
 
 	// thanks to https://stackoverflow.com/questions/22886500/how-to-render-text-in-sdl2 for some actually useful code here
 	SDL_Color white = {255, 255, 255};
 	SDL_Color black = {0, 0, 0};
-	SDL_Surface* surfaceMessage = TTF_RenderUTF8_Blended(font, msg, white); 
-	SDL_Texture* message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+	SDL_Surface* text = TTF_RenderUTF8_Blended(font, msg, white);
+	SDL_BlitSurface(text, NULL, surface, NULL);
 
-	SDL_Rect text_rect;
-	text_rect.x = 0;
-	text_rect.y = 0;
-	text_rect.w = surfaceMessage->w;
-	text_rect.h = surfaceMessage->h;
-
+	// monospace -> fixed width (duh)
 	int advance = 0;
 	for (int i = 0; i < strlen(msg); i++) {
 		TTF_GlyphMetrics(font, msg[i], NULL, NULL, NULL, NULL, &advance);
@@ -67,15 +64,10 @@ int main(int argc, char *argv[]) {
 			break;
 		}
 
-		SDL_RenderClear(renderer);
-		SDL_RenderCopy(renderer, message, NULL, &text_rect);
-		SDL_RenderPresent(renderer);
-
+		SDL_UpdateWindowSurface(window);
 		SDL_Delay(16);
 	}
 
-	SDL_FreeSurface(surfaceMessage);
-	SDL_DestroyTexture(message);
 	SDL_DestroyWindow(window);
 
 	SDL_Quit();
