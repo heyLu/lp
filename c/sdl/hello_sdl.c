@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
 	SDL_StartTextInput();
 
-	int pos = 0;
+	int pos = 25;
 	int max_chars = MIN(surface->w / advance, sizeof(msg));
 
 	SDL_bool quit = SDL_FALSE;
