@@ -1,7 +1,15 @@
+// Playing around with SDL + TTF.
+//
+// Resources:
+// - http://wiki.libsdl.org/CategoryAPI
+// - https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf.html
+
+#include <sys/param.h>
+
 #include <SDL.h>
 #include <SDL_ttf.h>
 
-char *font_file = "./NotoColorEmoji.ttf";
+char *font_file = "./FantasqueSansMono-Regular.ttf";
 
 int main(int argc, char *argv[]) {
 	printf("hello, world!\n");
@@ -41,13 +49,7 @@ int main(int argc, char *argv[]) {
 
 	SDL_Surface *surface = SDL_GetWindowSurface(window);
 
-	char *msg = "🐘";
-
-	// thanks to https://stackoverflow.com/questions/22886500/how-to-render-text-in-sdl2 for some actually useful code here
-	SDL_Color white = {255, 255, 255, 255};
-	SDL_Color black = {0, 0, 0};
-	SDL_Surface* text = TTF_RenderUTF8_Shaded(font, msg, white, black);
-	SDL_BlitSurface(text, NULL, surface, NULL);
+	char msg[100] = "howdy there, enby! 🐘                                          ";
 
 	// monospace -> fixed width (duh)
 	int advance = 0;
@@ -56,13 +58,48 @@ int main(int argc, char *argv[]) {
 		printf("advance '%c': %d\n", msg[i], advance);
 	}
 
+	SDL_StartTextInput();
+
+	int pos = 0;
+	int max_chars = MIN(surface->w / advance, sizeof(msg));
+
+	SDL_bool quit = SDL_FALSE;
+
 	SDL_Event event;
-	while (1) {
-		SDL_PollEvent(&event);
-		if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
-			printf("quit received\n");
-			break;
+	while (!quit) {
+		while(SDL_PollEvent(&event)) {
+			if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
+				printf("quit received\n");
+				quit = SDL_TRUE;
+				break;
+			}
+
+			if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_BACKSPACE) {
+				if (pos == 0) {
+					pos = max_chars-1;
+				} else {
+					pos = (pos - 1) % (max_chars - 1);
+				}
+				msg[pos] = '_';
+				printf("back to %d\n", pos);
+				continue;
+			}
+
+			if (event.type == SDL_TEXTINPUT) {
+				if (strlen(event.text.text) > 0) {
+					printf("key: %s\n", event.text.text);
+
+					msg[pos] = event.text.text[0];
+					pos = (pos + 1) % (max_chars - 1);
+				}
+			}
 		}
+
+		// thanks to https://stackoverflow.com/questions/22886500/how-to-render-text-in-sdl2 for some actually useful code here
+		SDL_Color white = {255, 255, 255, 255};
+		SDL_Color black = {0, 0, 0};
+		SDL_Surface* text = TTF_RenderUTF8_Shaded(font, msg, white, black);
+		SDL_BlitSurface(text, NULL, surface, NULL);
 
 		SDL_UpdateWindowSurface(window);
 		SDL_Delay(16);
