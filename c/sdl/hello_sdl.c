@@ -1,7 +1,7 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 
-char *font_file = "./FantasqueSansMono-Regular.ttf";
+char *font_file = "./NotoColorEmoji.ttf";
 
 int main(int argc, char *argv[]) {
 	printf("hello, world!\n");
@@ -41,12 +41,12 @@ int main(int argc, char *argv[]) {
 
 	SDL_Surface *surface = SDL_GetWindowSurface(window);
 
-	char *msg = "howdy there, enby! 🐘";
+	char *msg = "🐘";
 
 	// thanks to https://stackoverflow.com/questions/22886500/how-to-render-text-in-sdl2 for some actually useful code here
-	SDL_Color white = {255, 255, 255};
+	SDL_Color white = {255, 255, 255, 255};
 	SDL_Color black = {0, 0, 0};
-	SDL_Surface* text = TTF_RenderUTF8_Blended(font, msg, white);
+	SDL_Surface* text = TTF_RenderUTF8_Shaded(font, msg, white, black);
 	SDL_BlitSurface(text, NULL, surface, NULL);
 
 	// monospace -> fixed width (duh)
