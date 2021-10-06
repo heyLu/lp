@@ -2,7 +2,7 @@ const Builder = @import("std").build.Builder;
 
 pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
-    const exe = b.addExecutable("sdl-zig-demo", "./hello_sdl.zig");
+    const exe = b.addExecutable("hello_sdl", "./hello_sdl.zig");
     exe.setBuildMode(mode);
     exe.linkSystemLibrary("SDL2");
     exe.linkSystemLibrary("SDL2_ttf");
