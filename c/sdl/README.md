@@ -34,3 +34,5 @@ that you'll need a TTF font from somewhere and then run it like this:
 
 By default it wants `./FantasqueSansMono-Regular.ttf`, which you can get
 from the `ttf-fantasque-sans-mono` package on ArchLinux.
+
+See [../../zig/sdl](../../zig/sdl) for continued experiments!
