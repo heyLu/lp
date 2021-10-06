@@ -5,6 +5,11 @@
 // Resources:
 // - http://wiki.libsdl.org/CategoryAPI
 // - https://www.libsdl.org/projects/SDL_ttf/docs/SDL_ttf.html
+//
+// Unrelatedly, https://ziglang.org/learn/samples/ lead me to
+// raylib, which looks like a really neat library to get started with
+// game programming without Godot or Unity:
+// https://github.com/raysan5/raylib
 const c = @cImport({
     @cInclude("SDL2/SDL.h");
     @cInclude("SDL2/SDL_ttf.h");
@@ -71,6 +76,8 @@ pub fn main() !void {
         // thanks to https://stackoverflow.com/questions/22886500/how-to-render-text-in-sdl2 for some actually useful code here
         const white: c.SDL_Color = c.SDL_Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
         const black: c.SDL_Color = c.SDL_Color{ .r = 0, .g = 0, .b = 0, .a = 255 };
+        // Shaded vs Solid gives a nicer output, with solid the output
+        // was squiggly and not aligned with a baseline.
         const text = c.TTF_RenderUTF8_Shaded(font, msg, white, black);
         _ = c.SDL_BlitSurface(text, null, surface, null);
 
