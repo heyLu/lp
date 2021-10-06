@@ -52,15 +52,20 @@ pub fn main() !void {
 
     // assume monospace font
     var glyph_width: c_int = 0;
-    if (c.TTF_GlyphMetrics(font, 'x', null, null, null, null, &glyph_width) != 0) {
+    if (c.TTF_GlyphMetrics(font, 'g', null, null, null, null, &glyph_width) != 0) {
         c.SDL_Log("Unable to measure glyph: %s", c.TTF_GetError());
         return error.TTFInitializationFailed;
     }
-    std.debug.assert(glyph_width < 1000);
+    var glyph_height = c.TTF_FontLineSkip(font);
 
     var msg = "howdy there, enby! 🐘                                          ".*;
     var pos: usize = 0;
     var max_chars = std.math.min(@divTrunc(@intCast(usize, surface.*.w), @intCast(usize, glyph_width)), msg.len);
+
+    var result: ?[*:0]u8 = null;
+    result = "";
+
+    const keyboardState = c.SDL_GetKeyboardState(null);
 
     var quit = false;
     while (!quit) {
@@ -87,7 +92,28 @@ pub fn main() !void {
                             pos = if (pos == 0) max_chars - 1 else (pos - 1) % (max_chars - 1);
                             msg[pos] = '_';
                         },
+                        c.SDLK_RETURN => {
+                            result = runCommand(&msg);
+                        },
                         else => {},
+                    }
+
+                    // ctrl + key combinations
+                    if (keyboardState[c.SDL_SCANCODE_LCTRL] != 0) {
+                        switch (event.key.keysym.sym) {
+                            c.SDLK_a => {
+                                pos = 0;
+                                msg[pos] = '_';
+                            },
+                            c.SDLK_k => {
+                                var i: usize = 0;
+                                while (i < max_chars) : (i += 1) {
+                                    msg[i] = ' ';
+                                }
+                                msg[max_chars] = 0;
+                            },
+                            else => {},
+                        }
                     }
                 },
                 c.SDL_TEXTINPUT => {
@@ -109,8 +135,16 @@ pub fn main() !void {
         const text = c.TTF_RenderUTF8_Shaded(font, &msg, white, black);
         _ = c.SDL_BlitSurface(text, null, surface, null);
 
+        const result_text = c.TTF_RenderUTF8_Shaded(font, result, white, black);
+        _ = c.SDL_BlitSurface(result_text, null, surface, &c.SDL_Rect{ .x = 0, .y = glyph_height, .w = surface.*.w, .h = surface.*.h - glyph_height });
+
         _ = c.SDL_UpdateWindowSurface(screen);
 
         c.SDL_Delay(16);
     }
+}
+
+fn runCommand(cmd: ?[*:0]u8) ?[*:0]u8 {
+    c.SDL_Log("cmd is '%s'", cmd);
+    return "unknown command";
 }
