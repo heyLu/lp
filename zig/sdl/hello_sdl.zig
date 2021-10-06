@@ -42,9 +42,6 @@ pub fn main() !void {
     defer c.TTF_CloseFont(font);
     c.SDL_Log("Using font %s", font_file.ptr);
 
-    const msg = "howdy there, enby! 🐘                                          ";
-    c.SDL_Log(msg);
-
     const screen = c.SDL_CreateWindow("hello fonts", c.SDL_WINDOWPOS_CENTERED, c.SDL_WINDOWPOS_CENTERED, 600, 100, c.SDL_WINDOW_BORDERLESS) orelse {
         c.SDL_Log("Unable to create window: %s", c.SDL_GetError());
         return error.SDLInitializationFailed;
@@ -52,6 +49,18 @@ pub fn main() !void {
     defer c.SDL_DestroyWindow(screen);
 
     const surface = c.SDL_GetWindowSurface(screen);
+
+    // assume monospace font
+    var glyph_width: c_int = 0;
+    if (c.TTF_GlyphMetrics(font, 'x', null, null, null, null, &glyph_width) != 0) {
+        c.SDL_Log("Unable to measure glyph: %s", c.TTF_GetError());
+        return error.TTFInitializationFailed;
+    }
+    std.debug.assert(glyph_width < 1000);
+
+    var msg = "howdy there, enby! 🐘                                          ".*;
+    var pos: usize = 0;
+    var max_chars = std.math.min(@divTrunc(@intCast(usize, surface.*.w), @intCast(usize, glyph_width)), msg.len);
 
     var quit = false;
     while (!quit) {
@@ -69,6 +78,13 @@ pub fn main() !void {
                         else => {},
                     }
                 },
+                c.SDL_TEXTINPUT => {
+                    if (event.text.text.len > 0) {
+                        c.SDL_Log("input: '%s' at %d", event.text.text, pos);
+                        msg[pos] = event.text.text[0];
+                        pos = (pos + 1) % (max_chars - 1);
+                    }
+                },
                 else => {},
             }
         }
@@ -78,7 +94,7 @@ pub fn main() !void {
         const black: c.SDL_Color = c.SDL_Color{ .r = 0, .g = 0, .b = 0, .a = 255 };
         // Shaded vs Solid gives a nicer output, with solid the output
         // was squiggly and not aligned with a baseline.
-        const text = c.TTF_RenderUTF8_Shaded(font, msg, white, black);
+        const text = c.TTF_RenderUTF8_Shaded(font, &msg, white, black);
         _ = c.SDL_BlitSurface(text, null, surface, null);
 
         _ = c.SDL_UpdateWindowSurface(screen);
