@@ -9,10 +9,14 @@ const c = @cImport({
     @cInclude("SDL2/SDL.h");
     @cInclude("SDL2/SDL_ttf.h");
 });
-const assert = @import("std").debug.assert;
-const process = @import("std").process;
+const std = @import("std");
 
 pub fn main() !void {
+    var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
+    const gpa = &general_purpose_allocator.allocator;
+    const args = try std.process.argsAlloc(gpa);
+    defer std.process.argsFree(gpa, args);
+
     if (c.SDL_Init(c.SDL_INIT_VIDEO) != 0) {
         c.SDL_Log("Unable to initialize SDL: %s", c.SDL_GetError());
         return error.SDLInitializationFailed;
@@ -25,12 +29,13 @@ pub fn main() !void {
     }
     defer c.TTF_Quit();
 
-    var font_file = "./FantasqueSansMono-Regular.ttf";
+    var font_file = if (args.len > 1) args[1] else "./FantasqueSansMono-Regular.ttf";
     const font = c.TTF_OpenFont(font_file, 20) orelse {
         c.SDL_Log("Unable to load font: %s", c.TTF_GetError());
         return error.TTFInitializationFailed;
     };
     defer c.TTF_CloseFont(font);
+    c.SDL_Log("Using font %s", font_file.ptr);
 
     const msg = "howdy there, enby! 🐘                                          ";
     c.SDL_Log(msg);
