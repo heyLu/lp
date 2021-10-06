@@ -48,7 +48,7 @@ pub fn main() !void {
     };
     defer c.SDL_DestroyWindow(screen);
 
-    const surface = c.SDL_GetWindowSurface(screen);
+    var surface = c.SDL_GetWindowSurface(screen);
 
     // assume monospace font
     var glyph_width: c_int = 0;
@@ -69,6 +69,14 @@ pub fn main() !void {
             switch (event.@"type") {
                 c.SDL_QUIT => {
                     quit = true;
+                },
+                c.SDL_WINDOWEVENT => {
+                    switch (event.window.event) {
+                        c.SDL_WINDOWEVENT_SIZE_CHANGED => {
+                            surface = c.SDL_GetWindowSurface(screen);
+                        },
+                        else => {},
+                    }
                 },
                 c.SDL_KEYDOWN => {
                     switch (event.key.keysym.sym) {
