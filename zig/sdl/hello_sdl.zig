@@ -93,7 +93,13 @@ pub fn main() !void {
                             msg[pos] = '_';
                         },
                         c.SDLK_RETURN => {
-                            result = runCommand(&msg);
+                            result = runCommand(&msg, gpa);
+                            var i: usize = 0;
+                            while (i < max_chars) : (i += 1) {
+                                msg[i] = ' ';
+                            }
+                            msg[max_chars] = 0;
+                            pos = 0;
                         },
                         else => {},
                     }
@@ -111,6 +117,7 @@ pub fn main() !void {
                                     msg[i] = ' ';
                                 }
                                 msg[max_chars] = 0;
+                                pos = 0;
                             },
                             else => {},
                         }
