@@ -151,7 +151,19 @@ pub fn main() !void {
     }
 }
 
-fn runCommand(cmd: ?[*:0]u8) ?[*:0]u8 {
-    c.SDL_Log("cmd is '%s'", cmd);
-    return "unknown command";
+fn runCommand(cmd: []const u8, allocator: *std.mem.Allocator) ?[*:0]u8 {
+    const argv = &[_][]const u8{ "/usr/bin/qalc", "-terse", cmd };
+    const result = std.ChildProcess.exec(.{ .allocator = allocator, .argv = argv }) catch |err| return "oopsie";
+    const buf = allocator.allocSentinel(u8, 100, 0) catch |err| return "alloc";
+    std.mem.copy(u8, buf, result.stdout);
+    var i: usize = result.stdout.len;
+    while (i < buf.len) : (i += 1) {
+        buf[i] = ' ';
+    }
+    buf[buf.len - 1] = 0;
+    defer {
+        allocator.free(result.stdout);
+        allocator.free(result.stderr);
+    }
+    return buf;
 }
