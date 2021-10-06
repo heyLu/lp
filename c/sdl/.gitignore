@@ -1,2 +1,3 @@
 /hello_sdl
 *.ttf
+/zig-cache

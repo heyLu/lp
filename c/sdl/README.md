@@ -25,8 +25,8 @@ This is how it looks after those initial few hours:
 ![screenshot of hello\_sdl running](./screenshot.png)
 
 And for everything else, see [`hello_sdl.c`](./hello_sdl.c).  To run it
-run `make` and then run `./hello_sdl`.  Do not that you'll need a TTF
-font from somewhere and then run it like this:
+compile it by running make `make` and then run `./hello_sdl`.  Do note
+that you'll need a TTF font from somewhere and then run it like this:
 
 ```
 ./hello_sdl /usr/share/fonts/TTF/DejaVuSerif.ttf
