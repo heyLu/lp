@@ -83,6 +83,10 @@ pub fn main() !void {
                         c.SDLK_ESCAPE => {
                             quit = true;
                         },
+                        c.SDLK_BACKSPACE => {
+                            pos = if (pos == 0) max_chars - 1 else (pos - 1) % (max_chars - 1);
+                            msg[pos] = '_';
+                        },
                         else => {},
                     }
                 },
