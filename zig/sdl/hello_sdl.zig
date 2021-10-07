@@ -67,10 +67,13 @@ pub fn main() !void {
 
     const keyboardState = c.SDL_GetKeyboardState(null);
 
+    c.SDL_StartTextInput();
+
     var quit = false;
     while (!quit) {
         var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event) != 0) {
+            const ctrlPressed = (keyboardState[c.SDL_SCANCODE_LCTRL] != 0);
             switch (event.@"type") {
                 c.SDL_QUIT => {
                     quit = true;
@@ -84,28 +87,7 @@ pub fn main() !void {
                     }
                 },
                 c.SDL_KEYDOWN => {
-                    switch (event.key.keysym.sym) {
-                        c.SDLK_ESCAPE => {
-                            quit = true;
-                        },
-                        c.SDLK_BACKSPACE => {
-                            pos = if (pos == 0) max_chars - 1 else (pos - 1) % (max_chars - 1);
-                            msg[pos] = '_';
-                        },
-                        c.SDLK_RETURN => {
-                            result = runCommand(&msg, gpa);
-                            var i: usize = 0;
-                            while (i < max_chars) : (i += 1) {
-                                msg[i] = ' ';
-                            }
-                            msg[max_chars] = 0;
-                            pos = 0;
-                        },
-                        else => {},
-                    }
-
-                    // ctrl + key combinations
-                    if (keyboardState[c.SDL_SCANCODE_LCTRL] != 0) {
+                    if (ctrlPressed) {
                         switch (event.key.keysym.sym) {
                             c.SDLK_a => {
                                 pos = 0;
@@ -121,10 +103,30 @@ pub fn main() !void {
                             },
                             else => {},
                         }
+                    } else {
+                        switch (event.key.keysym.sym) {
+                            c.SDLK_ESCAPE => {
+                                quit = true;
+                            },
+                            c.SDLK_BACKSPACE => {
+                                pos = if (pos == 0) max_chars - 1 else (pos - 1) % (max_chars - 1);
+                                msg[pos] = '_';
+                            },
+                            c.SDLK_RETURN => {
+                                result = runCommand(&msg, gpa);
+                                var i: usize = 0;
+                                while (i < max_chars) : (i += 1) {
+                                    msg[i] = ' ';
+                                }
+                                msg[max_chars] = 0;
+                                pos = 0;
+                            },
+                            else => {},
+                        }
                     }
                 },
                 c.SDL_TEXTINPUT => {
-                    if (event.text.text.len > 0) {
+                    if (!ctrlPressed and event.text.text.len > 0) {
                         c.SDL_Log("input: '%s' at %d", event.text.text, pos);
                         msg[pos] = event.text.text[0];
                         pos = (pos + 1) % (max_chars - 1);
