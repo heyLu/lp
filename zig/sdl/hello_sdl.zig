@@ -151,19 +151,46 @@ pub fn main() !void {
     }
 }
 
-fn runCommand(cmd: []const u8, allocator: *std.mem.Allocator) ?[*:0]u8 {
-    const argv = &[_][]const u8{ "/usr/bin/qalc", "-terse", cmd };
+fn runCommand(raw_cmd: []const u8, allocator: *std.mem.Allocator) ?[*:0]u8 {
+    const cmd = std.mem.trim(u8, std.mem.sliceTo(raw_cmd, 0), &std.ascii.spaces);
+    const argv = if (std.mem.startsWith(u8, cmd, "go "))
+        &[_][]const u8{ "go", "doc", cmd[3..] }
+    else
+        &[_][]const u8{ "/usr/bin/qalc", "-terse", cmd };
+    for (argv) |arg| {
+        std.debug.print("'{s}' ", .{arg});
+    }
     const result = std.ChildProcess.exec(.{ .allocator = allocator, .argv = argv }) catch |err| return "oopsie";
     const buf = allocator.allocSentinel(u8, 100, 0) catch |err| return "alloc";
-    std.mem.copy(u8, buf, result.stdout);
+    std.mem.copy(u8, buf, result.stdout[0..std.math.min(100, result.stdout.len)]);
     var i: usize = result.stdout.len;
     while (i < buf.len) : (i += 1) {
         buf[i] = ' ';
     }
     buf[buf.len - 1] = 0;
+    std.debug.print("stderr: '{s}'\n", .{result.stderr});
     defer {
         allocator.free(result.stdout);
         allocator.free(result.stderr);
     }
     return buf;
+}
+
+// tests
+
+test "trim []const u8" {
+    const untrimmed: []const u8 = "   hey there   ";
+    const trimmed = std.mem.trim(u8, untrimmed, &std.ascii.spaces);
+    try std.testing.expect(trimmed.len < untrimmed.len);
+    try std.testing.expect(trimmed.len == 9);
+    try std.testing.expect(std.mem.eql(u8, trimmed, "hey there"));
+}
+
+test "trim [*:0]const u8" {
+    const untrimmed: [*:0]const u8 = "   hey there   ";
+    const to_trim: [*:0]const u8 = " ";
+    const trimmed = std.mem.trim(u8, std.mem.sliceTo(untrimmed, 0), std.mem.sliceTo(to_trim, 0));
+    try std.testing.expect(std.mem.len(trimmed) < std.mem.len(untrimmed));
+    try std.testing.expect(trimmed.len == 9);
+    try std.testing.expect(std.mem.eql(u8, trimmed, "hey there"));
 }
