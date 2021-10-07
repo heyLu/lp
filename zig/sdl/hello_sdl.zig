@@ -157,6 +157,8 @@ fn runCommand(raw_cmd: []const u8, allocator: *std.mem.Allocator) !?[*:0]u8 {
     const cmd = std.mem.trim(u8, std.mem.sliceTo(raw_cmd, 0), &std.ascii.spaces);
     const argv = if (std.mem.startsWith(u8, cmd, "go "))
         &[_][]const u8{ "go", "doc", cmd[3..] }
+    else if (std.mem.startsWith(u8, cmd, "py "))
+        &[_][]const u8{ "python", "-c", try std.fmt.allocPrint(allocator, "import {s}; help({s});", .{ cmd["py ".len..], cmd["py ".len..] }) }
     else
         &[_][]const u8{ "/usr/bin/qalc", "-terse", cmd };
     for (argv) |arg| {
