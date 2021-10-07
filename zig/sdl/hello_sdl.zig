@@ -113,7 +113,7 @@ pub fn main() !void {
                                 msg[pos] = '_';
                             },
                             c.SDLK_RETURN => {
-                                result = runCommand(&msg, gpa);
+                                result = try runCommand(&msg, gpa);
                                 var i: usize = 0;
                                 while (i < max_chars) : (i += 1) {
                                     msg[i] = ' ';
@@ -153,7 +153,7 @@ pub fn main() !void {
     }
 }
 
-fn runCommand(raw_cmd: []const u8, allocator: *std.mem.Allocator) ?[*:0]u8 {
+fn runCommand(raw_cmd: []const u8, allocator: *std.mem.Allocator) !?[*:0]u8 {
     const cmd = std.mem.trim(u8, std.mem.sliceTo(raw_cmd, 0), &std.ascii.spaces);
     const argv = if (std.mem.startsWith(u8, cmd, "go "))
         &[_][]const u8{ "go", "doc", cmd[3..] }
@@ -162,8 +162,8 @@ fn runCommand(raw_cmd: []const u8, allocator: *std.mem.Allocator) ?[*:0]u8 {
     for (argv) |arg| {
         std.debug.print("'{s}' ", .{arg});
     }
-    const result = std.ChildProcess.exec(.{ .allocator = allocator, .argv = argv }) catch |err| return "oopsie";
-    const buf = allocator.allocSentinel(u8, 100, 0) catch |err| return "alloc";
+    const result = try std.ChildProcess.exec(.{ .allocator = allocator, .argv = argv });
+    const buf = try allocator.allocSentinel(u8, 100, 0);
     std.mem.copy(u8, buf, result.stdout[0..std.math.min(100, result.stdout.len)]);
     var i: usize = result.stdout.len;
     while (i < buf.len) : (i += 1) {
