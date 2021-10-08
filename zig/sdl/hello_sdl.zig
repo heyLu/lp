@@ -71,6 +71,7 @@ pub fn main() !void {
     c.SDL_StartTextInput();
 
     var quit = false;
+    var skip: i32 = 0;
     while (!quit) {
         var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event) != 0) {
@@ -115,6 +116,7 @@ pub fn main() !void {
                                 msg[pos] = '_';
                             },
                             c.SDLK_RETURN => {
+                                skip = 0;
                                 gpa.free(result);
                                 result = try runCommand(&msg, gpa);
                                 var i: usize = 0;
@@ -123,6 +125,24 @@ pub fn main() !void {
                                 }
                                 msg[max_chars] = 0;
                                 pos = 0;
+                            },
+                            c.SDLK_UP => {
+                                if (skip > 0) {
+                                    skip -= 1;
+                                }
+                            },
+                            c.SDLK_PAGEUP => {
+                                if (skip < 10) {
+                                    skip = 0;
+                                } else {
+                                    skip -= 10;
+                                }
+                            },
+                            c.SDLK_DOWN => {
+                                skip += 1;
+                            },
+                            c.SDLK_PAGEDOWN => {
+                                skip += 10;
                             },
                             else => {},
                         }
@@ -154,7 +174,13 @@ pub fn main() !void {
         var i: c_int = 1;
         var lines = std.mem.split(result, "\n");
         var line = lines.next();
-        while (line != null) {
+        {
+            var skipped: i32 = 0;
+            while (skipped < skip and line != null) : (skipped += 1) {
+                line = lines.next();
+            }
+        }
+        while (line != null and i * glyph_height < window_height) {
             const line_c = try gpa.dupeZ(u8, line.?);
             const result_text = c.TTF_RenderUTF8_Shaded(font, line_c, white, black);
             gpa.free(line_c);
