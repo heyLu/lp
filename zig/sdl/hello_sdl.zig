@@ -50,8 +50,8 @@ pub fn main() !void {
     }
     var glyph_height = c.TTF_FontLineSkip(font);
 
-    const window_width = glyph_width * 100;
-    const window_height = glyph_height * 20;
+    var window_width = glyph_width * 100;
+    var window_height = glyph_height * 20;
     const screen = c.SDL_CreateWindow("hello fonts", c.SDL_WINDOWPOS_CENTERED, c.SDL_WINDOWPOS_CENTERED, window_width, window_height, c.SDL_WINDOW_BORDERLESS) orelse {
         c.SDL_Log("Unable to create window: %s", c.SDL_GetError());
         return error.SDLInitializationFailed;
@@ -82,7 +82,8 @@ pub fn main() !void {
                 c.SDL_WINDOWEVENT => {
                     switch (event.window.event) {
                         c.SDL_WINDOWEVENT_SIZE_CHANGED => {
-                            surface = c.SDL_GetWindowSurface(screen);
+                            window_width = event.window.data1;
+                            window_height = event.window.data2;
                         },
                         else => {},
                     }
@@ -147,7 +148,7 @@ pub fn main() !void {
         const text = c.TTF_RenderUTF8_Shaded(font, &msg, white, black);
         const texture = c.SDL_CreateTextureFromSurface(renderer, text);
         c.SDL_FreeSurface(text);
-        _ = c.SDL_RenderCopy(renderer, texture, null, &c.SDL_Rect{ .x = 0, .y = 0, .w = window_width, .h = glyph_height });
+        _ = c.SDL_RenderCopy(renderer, texture, null, &c.SDL_Rect{ .x = 0, .y = 0, .w = @intCast(c_int, msg.len) * glyph_width, .h = glyph_height });
 
         var i: c_int = 1;
         var lines = std.mem.split(result, "\n");
