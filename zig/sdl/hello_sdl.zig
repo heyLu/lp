@@ -218,7 +218,7 @@ fn runCommand(raw_cmd: []const u8, allocator: *std.mem.Allocator) ![]const u8 {
     for (argv) |arg| {
         std.debug.print("'{s}' ", .{arg});
     }
-    const result = try std.ChildProcess.exec(.{ .allocator = allocator, .argv = argv });
+    const result = try std.ChildProcess.exec(.{ .allocator = allocator, .argv = argv, .max_output_bytes = 1024 * 1024 });
     std.debug.print("stderr: '{s}'\n", .{result.stderr});
     defer {
         // FIXME: allocator.free(result.stdout);
