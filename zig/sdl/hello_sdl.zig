@@ -64,7 +64,7 @@ pub fn main() !void {
     var pos: usize = 0;
     var max_chars = std.math.min(@divTrunc(@intCast(usize, window_width), @intCast(usize, glyph_width)), msg.len);
 
-    var result: []const u8 = "";
+    var result: []const u8 = try gpa.alloc(u8, 0);
 
     const keyboardState = c.SDL_GetKeyboardState(null);
 
@@ -115,6 +115,7 @@ pub fn main() !void {
                                 msg[pos] = '_';
                             },
                             c.SDLK_RETURN => {
+                                gpa.free(result);
                                 result = try runCommand(&msg, gpa);
                                 var i: usize = 0;
                                 while (i < max_chars) : (i += 1) {
@@ -170,6 +171,8 @@ pub fn main() !void {
 
         c.SDL_Delay(16);
     }
+
+    _ = general_purpose_allocator.detectLeaks();
 }
 
 fn runCommand(raw_cmd: []const u8, allocator: *std.mem.Allocator) ![]const u8 {
