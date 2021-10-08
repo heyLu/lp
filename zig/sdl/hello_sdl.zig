@@ -104,6 +104,27 @@ pub fn main() !void {
                                 msg[max_chars] = 0;
                                 pos = 0;
                             },
+                            c.SDLK_c => {
+                                const clipboard_text = try gpa.dupeZ(u8, result);
+                                if (c.SDL_SetClipboardText(clipboard_text) != 0) {
+                                    c.SDL_Log("Could not set clipboard text: %s", c.SDL_GetError());
+                                }
+                                gpa.free(clipboard_text);
+                            },
+                            c.SDLK_v => {
+                                const clipboard_text = c.SDL_GetClipboardText();
+                                if (std.mem.len(clipboard_text) == 0) {
+                                    c.SDL_Log("Could not get clipboard: %s", c.SDL_GetError());
+                                } else {
+                                    const initial_pos = pos;
+                                    while (pos < max_chars and pos - initial_pos < std.mem.len(clipboard_text)) : (pos += 1) {
+                                        msg[pos] = clipboard_text[pos - initial_pos];
+                                    }
+                                    msg[pos] = ' ';
+                                    msg[max_chars] = 0;
+                                }
+                                c.SDL_free(clipboard_text);
+                            },
                             else => {},
                         }
                     } else {
