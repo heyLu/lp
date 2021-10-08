@@ -213,8 +213,10 @@ fn runCommand(raw_cmd: []const u8, allocator: *std.mem.Allocator) ![]const u8 {
     else if (std.mem.startsWith(u8, cmd, "man "))
         // TODO: handle `man 5 sway`
         &[_][]const u8{ "man", cmd["man ".len..] }
+    else if (cmd.len > 0 and std.ascii.isDigit(cmd[0]))
+        &[_][]const u8{ "/usr/bin/qalc", "-terse", cmd }
     else
-        &[_][]const u8{ "/usr/bin/qalc", "-terse", cmd };
+        &[_][]const u8{ "bash", "-c", cmd };
     for (argv) |arg| {
         std.debug.print("'{s}' ", .{arg});
     }
