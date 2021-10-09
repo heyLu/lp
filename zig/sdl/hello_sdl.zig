@@ -76,6 +76,7 @@ pub fn main() !void {
 
     var quit = false;
     var skip: i32 = 0;
+    var num_lines: i32 = 0;
     while (!quit) {
         var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event) != 0) {
@@ -150,6 +151,13 @@ pub fn main() !void {
                                 }
                                 msg[max_chars] = 0;
                                 pos = 0;
+
+                                num_lines = 0;
+                                var lines = std.mem.split(result, "\n");
+                                var line = lines.next();
+                                while (line != null) : (line = lines.next()) {
+                                    num_lines += 1;
+                                }
                             },
                             c.SDLK_UP => {
                                 if (skip > 0) {
@@ -168,6 +176,14 @@ pub fn main() !void {
                             },
                             c.SDLK_PAGEDOWN => {
                                 skip += 10;
+                            },
+                            c.SDLK_HOME => {
+                                skip = 0;
+                            },
+                            c.SDLK_END => {
+                                if (num_lines > 10) {
+                                    skip = num_lines - 10;
+                                }
                             },
                             else => {},
                         }
