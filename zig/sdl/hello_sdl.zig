@@ -55,11 +55,19 @@ pub fn main() !void {
 
     var window_width = glyph_width * 100;
     var window_height = glyph_height * 20;
-    const screen = c.SDL_CreateWindow("hello fonts", c.SDL_WINDOWPOS_CENTERED, c.SDL_WINDOWPOS_CENTERED, window_width, window_height, c.SDL_WINDOW_BORDERLESS) orelse {
+    const screen = c.SDL_CreateWindow("hello fonts", c.SDL_WINDOWPOS_CENTERED, c.SDL_WINDOWPOS_CENTERED, window_width, window_height, c.SDL_WINDOW_BORDERLESS | c.SDL_WINDOW_OPENGL) orelse {
         c.SDL_Log("Unable to create window: %s", c.SDL_GetError());
         return error.SDLInitializationFailed;
     };
     defer c.SDL_DestroyWindow(screen);
+
+    const op: f32 = 0.5;
+    if (c.SDL_SetWindowOpacity(screen, op) != 0) {
+        c.SDL_Log("Unable to make window transparent: %s", c.SDL_GetError());
+    }
+    var opacity: f32 = 10.0;
+    _ = c.SDL_GetWindowOpacity(screen, &opacity);
+    c.SDL_Log("opacity: %f", opacity);
 
     const renderer = c.SDL_CreateRenderer(screen, -1, c.SDL_RENDERER_ACCELERATED);
 
@@ -200,11 +208,13 @@ pub fn main() !void {
             }
         }
 
+        _ = c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 100);
+        //_ = c.SDL_SetRenderDrawBlendMode(renderer, c.SDL_BlendMode.SDL_BLENDMODE_BLEND);
         _ = c.SDL_RenderClear(renderer);
 
         // thanks to https://stackoverflow.com/questions/22886500/how-to-render-text-in-sdl2 for some actually useful code here
         const white: c.SDL_Color = c.SDL_Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
-        const black: c.SDL_Color = c.SDL_Color{ .r = 0, .g = 0, .b = 0, .a = 255 };
+        const black: c.SDL_Color = c.SDL_Color{ .r = 0, .g = 0, .b = 0, .a = 100 };
         // Shaded vs Solid gives a nicer output, with solid the output
         // was squiggly and not aligned with a baseline.
         const text = c.TTF_RenderUTF8_Shaded(font, &msg, white, black);
