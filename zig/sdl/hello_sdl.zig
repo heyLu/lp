@@ -244,13 +244,20 @@ fn runCommand(raw_cmd: []const u8, allocator: *std.mem.Allocator) ![]const u8 {
         std.debug.print("'{s}' ", .{arg});
     }
     const result = try std.ChildProcess.exec(.{ .allocator = allocator, .argv = argv, .max_output_bytes = 1024 * 1024 });
+    std.debug.print("stdout: '{s}'\n", .{result.stdout[0..std.math.min(100, result.stdout.len)]});
     std.debug.print("stderr: '{s}'\n", .{result.stderr});
-    defer {
-        // FIXME: allocator.free(result.stdout);
-        allocator.free(result.stderr);
-    }
 
-    return result.stdout;
+    if (result.stdout.len > 0) {
+        allocator.free(result.stderr);
+        return result.stdout;
+    } else if (result.stderr.len > 0) {
+        allocator.free(result.stdout);
+        return result.stderr;
+    } else {
+        allocator.free(result.stdout);
+        allocator.free(result.stderr);
+        return std.fmt.allocPrint(allocator, "<no output>", .{});
+    }
 }
 
 // tests
