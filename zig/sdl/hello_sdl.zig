@@ -18,6 +18,9 @@ const std = @import("std");
 
 pub fn main() !void {
     var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
+    defer {
+        _ = general_purpose_allocator.detectLeaks();
+    }
     const gpa = &general_purpose_allocator.allocator;
     const args = try std.process.argsAlloc(gpa);
     defer std.process.argsFree(gpa, args);
@@ -65,6 +68,7 @@ pub fn main() !void {
     var max_chars = std.math.min(@divTrunc(@intCast(usize, window_width), @intCast(usize, glyph_width)), msg.len);
 
     var result: []const u8 = try gpa.alloc(u8, 0);
+    defer gpa.free(result);
 
     const keyboardState = c.SDL_GetKeyboardState(null);
 
@@ -218,8 +222,6 @@ pub fn main() !void {
 
         c.SDL_Delay(16);
     }
-
-    _ = general_purpose_allocator.detectLeaks();
 }
 
 fn runCommand(raw_cmd: []const u8, allocator: *std.mem.Allocator) ![]const u8 {
