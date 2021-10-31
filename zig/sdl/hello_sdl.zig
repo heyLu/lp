@@ -233,6 +233,7 @@ pub fn main() !void {
         }
         while (line != null and i * glyph_height < window_height) {
             const line_c = try gpa.dupeZ(u8, line.?);
+            // TODO: render tabs at correct width (or some width at least)
             const result_text = c.TTF_RenderUTF8_Shaded(font, line_c, white, black);
             gpa.free(line_c);
             const result_texture = c.SDL_CreateTextureFromSurface(renderer, result_text);
@@ -262,8 +263,10 @@ fn runCommand(raw_cmd: []const u8, allocator: *std.mem.Allocator) ![]const u8 {
     else if (std.mem.startsWith(u8, cmd, "man "))
         // TODO: handle `man 5 sway`
         &[_][]const u8{ "man", cmd["man ".len..] }
+    else if (std.mem.startsWith(u8, cmd, "s "))
+        &[_][]const u8{ "ag", cmd["s ".len..], "/home/luna/t/raylib/src", "/home/luna/k/the-thing/resources/ode-build/include" }
     else if (cmd.len > 0 and std.ascii.isDigit(cmd[0]))
-        &[_][]const u8{ "/usr/bin/qalc", "-terse", cmd }
+        &[_][]const u8{ "qalc", "-terse", cmd }
     else
         &[_][]const u8{ "bash", "-c", cmd };
     for (argv) |arg| {
