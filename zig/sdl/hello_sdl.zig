@@ -16,6 +16,162 @@ const c = @cImport({
 });
 const std = @import("std");
 
+// TODO: incremental output (e.g. for ag)
+// TODO: instant output (for some commands like `py ...`, `go ...`, qcalc)
+
+// commands wishlist:
+// - search (e.g. default current dir + /usr/include)
+// - launch with logs (default launcher, use systemd-run --user --unit=name name?)
+// - view (the above logs)
+// - switch to window
+// - open url
+// - open shortcuts (logs -> ..., tickets)
+// - history (could be another command + some special keybindings)
+
+// output line-by-line -> saved by caller?
+// output can be reset
+// incremental output vs. final output/action
+
+const ProcessWithOutput = struct {
+    process: std.ChildProcess,
+    stdout: *std.ArrayList(u8),
+    stderr: *std.ArrayList(u8),
+
+    dead_fds: usize,
+    max_output_bytes: usize,
+
+    fn spawn(allocator: std.Allocator, argv: [][]u8, max_output_bytes: usize) ProcessWithOutput {
+        const child = try std.ChildProcess.init(argv, allocator);
+        child.stdin_behavior = std.ChildProcess.Ignore;
+        child.stdout_behavior = std.ChildProcess.Pipe;
+        child.stderr_behavior = std.ChildProcess.Pipe;
+        try child.spawn();
+
+        return ProcessWithOutput{ .process = child, .stdout = std.ArrayList(u8).init(allocator), .stderr = std.ArrayList(u8).init(allocator), .dead_fds = 0, .max_output_bytes = max_output_bytes };
+    }
+
+    fn is_running(self: ProcessWithOutput) bool {
+        if (self.process.term) |_| {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    fn stdout(self: ProcessWithOutput) []u8 {
+        return self.stdout.allocatedSlice();
+    }
+
+    fn stderr(self: ProcessWithOutput) []u8 {
+        return self.stdout.allocatedSlice();
+    }
+
+    // poll: https://github.com/ziglang/zig/blob/master/lib/std/child_process.zig#L206
+    //   basically do one iteration with no blocking each time it runs and thus get the output incrementally?
+    fn poll(self: ProcessWithOutput) !void {
+        if (!self.is_running()) {
+            return;
+        }
+
+        var poll_fds = [_]std.os.pollfd{
+            .{ .fd = self.process.stdout.?.handle, .events = std.os.POLL.IN, .revents = undefined },
+            .{ .fd = self.process.stderr.?.handle, .events = std.os.POLL.IN, .revents = undefined },
+        };
+
+        // We ask for ensureTotalCapacity with this much extra space. This has more of an
+        // effect on small reads because once the reads start to get larger the amount
+        // of space an ArrayList will allocate grows exponentially.
+        const bump_amt = 512;
+
+        const err_mask = std.os.POLL.ERR | std.os.POLL.NVAL | std.os.POLL.HUP;
+
+        if (self.dead_fds >= poll_fds.len) {
+            return;
+        }
+
+        const events = try std.os.poll(&poll_fds, 0);
+        if (events == 0) {
+            return;
+        }
+
+        var remove_stdout = false;
+        var remove_stderr = false;
+        // Try reading whatever is available before checking the error
+        // conditions.
+        // It's still pstd.ossible to read after a POLL.HUP is received, always
+        // check if there's some data waiting to be read first.
+        if (poll_fds[0].revents & std.os.POLL.IN != 0) {
+            // stdout is ready.
+            const new_capacity = std.math.min(self.stdout.items.len + bump_amt, self.max_output_bytes);
+            try self.stdout.ensureTotalCapacity(new_capacity);
+            const buf = self.stdout.unusedCapacitySlice();
+            if (buf.len == 0) return error.StdoutStreamTooLong;
+            const nread = try std.os.read(poll_fds[0].fd, buf);
+            self.stdout.items.len += nread;
+
+            // Remove the fd when the EOF condition is met.
+            remove_stdout = nread == 0;
+        } else {
+            remove_stdout = poll_fds[0].revents & err_mask != 0;
+        }
+
+        if (poll_fds[1].revents & std.os.POLL.IN != 0) {
+            // stderr is ready.
+            const new_capacity = std.math.min(self.stderr.items.len + bump_amt, self.max_output_bytes);
+            try self.stderr.ensureTotalCapacity(new_capacity);
+            const buf = self.stderr.unusedCapacitySlice();
+            if (buf.len == 0) return error.StderrStreamTooLong;
+            const nread = try std.os.read(poll_fds[1].fd, buf);
+            self.stderr.items.len += nread;
+
+            // Remove the fd when the EOF condition is met.
+            remove_stderr = nread == 0;
+        } else {
+            remove_stderr = poll_fds[1].revents & err_mask != 0;
+        }
+
+        // Exclude the fds that signaled an error.
+        if (remove_stdout) {
+            poll_fds[0].fd = -1;
+            self.dead_fds += 1;
+        }
+        if (remove_stderr) {
+            poll_fds[1].fd = -1;
+            self.dead_fds += 1;
+        }
+    }
+};
+
+const RegexRunner = struct {
+    run_always: bool,
+    process: ProcessWithOutput,
+
+    command_to_argv: fn (cmd: []u8) [][]u8,
+
+    fn run(self: RegexRunner, cmd: []u8, is_confirmed: true) !void {
+        if (!self.run_always and !is_confirmed) {
+            return;
+        }
+
+        if (self.is_running()) {
+            self.process.kill();
+        }
+        const argv = self.command_to_argv(cmd);
+        self.process = ProcessWithOutput(argv);
+    }
+
+    fn output(self: RegexRunner) []u8 {
+        if (!self.is_running()) {
+            // TODO: return buffer
+            return "<done>";
+        }
+
+        // get more input?
+
+        // TODO: return buffer
+    }
+};
+
 pub fn main() !void {
     var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
     defer {
