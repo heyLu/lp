@@ -161,7 +161,7 @@ pub fn main() !void {
                                 pos = 0;
 
                                 num_lines = 0;
-                                var lines = std.mem.split(result, "\n");
+                                var lines = std.mem.split(u8, result, "\n");
                                 var line = lines.next();
                                 while (line != null) : (line = lines.next()) {
                                     num_lines += 1;
@@ -223,7 +223,7 @@ pub fn main() !void {
         _ = c.SDL_RenderCopy(renderer, texture, null, &c.SDL_Rect{ .x = 0, .y = 0, .w = @intCast(c_int, msg.len) * glyph_width, .h = glyph_height });
 
         var i: c_int = 1;
-        var lines = std.mem.split(result, "\n");
+        var lines = std.mem.split(u8, result, "\n");
         var line = lines.next();
         {
             var skipped: i32 = 0;
