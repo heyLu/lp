@@ -16,6 +16,7 @@ const c = @cImport({
 });
 const std = @import("std");
 
+// TODO: restore commands
 // TODO: instant output (for some commands like `py ...`, `go ...`, qcalc)
 
 // commands wishlist:
@@ -43,6 +44,7 @@ const ProcessWithOutput = struct {
 
     fn spawn(allocator: *std.mem.Allocator, argv: []const []const u8, max_output_bytes: usize) !ProcessWithOutput {
         const child = try std.ChildProcess.init(argv, allocator);
+        child.expand_arg0 = std.ChildProcess.Arg0Expand.expand;
         child.stdin_behavior = std.ChildProcess.StdIo.Ignore;
         child.stdout_behavior = std.ChildProcess.StdIo.Pipe;
         child.stderr_behavior = std.ChildProcess.StdIo.Pipe;
@@ -59,11 +61,11 @@ const ProcessWithOutput = struct {
         }
     }
 
-    fn stdout(self: ProcessWithOutput) []u8 {
+    fn stdout(self: *ProcessWithOutput) []u8 {
         return self.stdout_buf.items;
     }
 
-    fn stderr(self: ProcessWithOutput) []u8 {
+    fn stderr(self: *ProcessWithOutput) []u8 {
         return self.stderr_buf.items;
     }
 
@@ -151,31 +153,109 @@ const ProcessWithOutput = struct {
 
 const RegexRunner = struct {
     run_always: bool,
-    process: ProcessWithOutput,
+    process: ?ProcessWithOutput = null,
 
-    command_to_argv: fn (cmd: []u8) [][]u8,
+    toArgv: fn (cmd: []const u8) []const []const u8,
+    isActive: fn (cmd: []const u8) bool,
 
-    fn run(self: RegexRunner, cmd: []u8, is_confirmed: true) !void {
+    fn run(self: *RegexRunner, allocator: *std.mem.Allocator, cmd: []const u8, is_confirmed: bool) !bool {
         if (!self.run_always and !is_confirmed) {
-            return;
+            return false;
         }
 
-        if (self.is_running()) {
-            self.process.kill();
+        if (!self.isActive(cmd)) {
+            return false;
         }
-        const argv = self.command_to_argv(cmd);
-        self.process = ProcessWithOutput(argv);
+
+        // stop already running command, restart with new cmd
+        if (self.process) |*process| {
+            if (process.is_running()) {
+                _ = try process.process.kill();
+                process.deinit();
+            }
+        }
+
+        const argv = self.toArgv(cmd);
+        std.debug.print("{s} -> {s}\n", .{ cmd, argv });
+        self.process = try ProcessWithOutput.spawn(allocator, argv, 1024 * 1024);
+
+        return true;
     }
 
-    fn output(self: RegexRunner) []u8 {
-        if (!self.is_running()) {
-            // TODO: return buffer
-            return "<done>";
+    fn output(self: *RegexRunner) ![]const u8 {
+        if (self.process) |*process| {
+            process.poll() catch |err| switch (err) {
+                error.StdoutStreamTooLong => {
+                    std.debug.print("too much output, killing\n", .{});
+                    _ = try process.process.kill();
+                },
+                else => {
+                    return err;
+                },
+            };
+            //std.debug.print("{d} ({d})\n", .{process.stdout_buf.items.len, process.stderr_buf.items.len});
+            if (process.stdout_buf.items.len > 0) {
+                return process.stdout();
+            } else if (process.stderr_buf.items.len > 0) {
+                return process.stderr();
+            }
         }
 
-        // get more input?
+        return "<no output>";
+    }
 
-        // TODO: return buffer
+    fn deinit(self: *RegexRunner) void {
+        if (self.process) |*process| {
+            process.deinit();
+        }
+    }
+};
+
+var cmd_buf: [100]u8 = undefined;
+
+const GoDocRunner = struct {
+    fn init() RegexRunner {
+        return RegexRunner{ .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return cmd.len > 3 and std.mem.startsWith(u8, cmd, "go ");
+    }
+
+    fn toArgv(cmd: []const u8) []const []const u8 {
+        // NO idea why bufPrint is required, but without `cmd` will just be some random bit of memory, which is rude.
+        _ = std.fmt.bufPrint(&cmd_buf, "{s}", .{cmd["go ".len..]}) catch "???";
+        return &[_][]const u8{ "go", "doc", &cmd_buf };
+    }
+};
+
+const PythonHelpRunner = struct {
+    fn init() RegexRunner {
+        return RegexRunner{ .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return cmd.len > 3 and std.mem.startsWith(u8, cmd, "py ");
+    }
+
+    fn toArgv(cmd: []const u8) []const []const u8 {
+        _ = std.fmt.bufPrint(&cmd_buf, "import {s}; help({s});", .{ std.mem.sliceTo(cmd["py ".len..], '.'), cmd["py ".len..] }) catch "???";
+        return &[_][]const u8{ "python", "-c", &cmd_buf };
+    }
+};
+
+const SearchRunner = struct {
+    fn init() RegexRunner {
+        return RegexRunner{ .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return cmd.len > "s ".len and std.mem.startsWith(u8, cmd, "s ");
+    }
+
+    fn toArgv(cmd: []const u8) []const []const u8 {
+        _ = std.fmt.bufPrint(&cmd_buf, "{s}", .{cmd["s ".len..]}) catch "???";
+        return &[_][]const u8{ "ag", &cmd_buf, "/home/luna/k/the-thing" };
     }
 };
 
@@ -244,14 +324,19 @@ pub fn main() !void {
     const keyboardState = c.SDL_GetKeyboardState(null);
 
     c.SDL_StartTextInput();
-
-    var process = &try ProcessWithOutput.spawn(gpa, &[_][]const u8{ "ag", "\\bshit\\b", "/usr/include" }, 1024 * 1024);
+    var commands = [_]RegexRunner{
+        GoDocRunner.init(),
+        PythonHelpRunner.init(),
+        SearchRunner.init(),
+    };
 
     var quit = false;
     var skip: i32 = 0;
     var num_lines: i32 = 0;
     while (!quit) {
         var event: c.SDL_Event = undefined;
+        var changed = false;
+        var confirmed = false;
         while (c.SDL_PollEvent(&event) != 0) {
             const ctrlPressed = (keyboardState[c.SDL_SCANCODE_LCTRL] != 0);
             switch (event.@"type") {
@@ -302,6 +387,8 @@ pub fn main() !void {
                                     msg[max_chars] = 0;
                                 }
                                 c.SDL_free(clipboard_text);
+
+                                changed = true;
                             },
                             else => {},
                         }
@@ -313,24 +400,12 @@ pub fn main() !void {
                             c.SDLK_BACKSPACE => {
                                 pos = if (pos == 0) max_chars - 1 else (pos - 1) % (max_chars - 1);
                                 msg[pos] = '_';
+                                changed = true;
                             },
                             c.SDLK_RETURN => {
                                 skip = 0;
-                                gpa.free(result);
-                                result = try runCommand(&msg, gpa);
-                                var i: usize = 0;
-                                while (i < max_chars) : (i += 1) {
-                                    msg[i] = ' ';
-                                }
-                                msg[max_chars] = 0;
-                                pos = 0;
 
-                                num_lines = 0;
-                                var lines = std.mem.split(u8, result, "\n");
-                                var line = lines.next();
-                                while (line != null) : (line = lines.next()) {
-                                    num_lines += 1;
-                                }
+                                confirmed = true;
                             },
                             c.SDLK_UP => {
                                 if (skip > 0) {
@@ -367,9 +442,19 @@ pub fn main() !void {
                         c.SDL_Log("input: '%s' at %d", event.text.text, pos);
                         msg[pos] = event.text.text[0];
                         pos = (pos + 1) % (max_chars - 1);
+
+                        changed = true;
                     }
                 },
                 else => {},
+            }
+        }
+
+        const cmd = std.mem.trim(u8, std.mem.sliceTo(&msg, 0), &std.ascii.spaces);
+
+        if (changed) {
+            for (commands) |*command| {
+                _ = try command.run(gpa, cmd, confirmed);
             }
         }
 
@@ -388,36 +473,43 @@ pub fn main() !void {
         _ = c.SDL_RenderCopy(renderer, texture, null, &c.SDL_Rect{ .x = 0, .y = 0, .w = @intCast(c_int, msg.len) * glyph_width, .h = glyph_height });
 
         var i: c_int = 1;
-        var lines = std.mem.split(u8, result, "\n");
-        var line = lines.next();
-        {
-            var skipped: i32 = 0;
-            while (skipped < skip and line != null) : (skipped += 1) {
+        for (commands) |*command| {
+            if (!command.isActive(cmd)) {
+                continue;
+            }
+
+            //std.debug.print("{s} {d} {d}\n", .{ command.process.is_running(), command.process.stdout_buf.items.len, command.process.stdout_buf.capacity });
+            var lines = std.mem.split(u8, try command.output(), "\n");
+            var line = lines.next();
+            {
+                var skipped: i32 = 0;
+                while (skipped < skip and line != null) : (skipped += 1) {
+                    line = lines.next();
+                }
+            }
+            while (line != null and i * glyph_height < window_height) {
+                const line_c = try gpa.dupeZ(u8, line.?);
+                // TODO: render tabs at correct width (or some width at least)
+                const result_text = c.TTF_RenderUTF8_Shaded(font, line_c, white, black);
+                gpa.free(line_c);
+                const result_texture = c.SDL_CreateTextureFromSurface(renderer, result_text);
+                _ = c.SDL_RenderCopy(renderer, result_texture, null, &c.SDL_Rect{ .x = 0, .y = i * glyph_height, .w = @intCast(c_int, line.?.len) * glyph_width, .h = glyph_height });
+                c.SDL_FreeSurface(result_text);
+                c.SDL_DestroyTexture(result_texture);
+
+                i += 1;
                 line = lines.next();
             }
-        }
-
-        try process.poll();
-        std.debug.print("{s} {d} {d}\n", .{ process.is_running(), process.stdout_buf.items.len, process.stdout_buf.capacity });
-        lines = std.mem.split(u8, process.stdout(), "\n");
-        line = lines.next();
-        while (line != null and i * glyph_height < window_height) {
-            const line_c = try gpa.dupeZ(u8, line.?);
-            // TODO: render tabs at correct width (or some width at least)
-            const result_text = c.TTF_RenderUTF8_Shaded(font, line_c, white, black);
-            gpa.free(line_c);
-            const result_texture = c.SDL_CreateTextureFromSurface(renderer, result_text);
-            _ = c.SDL_RenderCopy(renderer, result_texture, null, &c.SDL_Rect{ .x = 0, .y = i * glyph_height, .w = @intCast(c_int, line.?.len) * glyph_width, .h = glyph_height });
-            c.SDL_FreeSurface(result_text);
-            c.SDL_DestroyTexture(result_texture);
-
-            i += 1;
-            line = lines.next();
         }
 
         _ = c.SDL_RenderPresent(renderer);
 
         c.SDL_Delay(16);
+    }
+
+    // clean up memory and processes
+    for (commands) |*command| {
+        command.deinit();
     }
 }
 
