@@ -16,7 +16,6 @@ const c = @cImport({
 });
 const std = @import("std");
 
-// TODO: incremental output (e.g. for ag)
 // TODO: instant output (for some commands like `py ...`, `go ...`, qcalc)
 
 // commands wishlist:
@@ -33,24 +32,26 @@ const std = @import("std");
 // incremental output vs. final output/action
 
 const ProcessWithOutput = struct {
-    process: std.ChildProcess,
-    stdout: *std.ArrayList(u8),
-    stderr: *std.ArrayList(u8),
+    process: *std.ChildProcess,
+    stdout_buf: std.ArrayList(u8),
+    stderr_buf: std.ArrayList(u8),
 
-    dead_fds: usize,
-    max_output_bytes: usize,
+    dead_fds: usize = 0,
+    max_output_bytes: usize = 50 * 1024,
 
-    fn spawn(allocator: std.Allocator, argv: [][]u8, max_output_bytes: usize) ProcessWithOutput {
+    cleanup_done: bool = false,
+
+    fn spawn(allocator: *std.mem.Allocator, argv: []const []const u8, max_output_bytes: usize) !ProcessWithOutput {
         const child = try std.ChildProcess.init(argv, allocator);
-        child.stdin_behavior = std.ChildProcess.Ignore;
-        child.stdout_behavior = std.ChildProcess.Pipe;
-        child.stderr_behavior = std.ChildProcess.Pipe;
+        child.stdin_behavior = std.ChildProcess.StdIo.Ignore;
+        child.stdout_behavior = std.ChildProcess.StdIo.Pipe;
+        child.stderr_behavior = std.ChildProcess.StdIo.Pipe;
         try child.spawn();
 
-        return ProcessWithOutput{ .process = child, .stdout = std.ArrayList(u8).init(allocator), .stderr = std.ArrayList(u8).init(allocator), .dead_fds = 0, .max_output_bytes = max_output_bytes };
+        return ProcessWithOutput{ .process = child, .stdout_buf = std.ArrayList(u8).init(allocator), .stderr_buf = std.ArrayList(u8).init(allocator), .dead_fds = 0, .max_output_bytes = max_output_bytes };
     }
 
-    fn is_running(self: ProcessWithOutput) bool {
+    fn is_running(self: *ProcessWithOutput) bool {
         if (self.process.term) |_| {
             return false;
         } else {
@@ -59,16 +60,16 @@ const ProcessWithOutput = struct {
     }
 
     fn stdout(self: ProcessWithOutput) []u8 {
-        return self.stdout.allocatedSlice();
+        return self.stdout_buf.items;
     }
 
     fn stderr(self: ProcessWithOutput) []u8 {
-        return self.stdout.allocatedSlice();
+        return self.stderr_buf.items;
     }
 
     // poll: https://github.com/ziglang/zig/blob/master/lib/std/child_process.zig#L206
     //   basically do one iteration with no blocking each time it runs and thus get the output incrementally?
-    fn poll(self: ProcessWithOutput) !void {
+    fn poll(self: *ProcessWithOutput) !void {
         if (!self.is_running()) {
             return;
         }
@@ -102,12 +103,12 @@ const ProcessWithOutput = struct {
         // check if there's some data waiting to be read first.
         if (poll_fds[0].revents & std.os.POLL.IN != 0) {
             // stdout is ready.
-            const new_capacity = std.math.min(self.stdout.items.len + bump_amt, self.max_output_bytes);
-            try self.stdout.ensureTotalCapacity(new_capacity);
-            const buf = self.stdout.unusedCapacitySlice();
+            const new_capacity = std.math.min(self.stdout_buf.items.len + bump_amt, self.max_output_bytes);
+            try self.stdout_buf.ensureTotalCapacity(new_capacity);
+            const buf = self.stdout_buf.unusedCapacitySlice();
             if (buf.len == 0) return error.StdoutStreamTooLong;
             const nread = try std.os.read(poll_fds[0].fd, buf);
-            self.stdout.items.len += nread;
+            self.stdout_buf.items.len += nread;
 
             // Remove the fd when the EOF condition is met.
             remove_stdout = nread == 0;
@@ -117,12 +118,12 @@ const ProcessWithOutput = struct {
 
         if (poll_fds[1].revents & std.os.POLL.IN != 0) {
             // stderr is ready.
-            const new_capacity = std.math.min(self.stderr.items.len + bump_amt, self.max_output_bytes);
-            try self.stderr.ensureTotalCapacity(new_capacity);
-            const buf = self.stderr.unusedCapacitySlice();
+            const new_capacity = std.math.min(self.stderr_buf.items.len + bump_amt, self.max_output_bytes);
+            try self.stderr_buf.ensureTotalCapacity(new_capacity);
+            const buf = self.stderr_buf.unusedCapacitySlice();
             if (buf.len == 0) return error.StderrStreamTooLong;
             const nread = try std.os.read(poll_fds[1].fd, buf);
-            self.stderr.items.len += nread;
+            self.stderr_buf.items.len += nread;
 
             // Remove the fd when the EOF condition is met.
             remove_stderr = nread == 0;
@@ -139,6 +140,12 @@ const ProcessWithOutput = struct {
             poll_fds[1].fd = -1;
             self.dead_fds += 1;
         }
+    }
+
+    fn deinit(self: *ProcessWithOutput) void {
+        self.stdout_buf.deinit();
+        self.stderr_buf.deinit();
+        self.process.deinit();
     }
 };
 
@@ -237,6 +244,8 @@ pub fn main() !void {
     const keyboardState = c.SDL_GetKeyboardState(null);
 
     c.SDL_StartTextInput();
+
+    var process = &try ProcessWithOutput.spawn(gpa, &[_][]const u8{ "ag", "\\bshit\\b", "/usr/include" }, 1024 * 1024);
 
     var quit = false;
     var skip: i32 = 0;
@@ -387,6 +396,11 @@ pub fn main() !void {
                 line = lines.next();
             }
         }
+
+        try process.poll();
+        std.debug.print("{s} {d} {d}\n", .{ process.is_running(), process.stdout_buf.items.len, process.stdout_buf.capacity });
+        lines = std.mem.split(u8, process.stdout(), "\n");
+        line = lines.next();
         while (line != null and i * glyph_height < window_height) {
             const line_c = try gpa.dupeZ(u8, line.?);
             // TODO: render tabs at correct width (or some width at least)
