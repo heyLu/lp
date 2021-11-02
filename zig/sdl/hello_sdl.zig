@@ -200,7 +200,7 @@ const Runner = struct {
                     return err;
                 },
             };
-            std.debug.print("{d} ({d})\n", .{ process.stdout_buf.items.len, process.stderr_buf.items.len });
+            //std.debug.print("{d} ({d})\n", .{ process.stdout_buf.items.len, process.stderr_buf.items.len });
             if (process.stdout_buf.items.len > 0) {
                 return process.stdout();
             } else if (process.stderr_buf.items.len > 0) {
@@ -231,7 +231,7 @@ const GoDocRunner = struct {
 
     fn toArgv(cmd: []const u8) []const []const u8 {
         // NO idea why bufPrint is required, but without `cmd` will just be some random bit of memory, which is rude.
-        _ = std.fmt.bufPrint(&cmd_buf, "{s}", .{cmd["go ".len..]}) catch "???";
+        _ = std.fmt.bufPrint(&cmd_buf, "{s}\x00", .{cmd["go ".len..]}) catch "???";
         return &[_][]const u8{ "go", "doc", &cmd_buf };
     }
 };
@@ -246,7 +246,7 @@ const PythonHelpRunner = struct {
     }
 
     fn toArgv(cmd: []const u8) []const []const u8 {
-        _ = std.fmt.bufPrint(&cmd_buf, "import {s}; help({s});", .{ std.mem.sliceTo(cmd["py ".len..], '.'), cmd["py ".len..] }) catch "???";
+        _ = std.fmt.bufPrint(&cmd_buf, "import {s}; help({s});\x00", .{ std.mem.sliceTo(cmd["py ".len..], '.'), cmd["py ".len..] }) catch "???";
         return &[_][]const u8{ "python", "-c", &cmd_buf };
     }
 };
@@ -261,7 +261,7 @@ const PythonRunner = struct {
     }
 
     fn toArgv(cmd: []const u8) []const []const u8 {
-        _ = std.fmt.bufPrint(&cmd_buf, "print({s})", .{cmd["py! ".len..]}) catch "???";
+        _ = std.fmt.bufPrint(&cmd_buf, "print({s})\x00", .{cmd["py! ".len..]}) catch "???";
         return &[_][]const u8{ "python", "-c", &cmd_buf };
     }
 };
@@ -276,7 +276,7 @@ const HelpRunner = struct {
     }
 
     fn toArgv(cmd: []const u8) []const []const u8 {
-        _ = std.fmt.bufPrint(&cmd_buf, "{s}", .{cmd[0 .. cmd.len - " --help".len]}) catch "???";
+        _ = std.fmt.bufPrint(&cmd_buf, "{s}\x00", .{cmd[0 .. cmd.len - " --help".len]}) catch "???";
         return &[_][]const u8{ &cmd_buf, "--help" };
     }
 };
@@ -291,7 +291,7 @@ const ManPageRunner = struct {
     }
 
     fn toArgv(cmd: []const u8) []const []const u8 {
-        _ = std.fmt.bufPrint(&cmd_buf, "{s}", .{cmd["man ".len..]}) catch "???";
+        _ = std.fmt.bufPrint(&cmd_buf, "{s}\x00", .{cmd["man ".len..]}) catch "???";
         return &[_][]const u8{ "man", &cmd_buf };
     }
 };
@@ -306,7 +306,7 @@ const SearchRunner = struct {
     }
 
     fn toArgv(cmd: []const u8) []const []const u8 {
-        _ = std.fmt.bufPrint(&cmd_buf, "{s}", .{cmd["s ".len..]}) catch "???";
+        _ = std.fmt.bufPrint(&cmd_buf, "{s}\x00", .{cmd["s ".len..]}) catch "???";
         return &[_][]const u8{ "ag", &cmd_buf, "/home/luna/k/the-thing" };
     }
 };
@@ -326,7 +326,7 @@ const LogsRunner = struct {
         }
 
         const service = cmd["logs ".len..];
-        _ = std.fmt.bufPrint(&cmd_buf, "(systemctl status {s} &> /dev/null && journalctl -u {s} -f) || (systemctl status --user {s} &> /dev/null && journalctl --user -u {s} -f) || echo \"no logs for '{s}'\"", .{ service, service, service, service, service }) catch "???";
+        _ = std.fmt.bufPrint(&cmd_buf, "(systemctl status {s} &> /dev/null && journalctl -u {s} -f) || (systemctl status --user {s} &> /dev/null && journalctl --user -u {s} -f) || echo \"no logs for '{s}'\"\x00", .{ service, service, service, service, service }) catch "???";
         return &[_][]const u8{ "bash", "-c", &cmd_buf };
     }
 };
@@ -341,7 +341,7 @@ const QalcRunner = struct {
     }
 
     fn toArgv(cmd: []const u8) []const []const u8 {
-        _ = std.fmt.bufPrint(&cmd_buf, "{s}", .{cmd}) catch "???";
+        _ = std.fmt.bufPrint(&cmd_buf, "{s}\x00", .{cmd}) catch "???";
         return &[_][]const u8{ "qalc", "-terse", &cmd_buf };
     }
 };
