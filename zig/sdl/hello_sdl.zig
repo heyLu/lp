@@ -280,7 +280,7 @@ pub fn main() !void {
     }
     defer c.TTF_Quit();
 
-    var font_file = if (args.len > 1) args[1] else "./FantasqueSansMono-Regular.ttf";
+    var font_file = if (args.len > 1) args[1] else "/usr/share/fonts/TTF/FantasqueSansMono-Regular.ttf";
     const font = c.TTF_OpenFont(font_file, 16) orelse {
         c.SDL_Log("Unable to load font: %s", c.TTF_GetError());
         return error.TTFInitializationFailed;
