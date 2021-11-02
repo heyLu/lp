@@ -16,9 +16,6 @@ const c = @cImport({
 });
 const std = @import("std");
 
-// TODO: restore commands
-// TODO: instant output (for some commands like `py ...`, `go ...`, qcalc)
-
 // commands wishlist:
 // - search (e.g. default current dir + /usr/include)
 // - launch with logs (default launcher, use systemd-run --user --unit=name name?)
@@ -38,7 +35,7 @@ const ProcessWithOutput = struct {
     stderr_buf: std.ArrayList(u8),
 
     dead_fds: usize = 0,
-    max_output_bytes: usize = 50 * 1024,
+    max_output_bytes: usize,
 
     cleanup_done: bool = false,
 
@@ -112,6 +109,8 @@ const ProcessWithOutput = struct {
             const nread = try std.os.read(poll_fds[0].fd, buf);
             self.stdout_buf.items.len += nread;
 
+            std.debug.print("read {d} bytes ({d} total, {d} max)\n", .{ nread, self.stdout_buf.items.len, self.max_output_bytes });
+
             // Remove the fd when the EOF condition is met.
             remove_stdout = nread == 0;
         } else {
@@ -152,6 +151,7 @@ const ProcessWithOutput = struct {
 };
 
 const RegexRunner = struct {
+    name: []const u8,
     run_always: bool,
     process: ?ProcessWithOutput = null,
 
@@ -201,7 +201,7 @@ const RegexRunner = struct {
                     return err;
                 },
             };
-            //std.debug.print("{d} ({d})\n", .{process.stdout_buf.items.len, process.stderr_buf.items.len});
+            std.debug.print("{d} ({d})\n", .{ process.stdout_buf.items.len, process.stderr_buf.items.len });
             if (process.stdout_buf.items.len > 0) {
                 return process.stdout();
             } else if (process.stderr_buf.items.len > 0) {
@@ -223,7 +223,7 @@ var cmd_buf: [100]u8 = undefined;
 
 const GoDocRunner = struct {
     fn init() RegexRunner {
-        return RegexRunner{ .run_always = true, .toArgv = toArgv, .isActive = isActive };
+        return RegexRunner{ .name = "go doc", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -239,7 +239,7 @@ const GoDocRunner = struct {
 
 const PythonHelpRunner = struct {
     fn init() RegexRunner {
-        return RegexRunner{ .run_always = true, .toArgv = toArgv, .isActive = isActive };
+        return RegexRunner{ .name = "python help", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -254,7 +254,7 @@ const PythonHelpRunner = struct {
 
 const PythonRunner = struct {
     fn init() RegexRunner {
-        return RegexRunner{ .run_always = true, .toArgv = toArgv, .isActive = isActive };
+        return RegexRunner{ .name = "python run", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -267,9 +267,39 @@ const PythonRunner = struct {
     }
 };
 
+const HelpRunner = struct {
+    fn init() RegexRunner {
+        return RegexRunner{ .name = "--help", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return std.mem.endsWith(u8, cmd, " --help");
+    }
+
+    fn toArgv(cmd: []const u8) []const []const u8 {
+        _ = std.fmt.bufPrint(&cmd_buf, "{s}", .{cmd[0 .. cmd.len - " --help".len]}) catch "???";
+        return &[_][]const u8{ &cmd_buf, "--help" };
+    }
+};
+
+const ManPageRunner = struct {
+    fn init() RegexRunner {
+        return RegexRunner{ .name = "man page", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return cmd.len > "man ".len + 2 and std.mem.startsWith(u8, cmd, "man ");
+    }
+
+    fn toArgv(cmd: []const u8) []const []const u8 {
+        _ = std.fmt.bufPrint(&cmd_buf, "{s}", .{cmd["man ".len..]}) catch "???";
+        return &[_][]const u8{ "man", &cmd_buf };
+    }
+};
+
 const SearchRunner = struct {
     fn init() RegexRunner {
-        return RegexRunner{ .run_always = true, .toArgv = toArgv, .isActive = isActive };
+        return RegexRunner{ .name = "search", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -284,7 +314,7 @@ const SearchRunner = struct {
 
 const QalcRunner = struct {
     fn init() RegexRunner {
-        return RegexRunner{ .run_always = true, .toArgv = toArgv, .isActive = isActive };
+        return RegexRunner{ .name = "qalc", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -366,6 +396,8 @@ pub fn main() !void {
         GoDocRunner.init(),
         PythonHelpRunner.init(),
         PythonRunner.init(),
+        HelpRunner.init(),
+        ManPageRunner.init(),
         SearchRunner.init(),
         QalcRunner.init(),
     };
@@ -556,44 +588,6 @@ pub fn main() !void {
     // clean up memory and processes
     for (commands) |*command| {
         command.deinit();
-    }
-}
-
-fn runCommand(raw_cmd: []const u8, allocator: *std.mem.Allocator) ![]const u8 {
-    const cmd = std.mem.trim(u8, std.mem.sliceTo(raw_cmd, 0), &std.ascii.spaces);
-    const argv = if (std.mem.startsWith(u8, cmd, "go "))
-        &[_][]const u8{ "go", "doc", cmd[3..] }
-    else if (std.mem.startsWith(u8, cmd, "py "))
-        &[_][]const u8{ "python", "-c", try std.fmt.allocPrint(allocator, "import {s}; help({s});", .{ std.mem.sliceTo(cmd["py ".len..], '.'), cmd["py ".len..] }) }
-    else if (std.mem.endsWith(u8, cmd, " --help"))
-        // TODO: handle --help that outputs on stderr
-        &[_][]const u8{ cmd[0..(cmd.len - " --help".len)], "--help" }
-    else if (std.mem.startsWith(u8, cmd, "man "))
-        // TODO: handle `man 5 sway`
-        &[_][]const u8{ "man", cmd["man ".len..] }
-    else if (std.mem.startsWith(u8, cmd, "s "))
-        &[_][]const u8{ "ag", cmd["s ".len..], "/home/luna/t/raylib/src", "/home/luna/k/the-thing/resources/ode-build/include" }
-    else if (cmd.len > 0 and std.ascii.isDigit(cmd[0]))
-        &[_][]const u8{ "qalc", "-terse", cmd }
-    else
-        &[_][]const u8{ "bash", "-c", cmd };
-    for (argv) |arg| {
-        std.debug.print("'{s}' ", .{arg});
-    }
-    const result = try std.ChildProcess.exec(.{ .allocator = allocator, .argv = argv, .max_output_bytes = 1024 * 1024 });
-    std.debug.print("stdout: '{s}'\n", .{result.stdout[0..std.math.min(100, result.stdout.len)]});
-    std.debug.print("stderr: '{s}'\n", .{result.stderr});
-
-    if (result.stdout.len > 0) {
-        allocator.free(result.stderr);
-        return result.stdout;
-    } else if (result.stderr.len > 0) {
-        allocator.free(result.stdout);
-        return result.stderr;
-    } else {
-        allocator.free(result.stdout);
-        allocator.free(result.stderr);
-        return std.fmt.allocPrint(allocator, "<no output>", .{});
     }
 }
 
