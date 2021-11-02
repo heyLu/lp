@@ -252,6 +252,21 @@ const PythonHelpRunner = struct {
     }
 };
 
+const PythonRunner = struct {
+    fn init() RegexRunner {
+        return RegexRunner{ .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return cmd.len > 3 and std.mem.startsWith(u8, cmd, "py! ");
+    }
+
+    fn toArgv(cmd: []const u8) []const []const u8 {
+        _ = std.fmt.bufPrint(&cmd_buf, "print({s})", .{cmd["py! ".len..]}) catch "???";
+        return &[_][]const u8{ "python", "-c", &cmd_buf };
+    }
+};
+
 const SearchRunner = struct {
     fn init() RegexRunner {
         return RegexRunner{ .run_always = true, .toArgv = toArgv, .isActive = isActive };
@@ -264,6 +279,21 @@ const SearchRunner = struct {
     fn toArgv(cmd: []const u8) []const []const u8 {
         _ = std.fmt.bufPrint(&cmd_buf, "{s}", .{cmd["s ".len..]}) catch "???";
         return &[_][]const u8{ "ag", &cmd_buf, "/home/luna/k/the-thing" };
+    }
+};
+
+const QalcRunner = struct {
+    fn init() RegexRunner {
+        return RegexRunner{ .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return cmd.len > 0 and std.ascii.isDigit(cmd[0]);
+    }
+
+    fn toArgv(cmd: []const u8) []const []const u8 {
+        _ = std.fmt.bufPrint(&cmd_buf, "{s}", .{cmd}) catch "???";
+        return &[_][]const u8{ "qalc", "-terse", &cmd_buf };
     }
 };
 
@@ -335,7 +365,9 @@ pub fn main() !void {
     var commands = [_]RegexRunner{
         GoDocRunner.init(),
         PythonHelpRunner.init(),
+        PythonRunner.init(),
         SearchRunner.init(),
+        QalcRunner.init(),
     };
 
     var quit = false;
