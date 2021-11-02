@@ -19,7 +19,6 @@ const std = @import("std");
 // commands wishlist:
 // - search (e.g. default current dir + /usr/include)
 // - launch with logs (default launcher, use systemd-run --user --unit=name name?)
-// - view (the above logs)
 // - switch to window
 // - open url
 // - open shortcuts (logs -> ..., tickets)
@@ -219,7 +218,7 @@ const RegexRunner = struct {
     }
 };
 
-var cmd_buf: [100]u8 = undefined;
+var cmd_buf: [1000]u8 = undefined;
 
 const GoDocRunner = struct {
     fn init() RegexRunner {
@@ -312,6 +311,26 @@ const SearchRunner = struct {
     }
 };
 
+const LogsRunner = struct {
+    fn init() RegexRunner {
+        return RegexRunner{ .name = "logs", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return std.mem.startsWith(u8, cmd, "logs");
+    }
+
+    fn toArgv(cmd: []const u8) []const []const u8 {
+        if (cmd.len <= "logs ".len) {
+            return &[_][]const u8{ "journalctl", "-b" };
+        }
+
+        const service = cmd["logs ".len..];
+        _ = std.fmt.bufPrint(&cmd_buf, "(systemctl status {s} &> /dev/null && journalctl -u {s} -f) || (systemctl status --user {s} &> /dev/null && journalctl --user -u {s} -f) || echo \"no logs for '{s}'\"", .{ service, service, service, service, service }) catch "???";
+        return &[_][]const u8{ "bash", "-c", &cmd_buf };
+    }
+};
+
 const QalcRunner = struct {
     fn init() RegexRunner {
         return RegexRunner{ .name = "qalc", .run_always = true, .toArgv = toArgv, .isActive = isActive };
@@ -399,6 +418,7 @@ pub fn main() !void {
         HelpRunner.init(),
         ManPageRunner.init(),
         SearchRunner.init(),
+        LogsRunner.init(),
         QalcRunner.init(),
     };
 
