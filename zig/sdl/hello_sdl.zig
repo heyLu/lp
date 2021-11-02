@@ -149,7 +149,7 @@ const ProcessWithOutput = struct {
     }
 };
 
-const RegexRunner = struct {
+const Runner = struct {
     name: []const u8,
     run_always: bool,
     process: ?ProcessWithOutput = null,
@@ -157,7 +157,7 @@ const RegexRunner = struct {
     toArgv: fn (cmd: []const u8) []const []const u8,
     isActive: fn (cmd: []const u8) bool,
 
-    fn run(self: *RegexRunner, allocator: *std.mem.Allocator, cmd: []const u8, is_confirmed: bool) !bool {
+    fn run(self: *Runner, allocator: *std.mem.Allocator, cmd: []const u8, is_confirmed: bool) !bool {
         if (!self.run_always and !is_confirmed) {
             return false;
         }
@@ -189,7 +189,7 @@ const RegexRunner = struct {
         return true;
     }
 
-    fn output(self: *RegexRunner) ![]const u8 {
+    fn output(self: *Runner) ![]const u8 {
         if (self.process) |*process| {
             process.poll() catch |err| switch (err) {
                 error.StdoutStreamTooLong => {
@@ -211,7 +211,7 @@ const RegexRunner = struct {
         return "<no output>";
     }
 
-    fn deinit(self: *RegexRunner) void {
+    fn deinit(self: *Runner) void {
         if (self.process) |*process| {
             process.deinit();
         }
@@ -221,8 +221,8 @@ const RegexRunner = struct {
 var cmd_buf: [1000]u8 = undefined;
 
 const GoDocRunner = struct {
-    fn init() RegexRunner {
-        return RegexRunner{ .name = "go doc", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    fn init() Runner {
+        return Runner{ .name = "go doc", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -237,8 +237,8 @@ const GoDocRunner = struct {
 };
 
 const PythonHelpRunner = struct {
-    fn init() RegexRunner {
-        return RegexRunner{ .name = "python help", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    fn init() Runner {
+        return Runner{ .name = "python help", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -252,8 +252,8 @@ const PythonHelpRunner = struct {
 };
 
 const PythonRunner = struct {
-    fn init() RegexRunner {
-        return RegexRunner{ .name = "python run", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    fn init() Runner {
+        return Runner{ .name = "python run", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -267,8 +267,8 @@ const PythonRunner = struct {
 };
 
 const HelpRunner = struct {
-    fn init() RegexRunner {
-        return RegexRunner{ .name = "--help", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    fn init() Runner {
+        return Runner{ .name = "--help", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -282,8 +282,8 @@ const HelpRunner = struct {
 };
 
 const ManPageRunner = struct {
-    fn init() RegexRunner {
-        return RegexRunner{ .name = "man page", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    fn init() Runner {
+        return Runner{ .name = "man page", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -297,8 +297,8 @@ const ManPageRunner = struct {
 };
 
 const SearchRunner = struct {
-    fn init() RegexRunner {
-        return RegexRunner{ .name = "search", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    fn init() Runner {
+        return Runner{ .name = "search", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -312,8 +312,8 @@ const SearchRunner = struct {
 };
 
 const LogsRunner = struct {
-    fn init() RegexRunner {
-        return RegexRunner{ .name = "logs", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    fn init() Runner {
+        return Runner{ .name = "logs", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -332,8 +332,8 @@ const LogsRunner = struct {
 };
 
 const QalcRunner = struct {
-    fn init() RegexRunner {
-        return RegexRunner{ .name = "qalc", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    fn init() Runner {
+        return Runner{ .name = "qalc", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -411,7 +411,7 @@ pub fn main() !void {
     const keyboardState = c.SDL_GetKeyboardState(null);
 
     c.SDL_StartTextInput();
-    var commands = [_]RegexRunner{
+    var commands = [_]Runner{
         GoDocRunner.init(),
         PythonHelpRunner.init(),
         PythonRunner.init(),
