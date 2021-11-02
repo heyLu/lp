@@ -170,7 +170,15 @@ const RegexRunner = struct {
         // stop already running command, restart with new cmd
         if (self.process) |*process| {
             if (process.is_running()) {
-                _ = try process.process.kill();
+                _ = process.process.kill() catch |err| switch (err) {
+                    error.FileNotFound => {
+                        // TODO: report error to user
+                        std.debug.print("killing: {s}\n", .{err});
+                    },
+                    else => {
+                        return err;
+                    },
+                };
                 process.deinit();
             }
         }
