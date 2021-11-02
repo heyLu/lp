@@ -561,7 +561,8 @@ pub fn main() !void {
         _ = c.SDL_RenderClear(renderer);
 
         // thanks to https://stackoverflow.com/questions/22886500/how-to-render-text-in-sdl2 for some actually useful code here
-        const white: c.SDL_Color = c.SDL_Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
+        const white: c.SDL_Color = c.SDL_Color{ .r = 255, .g = 255, .b = 255, .a = 0 };
+        const gray: c.SDL_Color = c.SDL_Color{ .r = 150, .g = 150, .b = 150, .a = 255 };
         const black: c.SDL_Color = c.SDL_Color{ .r = 0, .g = 0, .b = 0, .a = 100 };
         // Shaded vs Solid gives a nicer output, with solid the output
         // was squiggly and not aligned with a baseline.
@@ -574,6 +575,16 @@ pub fn main() !void {
         for (commands) |*command| {
             if (!command.isActive(cmd)) {
                 continue;
+            }
+
+            {
+                const name = try gpa.dupeZ(u8, command.name);
+                const result_text = c.TTF_RenderUTF8_Shaded(font, name, gray, c.SDL_Color{ .r = 0, .g = 0, .b = 0, .a = 255 });
+                gpa.free(name);
+                const result_texture = c.SDL_CreateTextureFromSurface(renderer, result_text);
+                _ = c.SDL_RenderCopy(renderer, result_texture, null, &c.SDL_Rect{ .x = window_width - @intCast(c_int, command.name.len) * glyph_width, .y = 0, .w = @intCast(c_int, command.name.len) * glyph_width, .h = glyph_height });
+                c.SDL_FreeSurface(result_text);
+                c.SDL_DestroyTexture(result_texture);
             }
 
             //std.debug.print("{s} {d} {d}\n", .{ command.process.is_running(), command.process.stdout_buf.items.len, command.process.stdout_buf.capacity });
