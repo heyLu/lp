@@ -402,6 +402,7 @@ pub fn main() !void {
     const renderer = c.SDL_CreateRenderer(screen, -1, c.SDL_RENDERER_ACCELERATED);
 
     var msg = "                                                                                                    ".*;
+    var msg_overlay = "                                                                                                    ".*;
     var pos: usize = 0;
     var max_chars = std.math.min(@divTrunc(@intCast(usize, window_width), @intCast(usize, glyph_width)), msg.len);
 
@@ -451,8 +452,11 @@ pub fn main() !void {
                     if (ctrlPressed) {
                         switch (event.key.keysym.sym) {
                             c.SDLK_a => {
+                                if (msg_overlay[pos] == '_') {
+                                    msg_overlay[pos] = ' ';
+                                }
                                 pos = 0;
-                                msg[pos] = '_';
+                                msg_overlay[pos] = '_';
                             },
                             c.SDLK_k => {
                                 var i: usize = 0;
@@ -493,8 +497,14 @@ pub fn main() !void {
                                 quit = true;
                             },
                             c.SDLK_BACKSPACE => {
+                                if (msg_overlay[pos] == '_') {
+                                    msg_overlay[pos] = ' ';
+                                }
+                                if (pos > 0) {
+                                    msg[pos - 1] = ' ';
+                                }
                                 pos = if (pos == 0) max_chars - 1 else (pos - 1) % (max_chars - 1);
-                                msg[pos] = '_';
+                                msg_overlay[pos] = '_';
                                 changed = true;
                             },
                             c.SDLK_RETURN => {
@@ -536,6 +546,7 @@ pub fn main() !void {
                     if (!ctrlPressed and event.text.text.len > 0) {
                         c.SDL_Log("input: '%s' at %d", event.text.text, pos);
                         msg[pos] = event.text.text[0];
+                        msg_overlay[pos] = ' ';
                         pos = (pos + 1) % (max_chars - 1);
 
                         changed = true;
@@ -561,15 +572,27 @@ pub fn main() !void {
         _ = c.SDL_RenderClear(renderer);
 
         // thanks to https://stackoverflow.com/questions/22886500/how-to-render-text-in-sdl2 for some actually useful code here
-        const white: c.SDL_Color = c.SDL_Color{ .r = 255, .g = 255, .b = 255, .a = 0 };
+        const white: c.SDL_Color = c.SDL_Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
         const gray: c.SDL_Color = c.SDL_Color{ .r = 150, .g = 150, .b = 150, .a = 255 };
-        const black: c.SDL_Color = c.SDL_Color{ .r = 0, .g = 0, .b = 0, .a = 100 };
-        // Shaded vs Solid gives a nicer output, with solid the output
-        // was squiggly and not aligned with a baseline.
-        const text = c.TTF_RenderUTF8_Shaded(font, &msg, white, black);
-        const texture = c.SDL_CreateTextureFromSurface(renderer, text);
-        c.SDL_FreeSurface(text);
-        _ = c.SDL_RenderCopy(renderer, texture, null, &c.SDL_Rect{ .x = 0, .y = 0, .w = @intCast(c_int, msg.len) * glyph_width, .h = glyph_height });
+        const black: c.SDL_Color = c.SDL_Color{ .r = 0, .g = 0, .b = 0, .a = 255 };
+
+        {
+            // Shaded vs Solid gives a nicer output, with solid the output
+            // was squiggly and not aligned with a baseline.
+            const text = c.TTF_RenderUTF8_Shaded(font, &msg, white, black);
+            const texture = c.SDL_CreateTextureFromSurface(renderer, text);
+            c.SDL_FreeSurface(text);
+            _ = c.SDL_RenderCopy(renderer, texture, null, &c.SDL_Rect{ .x = 0, .y = 0, .w = @intCast(c_int, msg.len) * glyph_width, .h = glyph_height });
+        }
+        {
+            const text = c.TTF_RenderUTF8_Shaded(font, &msg_overlay, white, c.SDL_Color{ .r = 0, .g = 0, .b = 0, .a = 0 });
+            const texture = c.SDL_CreateTextureFromSurface(renderer, text);
+            if (c.SDL_SetTextureBlendMode(texture, c.SDL_BLENDMODE_ADD) != 0) {
+                c.SDL_Log("Unable set texture blend mode: %s", c.SDL_GetError());
+            }
+            c.SDL_FreeSurface(text);
+            _ = c.SDL_RenderCopy(renderer, texture, null, &c.SDL_Rect{ .x = 0, .y = 0, .w = @intCast(c_int, msg.len) * glyph_width, .h = glyph_height });
+        }
 
         var i: c_int = 1;
         for (commands) |*command| {
