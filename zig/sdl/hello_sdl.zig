@@ -425,6 +425,7 @@ pub fn main() !void {
 
     var quit = false;
     var skip: i32 = 0;
+    var skip_horizontal: usize = 0;
     var num_lines: i32 = 0;
 
     var changed = false;
@@ -538,6 +539,14 @@ pub fn main() !void {
                                     skip = num_lines - 10;
                                 }
                             },
+                            c.SDLK_LEFT => {
+                                if (skip_horizontal > 0) {
+                                    skip_horizontal -= 1;
+                                }
+                            },
+                            c.SDLK_RIGHT => {
+                                skip_horizontal += 1;
+                            },
                             else => {},
                         }
                     }
@@ -565,6 +574,9 @@ pub fn main() !void {
 
             changed = false;
             lastChange = c.SDL_GetTicks();
+
+            skip = 0;
+            skip_horizontal = 0;
         }
 
         _ = c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 100);
@@ -595,6 +607,7 @@ pub fn main() !void {
         }
 
         var i: c_int = 1;
+        var line_buf = [_]u8{0} ** 10000;
         for (commands) |*command| {
             if (!command.isActive(cmd)) {
                 continue;
@@ -620,12 +633,16 @@ pub fn main() !void {
                 }
             }
             while (line != null and i * glyph_height < window_height) {
-                const line_c = try gpa.dupeZ(u8, line.?);
-                // TODO: render tabs at correct width (or some width at least)
-                const result_text = c.TTF_RenderUTF8_Shaded(font, line_c, white, black);
-                gpa.free(line_c);
+                const skipped_line = line.?[std.math.min(skip_horizontal, line.?.len)..];
+
+                // fix tabs
+                const repl_size = std.mem.replacementSize(u8, skipped_line, "\t", " " ** 8);
+                _ = std.mem.replace(u8, skipped_line, "\t", " " ** 8, &line_buf);
+                line_buf[repl_size] = 0;
+
+                const result_text = c.TTF_RenderUTF8_Shaded(font, &line_buf, white, black);
                 const result_texture = c.SDL_CreateTextureFromSurface(renderer, result_text);
-                _ = c.SDL_RenderCopy(renderer, result_texture, null, &c.SDL_Rect{ .x = 0, .y = i * glyph_height, .w = @intCast(c_int, line.?.len) * glyph_width, .h = glyph_height });
+                _ = c.SDL_RenderCopy(renderer, result_texture, null, &c.SDL_Rect{ .x = 0, .y = i * glyph_height, .w = @intCast(c_int, repl_size) * glyph_width, .h = glyph_height });
                 c.SDL_FreeSurface(result_text);
                 c.SDL_DestroyTexture(result_texture);
 
