@@ -333,10 +333,13 @@ pub fn main() !void {
     var quit = false;
     var skip: i32 = 0;
     var num_lines: i32 = 0;
+
+    var changed = false;
+    var lastChange: u32 = 0;
+
     while (!quit) {
-        var event: c.SDL_Event = undefined;
-        var changed = false;
         var confirmed = false;
+        var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event) != 0) {
             const ctrlPressed = (keyboardState[c.SDL_SCANCODE_LCTRL] != 0);
             switch (event.@"type") {
@@ -452,10 +455,13 @@ pub fn main() !void {
 
         const cmd = std.mem.trim(u8, std.mem.sliceTo(&msg, 0), &std.ascii.spaces);
 
-        if (changed) {
+        if (changed and c.SDL_GetTicks() - lastChange > 100) {
             for (commands) |*command| {
                 _ = try command.run(gpa, cmd, confirmed);
             }
+
+            changed = false;
+            lastChange = c.SDL_GetTicks();
         }
 
         _ = c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 100);
