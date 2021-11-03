@@ -50,10 +50,15 @@ type Options struct {
 	NoDefaultStyle bool   `yaml:"no_default_style"`
 	Title          string `yaml:"title"`
 	After          string `yaml:"after"`
+	PostsDir       string `yaml:"posts_dir"`
 
 	// options only in the YAML prefix:
 
 	Output string `yaml:"output"`
+
+	// options only for file output
+	title    string
+	showTags bool
 }
 
 var flags struct {
@@ -159,6 +164,7 @@ func init() {
 	flag.BoolVar(&flags.PrintDefaultStyle, "print-default-style", false, "Print the default styles")
 	flag.StringVar(&flags.Title, "title", "A blog", "Custom `title` to use")
 	flag.StringVar(&flags.After, "after", "", "Insert additional `html` at the end of the generated page")
+	flag.StringVar(&flags.PostsDir, "posts-dir", "", "Directory to write per-post html files to")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags] [<blog.yaml> [<blog.html>]]\n\n", os.Args[0])
@@ -233,6 +239,10 @@ func main() {
 				}
 			case "after":
 				flags.After = opts.After
+			case "posts-dir":
+				if opts.PostsDir != "" {
+					flags.PostsDir = opts.PostsDir
+				}
 			}
 		})
 
@@ -257,6 +267,34 @@ func main() {
 		exit(err)
 	}
 
+	for i, post := range posts {
+		if post.ID == "" {
+			posts[i].ID = generateID(post)
+		}
+	}
+
+	flags.showTags = true
+	writePosts(posts, out, flags.Options)
+
+	if flags.PostsDir != "" {
+		for _, post := range posts {
+			postPath := path.Join(path.Dir(dataPath), flags.PostsDir, post.ID+".html")
+
+			f, err := os.Create(postPath)
+			if err != nil {
+				exit(err)
+			}
+
+			flags.Title = post.Title
+			flags.showTags = false
+			writePosts([]Post{post}, f, flags.Options)
+
+			fmt.Println("wrote", postPath)
+		}
+	}
+}
+
+func writePosts(posts []Post, out io.WriteCloser, opts Options) {
 	if flags.NoDefaultStyle {
 		defaultStyle = ""
 	}
@@ -283,12 +321,7 @@ func main() {
 	}
 
 	tags := map[string]bool{}
-	for i, post := range posts {
-		if post.ID == "" {
-			posts[i].ID = generateID(post)
-			post = posts[i]
-		}
-
+	for _, post := range posts {
 		if post.Tags != nil {
 			for _, tag := range post.Tags {
 				tags[tag] = true
@@ -340,14 +373,16 @@ func main() {
 		}
 	}
 
-	sortedTags := []string{}
-	for tag := range tags {
-		sortedTags = append(sortedTags, tag)
-	}
-	sort.Strings(sortedTags)
-	err = tagsTmpl.Execute(out, sortedTags)
-	if err != nil {
-		exit(err)
+	if opts.showTags {
+		sortedTags := []string{}
+		for tag := range tags {
+			sortedTags = append(sortedTags, tag)
+		}
+		sort.Strings(sortedTags)
+		err := tagsTmpl.Execute(out, sortedTags)
+		if err != nil {
+			exit(err)
+		}
 	}
 
 	fmt.Fprintf(out, `
@@ -508,6 +543,13 @@ func main() {
 }
 
 var funcs = template.FuncMap{
+	"permalink": func(post Post) string {
+		if flags.PostsDir == "" {
+			return "#" + post.ID
+		}
+
+		return path.Join(flags.PostsDir, post.ID+".html")
+	},
 	"markdown": func(markdown string) template.HTML {
 		return template.HTML(blackfriday.MarkdownCommon([]byte(markdown)))
 	},
@@ -522,11 +564,12 @@ var funcs = template.FuncMap{
 
 var baseTmpl = template.Must(template.New("base").
 	Funcs(funcs).Parse(`
+{{ $options := .Options }}
 {{ define "title" }}
 	<header>
 		{{- if .Title }}
 		<h1>{{ .Title }}</h1>{{ end }}
-		<a class="permalink" href="#{{ .ID }}">∞</a>
+		<a class="permalink" href="{{ permalink . }}">∞</a>
 		{{- if .Date }}
 		<time>{{ .Date }}</time>{{ end }}
 	</header>
@@ -546,7 +589,7 @@ var shellTmpl = template.Must(baseTmpl.New("shell").
 <article id="{{ .ID }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	<header>
 		<h1><code class="language-shell">{{ .Title }}</code></h1>
-		<a class="permalink" href="#{{ .ID }}">∞</a>
+		<a class="permalink" href="{{ permalink . }}">∞</a>
 		{{- if .Date }}
 		<time>{{ .Date }}</time>{{ end }}
 	</header>
@@ -566,7 +609,7 @@ var linkTmpl = template.Must(baseTmpl.New("link").
 <article id="{{ .ID }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	<header>
 		<h1><a href="{{ .URL }}">{{ .Title }}</a></h1>
-		<a class="permalink" href="#{{ .ID }}">∞</a>
+		<a class="permalink" href="{{ permalink . }}">∞</a>
 		{{- if .Date }}
 		<time>{{ .Date }}</time>{{ end }}
 	</header>
