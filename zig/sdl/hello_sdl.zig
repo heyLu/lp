@@ -342,6 +342,22 @@ const SearchRunner = struct {
     }
 };
 
+const FileRunner = struct {
+    fn init() Runner {
+        return Runner{ .name = "file", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return cmd.len > "file ".len and std.mem.startsWith(u8, cmd, "file ");
+    }
+
+    fn toArgv(cmd: []const u8) []const []const u8 {
+        // FIXME: replace with choice + selection whenever that is implemented
+        _ = std.fmt.bufPrint(&cmd_buf, "find ~/k/the-thing ~/t/zig -type f -name '{s}' | head -n1 | tee /tmp/file-search && ([ \"$(wc -l < /tmp/file-search)\" = \"1\" ] && cat \"$(head -n1 /tmp/file-search)\") || echo \"not found\"\x00", .{cmd["file ".len..]}) catch "???";
+        return &[_][]const u8{ "bash", "-c", &cmd_buf };
+    }
+};
+
 const LogsRunner = struct {
     fn init() Runner {
         return Runner{ .name = "logs", .run_always = true, .toArgv = toArgv, .isActive = isActive };
@@ -452,6 +468,7 @@ pub fn main() !void {
         HelpRunner.init(),
         ManPageRunner.init(),
         SearchRunner.init(),
+        FileRunner.init(),
         LogsRunner.init(),
         QalcRunner.init(),
     };
