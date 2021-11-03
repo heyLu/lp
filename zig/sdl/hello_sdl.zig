@@ -338,7 +338,7 @@ const SearchRunner = struct {
 
     fn toArgv(cmd: []const u8) []const []const u8 {
         _ = std.fmt.bufPrint(&cmd_buf, "{s}\x00", .{cmd["s ".len..]}) catch "???";
-        return &[_][]const u8{ "ag", &cmd_buf, "/home/luna/k/the-thing" };
+        return &[_][]const u8{ "ag", "--color", &cmd_buf, "/home/luna/k/the-thing", "/home/luna/t/zig" };
     }
 };
 
@@ -689,6 +689,15 @@ pub fn main() !void {
                 const repl_size = std.mem.replacementSize(u8, skipped_line, "\t", " " ** 8);
                 _ = std.mem.replace(u8, skipped_line, "\t", " " ** 8, &line_buf);
                 line_buf[repl_size] = 0;
+
+                // TODO: implement some terminal colors
+                var parts = std.mem.split(u8, line_buf[0..repl_size], "\x1B[");
+                var part = parts.next();
+                while (part != null and part.?.len != repl_size) : (part = parts.next()) {
+                    if (part.?.len > 0) {
+                        std.debug.print("escape char: {d} {s}\n", .{ part.?[0], part.?[1..] });
+                    }
+                }
 
                 const result_text = c.TTF_RenderUTF8_Shaded(font, &line_buf, white, black);
                 const result_texture = c.SDL_CreateTextureFromSurface(renderer, result_text);
