@@ -1,3 +1,7 @@
+// Command blog renders a YAML file to a little HTML blog.
+//
+// Feel free to adapt it and use it in your setup, if you want your own
+// personal digital writing implement.
 package main
 
 import (
@@ -22,8 +26,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Post is a single post, title, tags and all.
+//
+// It contains all information to get rendered by something, as determined by
+// the `Type`.
 type Post struct {
-	Id      string   `yaml:"id"`
+	ID      string   `yaml:"id"`
 	Title   string   `yaml:"title"`
 	URL     string   `yaml:"url"`
 	Content string   `yaml:"content"`
@@ -32,11 +40,13 @@ type Post struct {
 	Type    string   `yaml:"type"`
 }
 
+// Options are options that can be specified in the YAML file itself or on the
+// commandline, to control how the output is done.
 type Options struct {
 	WriteBack      bool   `yaml:"write_back"`
-	HashIds        bool   `yaml:"hash_ids"`
+	HashIDs        bool   `yaml:"hash_ids"`
 	Reverse        bool   `yaml:"reverse"`
-	Css            string `yaml:"css"`
+	CSS            string `yaml:"css"`
 	NoDefaultStyle bool   `yaml:"no_default_style"`
 	Title          string `yaml:"title"`
 	After          string `yaml:"after"`
@@ -142,9 +152,9 @@ article.does-not-match {
 
 func init() {
 	flag.BoolVar(&flags.WriteBack, "write-back", false, "Rewrite the YAML file with the generated ids")
-	flag.BoolVar(&flags.HashIds, "hash-ids", false, "Use hash-based post ids")
+	flag.BoolVar(&flags.HashIDs, "hash-ids", false, "Use hash-based post ids")
 	flag.BoolVar(&flags.Reverse, "reverse", false, "Reverse the order of the articles in the file")
-	flag.StringVar(&flags.Css, "css", "", "Use custom `css` styles")
+	flag.StringVar(&flags.CSS, "css", "", "Use custom `css` styles")
 	flag.BoolVar(&flags.NoDefaultStyle, "no-default-style", false, "Don't use the default styles")
 	flag.BoolVar(&flags.PrintDefaultStyle, "print-default-style", false, "Print the default styles")
 	flag.StringVar(&flags.Title, "title", "A blog", "Custom `title` to use")
@@ -210,11 +220,11 @@ func main() {
 			case "write-back":
 				flags.WriteBack = opts.WriteBack
 			case "hash-ids":
-				flags.HashIds = opts.HashIds
+				flags.HashIDs = opts.HashIDs
 			case "reverse":
 				flags.Reverse = opts.Reverse
 			case "css":
-				flags.Css = opts.Css
+				flags.CSS = opts.CSS
 			case "no-default-style":
 				flags.NoDefaultStyle = opts.NoDefaultStyle
 			case "title":
@@ -261,7 +271,7 @@ func main() {
 </head>
 
 <body>
-`, template.HTMLEscapeString(flags.Title), defaultStyle, flags.Css)
+`, template.HTMLEscapeString(flags.Title), defaultStyle, flags.CSS)
 
 	if flags.Reverse {
 		l := len(posts)
@@ -274,8 +284,8 @@ func main() {
 
 	tags := map[string]bool{}
 	for i, post := range posts {
-		if post.Id == "" {
-			posts[i].Id = generateId(post)
+		if post.ID == "" {
+			posts[i].ID = generateID(post)
 			post = posts[i]
 		}
 
@@ -310,9 +320,9 @@ func main() {
 			case (u.Host == "youtube.com" || u.Host == "www.youtube.com") && u.Query().Get("v") != "":
 				provider = "youtube"
 				post.URL = fmt.Sprintf("https://www.youtube.com/embed/%s", u.Query().Get("v"))
-			case u.Host == "vimeo.com" && getVimeoId(u.Path) != "":
+			case u.Host == "vimeo.com" && getVimeoID(u.Path) != "":
 				provider = "vimeo"
-				post.URL = fmt.Sprintf("https://player.vimeo.com/video/%s", getVimeoId(u.Path))
+				post.URL = fmt.Sprintf("https://player.vimeo.com/video/%s", getVimeoID(u.Path))
 			default:
 				exit(fmt.Errorf("unsupported video url '%s'", post.URL))
 			}
@@ -331,7 +341,7 @@ func main() {
 	}
 
 	sortedTags := []string{}
-	for tag, _ := range tags {
+	for tag := range tags {
 		sortedTags = append(sortedTags, tag)
 	}
 	sort.Strings(sortedTags)
@@ -516,7 +526,7 @@ var baseTmpl = template.Must(template.New("base").
 	<header>
 		{{- if .Title }}
 		<h1>{{ .Title }}</h1>{{ end }}
-		<a class="permalink" href="#{{ .Id }}">∞</a>
+		<a class="permalink" href="#{{ .ID }}">∞</a>
 		{{- if .Date }}
 		<time>{{ .Date }}</time>{{ end }}
 	</header>
@@ -533,10 +543,10 @@ var baseTmpl = template.Must(template.New("base").
 
 var shellTmpl = template.Must(baseTmpl.New("shell").
 	Funcs(funcs).Parse(`
-<article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
+<article id="{{ .ID }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	<header>
 		<h1><code class="language-shell">{{ .Title }}</code></h1>
-		<a class="permalink" href="#{{ .Id }}">∞</a>
+		<a class="permalink" href="#{{ .ID }}">∞</a>
 		{{- if .Date }}
 		<time>{{ .Date }}</time>{{ end }}
 	</header>
@@ -553,10 +563,10 @@ var shellTmpl = template.Must(baseTmpl.New("shell").
 
 var linkTmpl = template.Must(baseTmpl.New("link").
 	Funcs(funcs).Parse(`
-<article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
+<article id="{{ .ID }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	<header>
 		<h1><a href="{{ .URL }}">{{ .Title }}</a></h1>
-		<a class="permalink" href="#{{ .Id }}">∞</a>
+		<a class="permalink" href="#{{ .ID }}">∞</a>
 		{{- if .Date }}
 		<time>{{ .Date }}</time>{{ end }}
 	</header>
@@ -573,7 +583,7 @@ var linkTmpl = template.Must(baseTmpl.New("link").
 
 var imageTmpl = template.Must(baseTmpl.New("image").
 	Funcs(funcs).Parse(`
-<article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
+<article id="{{ .ID }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
 	<img src="{{ safe_url .URL }}" />
 	{{- if .Content }}
@@ -589,7 +599,7 @@ var imageTmpl = template.Must(baseTmpl.New("image").
 
 var songTmpl = template.Must(baseTmpl.New("song").
 	Funcs(funcs).Parse(`
-<article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
+<article id="{{ .ID }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
 	<audio src="{{ safe_url .URL }}" controls>
 		Your browser can't play {{ .URL }}.
@@ -607,7 +617,7 @@ var songTmpl = template.Must(baseTmpl.New("song").
 
 var textTmpl = template.Must(baseTmpl.New("text").
 	Funcs(funcs).Parse(`
-<article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
+<article id="{{ .ID }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
 	{{- if .Content }}
 
@@ -621,7 +631,7 @@ var textTmpl = template.Must(baseTmpl.New("text").
 `))
 
 var videoTmpl = template.Must(baseTmpl.New("video").Parse(`
-<article id="{{ .Id }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
+<article id="{{ .ID }}" class="{{ .Type }}" {{- if .Tags }} data-tags="{{ json .Tags }}"{{ end }}>
 	{{- template "title" . }}
 	{{ if (eq .Provider "youtube" "vimeo") -}}
 	<iframe width="560" height="315" src="{{ safe_url .URL }}" frameborder="0" allowfullscreen loading="lazy"></iframe>
@@ -651,14 +661,14 @@ func exit(err error) {
 	os.Exit(1)
 }
 
-func generateId(p Post) string {
-	if flags.HashIds {
-		return hashId(p)
+func generateID(p Post) string {
+	if flags.HashIDs {
+		return hashID(p)
 	}
-	return slugId(p)
+	return slugID(p)
 }
 
-func hashId(p Post) string {
+func hashID(p Post) string {
 	h := md5.New()
 	io.WriteString(h, p.Title)
 	io.WriteString(h, p.Content)
@@ -666,7 +676,7 @@ func hashId(p Post) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func randomId() string {
+func randomID() string {
 	buf := make([]byte, 16)
 	_, err := rand.Read(buf)
 	if err != nil {
@@ -678,11 +688,11 @@ func randomId() string {
 
 var usedSlugs = map[string]int{}
 
-func slugId(p Post) string {
+func slugID(p Post) string {
 	slug := toSlug(p.Title)
 	n, ok := usedSlugs[slug]
 	if ok {
-		n += 1
+		n++
 	} else {
 		n = 1
 	}
@@ -715,7 +725,7 @@ func toSlug(s string) string {
 	return strings.Trim(s, "-")
 }
 
-func getVimeoId(p string) string {
+func getVimeoID(p string) string {
 	i := strings.LastIndex(p, "/")
 	if i == -1 || len(p) == i+1 {
 		return ""
