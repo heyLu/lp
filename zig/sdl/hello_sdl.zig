@@ -238,7 +238,7 @@ const GoDocRunner = struct {
 
 const PythonHelpRunner = struct {
     fn init() Runner {
-        return Runner{ .name = "python help", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+        return Runner{ .name = "python docs", .run_always = true, .toArgv = toArgv, .isActive = isActive };
     }
 
     fn isActive(cmd: []const u8) bool {
@@ -263,6 +263,36 @@ const PythonRunner = struct {
     fn toArgv(cmd: []const u8) []const []const u8 {
         _ = std.fmt.bufPrint(&cmd_buf, "print({s})\x00", .{cmd["py! ".len..]}) catch "???";
         return &[_][]const u8{ "python", "-c", &cmd_buf };
+    }
+};
+
+const RubyHelpRunner = struct {
+    fn init() Runner {
+        return Runner{ .name = "ruby docs", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return cmd.len > 3 and std.mem.startsWith(u8, cmd, "rb ");
+    }
+
+    fn toArgv(cmd: []const u8) []const []const u8 {
+        _ = std.fmt.bufPrint(&cmd_buf, "{s}\x00", .{cmd["rb ".len..]}) catch "???";
+        return &[_][]const u8{ "ri", &cmd_buf };
+    }
+};
+
+const RubyRunner = struct {
+    fn init() Runner {
+        return Runner{ .name = "ruby run", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return cmd.len > 3 and std.mem.startsWith(u8, cmd, "rb! ");
+    }
+
+    fn toArgv(cmd: []const u8) []const []const u8 {
+        _ = std.fmt.bufPrint(&cmd_buf, "puts({s})\x00", .{cmd["rb! ".len..]}) catch "???";
+        return &[_][]const u8{ "ruby", "-e", &cmd_buf };
     }
 };
 
@@ -416,6 +446,8 @@ pub fn main() !void {
         GoDocRunner.init(),
         PythonHelpRunner.init(),
         PythonRunner.init(),
+        RubyHelpRunner.init(),
+        RubyRunner.init(),
         HelpRunner.init(),
         ManPageRunner.init(),
         SearchRunner.init(),
