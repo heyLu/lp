@@ -23,10 +23,11 @@ const std = @import("std");
 // - open url
 // - open shortcuts (logs -> ..., tickets)
 // - history (could be another command + some special keybindings)
+// - hex (and other decodes, terminal escapes?)
 
-// output line-by-line -> saved by caller?
-// output can be reset
-// incremental output vs. final output/action
+// TODO: implement suggestions by program
+// TODO: implement choosing from suggestions
+// TODO: implement searching through results
 
 const ProcessWithOutput = struct {
     process: *std.ChildProcess,
