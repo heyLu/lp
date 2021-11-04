@@ -34,6 +34,7 @@ const ProcessWithOutput = struct {
     stdout_buf: std.ArrayList(u8),
     stderr_buf: std.ArrayList(u8),
 
+    poll_fds: [2]std.os.pollfd,
     dead_fds: usize = 0,
     max_output_bytes: usize,
 
@@ -47,7 +48,17 @@ const ProcessWithOutput = struct {
         child.stderr_behavior = std.ChildProcess.StdIo.Pipe;
         try child.spawn();
 
-        return ProcessWithOutput{ .process = child, .stdout_buf = std.ArrayList(u8).init(allocator), .stderr_buf = std.ArrayList(u8).init(allocator), .dead_fds = 0, .max_output_bytes = max_output_bytes };
+        return ProcessWithOutput{
+            .process = child,
+            .stdout_buf = std.ArrayList(u8).init(allocator),
+            .stderr_buf = std.ArrayList(u8).init(allocator),
+            .poll_fds = [_]std.os.pollfd{
+                .{ .fd = child.stdout.?.handle, .events = std.os.POLL.IN, .revents = undefined },
+                .{ .fd = child.stderr.?.handle, .events = std.os.POLL.IN, .revents = undefined },
+            },
+            .dead_fds = 0,
+            .max_output_bytes = max_output_bytes,
+        };
     }
 
     fn is_running(self: *ProcessWithOutput) bool {
@@ -73,11 +84,6 @@ const ProcessWithOutput = struct {
             return;
         }
 
-        var poll_fds = [_]std.os.pollfd{
-            .{ .fd = self.process.stdout.?.handle, .events = std.os.POLL.IN, .revents = undefined },
-            .{ .fd = self.process.stderr.?.handle, .events = std.os.POLL.IN, .revents = undefined },
-        };
-
         // We ask for ensureTotalCapacity with this much extra space. This has more of an
         // effect on small reads because once the reads start to get larger the amount
         // of space an ArrayList will allocate grows exponentially.
@@ -85,11 +91,11 @@ const ProcessWithOutput = struct {
 
         const err_mask = std.os.POLL.ERR | std.os.POLL.NVAL | std.os.POLL.HUP;
 
-        if (self.dead_fds >= poll_fds.len) {
+        if (self.dead_fds >= self.poll_fds.len) {
             return;
         }
 
-        const events = try std.os.poll(&poll_fds, 0);
+        const events = try std.os.poll(&self.poll_fds, 0);
         if (events == 0) {
             return;
         }
@@ -100,45 +106,47 @@ const ProcessWithOutput = struct {
         // conditions.
         // It's still pstd.ossible to read after a POLL.HUP is received, always
         // check if there's some data waiting to be read first.
-        if (poll_fds[0].revents & std.os.POLL.IN != 0) {
+        if (self.poll_fds[0].revents & std.os.POLL.IN != 0) {
             // stdout is ready.
             const new_capacity = std.math.min(self.stdout_buf.items.len + bump_amt, self.max_output_bytes);
             try self.stdout_buf.ensureTotalCapacity(new_capacity);
             const buf = self.stdout_buf.unusedCapacitySlice();
             if (buf.len == 0) return error.StdoutStreamTooLong;
-            const nread = try std.os.read(poll_fds[0].fd, buf);
+            const nread = try std.os.read(self.poll_fds[0].fd, buf);
             self.stdout_buf.items.len += nread;
 
             std.debug.print("read {d} bytes ({d} total, {d} max)\n", .{ nread, self.stdout_buf.items.len, self.max_output_bytes });
 
             // Remove the fd when the EOF condition is met.
-            remove_stdout = nread == 0;
+            //remove_stdout = nread == 0;
         } else {
-            remove_stdout = poll_fds[0].revents & err_mask != 0;
+            remove_stdout = (self.poll_fds[0].revents & err_mask) != 0;
         }
 
-        if (poll_fds[1].revents & std.os.POLL.IN != 0) {
+        if (self.poll_fds[1].revents & std.os.POLL.IN != 0) {
             // stderr is ready.
             const new_capacity = std.math.min(self.stderr_buf.items.len + bump_amt, self.max_output_bytes);
             try self.stderr_buf.ensureTotalCapacity(new_capacity);
             const buf = self.stderr_buf.unusedCapacitySlice();
             if (buf.len == 0) return error.StderrStreamTooLong;
-            const nread = try std.os.read(poll_fds[1].fd, buf);
+            const nread = try std.os.read(self.poll_fds[1].fd, buf);
             self.stderr_buf.items.len += nread;
 
             // Remove the fd when the EOF condition is met.
-            remove_stderr = nread == 0;
+            //remove_stderr = nread == 0;
         } else {
-            remove_stderr = poll_fds[1].revents & err_mask != 0;
+            remove_stderr = self.poll_fds[1].revents & err_mask != 0;
         }
 
         // Exclude the fds that signaled an error.
         if (remove_stdout) {
-            poll_fds[0].fd = -1;
+            std.debug.print("remove stdout\n", .{});
+            self.poll_fds[0].fd = -1;
             self.dead_fds += 1;
         }
         if (remove_stderr) {
-            poll_fds[1].fd = -1;
+            std.debug.print("remove stderr\n", .{});
+            self.poll_fds[1].fd = -1;
             self.dead_fds += 1;
         }
     }
