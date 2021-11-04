@@ -24,10 +24,12 @@ const std = @import("std");
 // - open shortcuts (logs -> ..., tickets)
 // - history (could be another command + some special keybindings)
 // - hex (and other decodes, terminal escapes?)
+// - show docs if no command
 
 // TODO: implement suggestions by program
 // TODO: implement choosing from suggestions
 // TODO: implement searching through results
+// TODO: only output if something was found (man page exists -> output, hex decodable -> output, search results -> output, ...)
 
 const ProcessWithOutput = struct {
     process: *std.ChildProcess,
