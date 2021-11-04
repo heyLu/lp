@@ -705,7 +705,7 @@ pub fn main() !void {
                 var part = parts.next();
                 while (part != null and part.?.len != repl_size) : (part = parts.next()) {
                     if (part.?.len > 0) {
-                        std.debug.print("escape char: {d} {s}\n", .{ part.?[0], part.?[1..] });
+                        std.debug.print("escape char: {d} {s}\n", .{ part.?[0], part.?[0..] });
                     }
                 }
 
