@@ -533,8 +533,11 @@ pub fn main() !void {
     var skip: i32 = 0;
     var skip_horizontal: usize = 0;
     var num_lines: i32 = 0;
+    var output_length: usize = 0;
 
     var changed = false;
+
+    var hasChanged = false;
     var lastChange: u32 = 0;
 
     while (!quit) {
@@ -681,8 +684,20 @@ pub fn main() !void {
             changed = false;
             lastChange = c.SDL_GetTicks();
 
+            hasChanged = true;
+
             skip = 0;
             skip_horizontal = 0;
+        }
+
+        // do not render if nothing has changed
+        for (commands) |*command| {
+            if (command.isActive(cmd)) {
+                const out = try command.output();
+                if (!hasChanged and out.len == output_length) {
+                    continue;
+                }
+            }
         }
 
         _ = c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 100);
@@ -720,6 +735,9 @@ pub fn main() !void {
                 continue;
             }
 
+            const output = try command.output();
+            output_length = output.len;
+
             // TODO: indicate if command is still running
 
             {
@@ -733,7 +751,7 @@ pub fn main() !void {
             }
 
             //std.debug.print("{s} {d} {d}\n", .{ command.process.is_running(), command.process.stdout_buf.items.len, command.process.stdout_buf.capacity });
-            var lines = std.mem.split(u8, try command.output(), "\n");
+            var lines = std.mem.split(u8, output, "\n");
             var line = lines.next();
             {
                 var skipped: i32 = 0;
