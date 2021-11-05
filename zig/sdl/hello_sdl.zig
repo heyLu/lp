@@ -419,6 +419,41 @@ const QalcRunner = struct {
     }
 };
 
+const SelfDocRunner = struct {
+    fn init() Runner {
+        return Runner{ .name = "usage", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return cmd.len == 0;
+    }
+
+    fn toArgv(_: []const u8) []const []const u8 {
+        const print_help =
+            "cat <<EOF\n" ++
+            "\x1b[37mqck - type something, find something (quick)!\x1b[0m\n" ++
+            "\n" ++
+            "\x1b[37mcommands:\x1b[0m\n" ++
+            "\n" ++
+            "  s\x1b[37m <search>       -- search for <search> in SEARCH_DIRS\x1b[0m\n" ++
+            "  file \x1b[37m<name>      -- search for file matching <name> and preview it\x1b[0m\n" ++
+            "\n" ++
+            "  man\x1b[37m <name>       -- display man page for <name>\x1b[0m\n" ++
+            "  \x1b[37mcommand\x1b[0m --help \x1b[37m  -- display --help output for <command>\x1b[0m\n" ++
+            "  go\x1b[37m <name>        -- display go doc for <name>\x1b[0m\n" ++
+            "  py\x1b[37m <name>        -- display python doc for <name>\x1b[0m\n" ++
+            "  py!\x1b[37m\x1b[0m\n" ++
+            "  rb\x1b[37m <name>        -- display ruby doc for <name>\x1b[0m\n" ++
+            "  rb!\x1b[37m\x1b[0m\n" ++
+            "\n" ++
+            "  <math expr>\x1b[37m      -- run <math expr> using qalc\x1b[0m\n" ++
+            "\n" ++
+            "  logs\x1b[37m [<service>] -- display logs of <service> or all logs by default\x1b[0m\n" ++
+            "EOF\n";
+        return &[_][]const u8{ "bash", "-c", print_help };
+    }
+};
+
 pub fn main() !void {
     var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
     defer {
@@ -527,6 +562,7 @@ pub fn main() !void {
         FileRunner.init(),
         LogsRunner.init(),
         QalcRunner.init(),
+        SelfDocRunner.init(),
     };
 
     var quit = false;
@@ -535,7 +571,7 @@ pub fn main() !void {
     var num_lines: i32 = 0;
     var output_length: usize = 0;
 
-    var changed = false;
+    var changed = true; // initially true to print help even with no command
 
     var hasChanged = false;
     var lastChange: u32 = 0;
@@ -783,6 +819,9 @@ pub fn main() !void {
                     var part_text = part.?;
                     if (std.mem.startsWith(u8, part_text, "0m")) {
                         part_text = part_text[2..];
+                    } else if (std.mem.startsWith(u8, part_text, "37m")) {
+                        part_text = part_text[3..];
+                        fg_color = c.SDL_Color{ .r = 200, .g = 200, .b = 200, .a = 255 };
                     } else if (std.mem.startsWith(u8, part_text, "1;32m")) {
                         fnt = bold_font;
                         part_text = part_text[5..];
