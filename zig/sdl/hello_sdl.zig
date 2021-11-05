@@ -229,7 +229,13 @@ const Runner = struct {
     }
 };
 
+const Config = struct {
+    var searchDirectories: []const []const u8 = undefined;
+    var searchDirectoriesString: []const u8 = undefined;
+};
+
 var cmd_buf: [1000]u8 = undefined;
+var argv_buf: [100][]const u8 = undefined;
 
 const GoDocRunner = struct {
     fn init() Runner {
@@ -348,7 +354,12 @@ const SearchRunner = struct {
 
     fn toArgv(cmd: []const u8) []const []const u8 {
         _ = std.fmt.bufPrint(&cmd_buf, "{s}\x00", .{cmd["s ".len..]}) catch "???";
-        return &[_][]const u8{ "ag", "--color", &cmd_buf, "/home/luna/k/the-thing", "/home/luna/t/zig" };
+        argv_buf[0] = "ag";
+        argv_buf[1] = &cmd_buf;
+        for (Config.searchDirectories) |dir, i| {
+            argv_buf[2 + i] = dir;
+        }
+        return argv_buf[0 .. 2 + Config.searchDirectories.len];
     }
 };
 
@@ -363,7 +374,7 @@ const FileRunner = struct {
 
     fn toArgv(cmd: []const u8) []const []const u8 {
         // FIXME: replace with choice + selection whenever that is implemented
-        _ = std.fmt.bufPrint(&cmd_buf, "find ~/k/the-thing ~/t/zig -type f -name '{s}' | head -n1 | tee /tmp/file-search && ([ \"$(wc -l < /tmp/file-search)\" = \"1\" ] && cat \"$(head -n1 /tmp/file-search)\") || echo \"not found\"\x00", .{cmd["file ".len..]}) catch "???";
+        _ = std.fmt.bufPrint(&cmd_buf, "find {s} -type f -path '*{s}*' -or -name '*{s}*' | tee /tmp/file-search && ([ \"$(wc -l < /tmp/file-search)\" = \"1\" ] && ((file --mime \"$(head -n1 /tmp/file-search)\" | grep 'text/' &> /dev/null && cat \"$(head -n1 /tmp/file-search)\") || sushi \"$(head -n1 /tmp/file-search)\")) || echo \"not found\"\x00", .{ Config.searchDirectoriesString, cmd["file ".len..], cmd["file ".len..] }) catch "???";
         return &[_][]const u8{ "bash", "-c", &cmd_buf };
     }
 };
@@ -411,6 +422,27 @@ pub fn main() !void {
     const gpa = &general_purpose_allocator.allocator;
     const args = try std.process.argsAlloc(gpa);
     defer std.process.argsFree(gpa, args);
+
+    var dirsList = std.ArrayList([]const u8).init(gpa);
+    var dirsString = std.ArrayList(u8).init(gpa);
+    if (std.os.getenv("SEARCH_DIRS")) |dirsEnv| {
+        var dirs = std.mem.split(u8, dirsEnv, ":");
+        var dir = dirs.next();
+        while (dir != null) : (dir = dirs.next()) {
+            try dirsList.append(dir.?);
+        }
+    } else {
+        try dirsList.append("/home/luna/k/the-thing");
+        try dirsList.append("/home/luna/t/zig");
+    }
+    Config.searchDirectories = dirsList.toOwnedSlice();
+    for (Config.searchDirectories) |dir| {
+        try dirsString.appendSlice(dir);
+        try dirsString.append(' ');
+    }
+    Config.searchDirectoriesString = dirsString.toOwnedSlice();
+    defer gpa.free(Config.searchDirectories);
+    defer gpa.free(Config.searchDirectoriesString);
 
     if (c.SDL_Init(c.SDL_INIT_VIDEO) != 0) {
         c.SDL_Log("Unable to initialize SDL: %s", c.SDL_GetError());
@@ -672,6 +704,8 @@ pub fn main() !void {
             if (!command.isActive(cmd)) {
                 continue;
             }
+
+            // TODO: indicate if command is still running
 
             {
                 const name = try gpa.dupeZ(u8, command.name);
