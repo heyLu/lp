@@ -425,6 +425,7 @@ pub fn main() !void {
 
     var dirsList = std.ArrayList([]const u8).init(gpa);
     var dirsString = std.ArrayList(u8).init(gpa);
+    const downloadsDir = try std.fs.path.join(gpa, &[_][]const u8{ std.os.getenv("HOME").?, "Downloads" });
     if (std.os.getenv("SEARCH_DIRS")) |dirsEnv| {
         var dirs = std.mem.split(u8, dirsEnv, ":");
         var dir = dirs.next();
@@ -432,8 +433,8 @@ pub fn main() !void {
             try dirsList.append(dir.?);
         }
     } else {
-        try dirsList.append("/home/luna/k/the-thing");
-        try dirsList.append("/home/luna/t/zig");
+        try dirsList.append(downloadsDir);
+        try dirsList.append("/usr/include");
     }
     Config.searchDirectories = dirsList.toOwnedSlice();
     for (Config.searchDirectories) |dir| {
@@ -443,6 +444,7 @@ pub fn main() !void {
     Config.searchDirectoriesString = dirsString.toOwnedSlice();
     defer gpa.free(Config.searchDirectories);
     defer gpa.free(Config.searchDirectoriesString);
+    defer gpa.free(downloadsDir);
 
     if (c.SDL_Init(c.SDL_INIT_VIDEO) != 0) {
         c.SDL_Log("Unable to initialize SDL: %s", c.SDL_GetError());
