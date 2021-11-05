@@ -384,6 +384,28 @@ const FileRunner = struct {
     }
 };
 
+const FirefoxHistoryRunner = struct {
+    fn init() Runner {
+        return Runner{ .name = "ff", .run_always = true, .toArgv = toArgv, .isActive = isActive };
+    }
+
+    fn isActive(cmd: []const u8) bool {
+        return cmd.len > "ff ".len and std.mem.startsWith(u8, cmd, "ff ");
+    }
+
+    fn toArgv(cmd: []const u8) []const []const u8 {
+        // FIXME: replace with choice + selection whenever that is implemented
+        const cmd_fmt =
+            \\find ~/.mozilla -type f -name 'places.sqlite' -exec bash -c 'cp {{}} /tmp && sqlite3 /tmp/places.sqlite "select title, url from moz_places where url like \"%{s}%\" or url like \"%{s}%\" order by last_visit_date desc limit 100;" | tee /tmp/places-result; [ "$(wc -l < /tmp/places-result)" = "1" ] && xdg-open $(head -n1 /tmp/places-result | cut -d\| -f2) && test -f /usr/bin/swaymsg && swaymsg '[app_id="firefox"]' focus &> /dev/null; rm /tmp/places.sqlite;' \;
+        ++ "\x00";
+
+        _ = std.fmt.bufPrint(&cmd_buf, cmd_fmt, .{ cmd["ff ".len..], cmd["ff ".len..] }) catch "???";
+        return &[_][]const u8{ "bash", "-c", &cmd_buf };
+    }
+};
+
+// TODO: window switcher (do i even want that?)
+
 const LogsRunner = struct {
     fn init() Runner {
         return Runner{ .name = "logs", .run_always = true, .toArgv = toArgv, .isActive = isActive };
@@ -560,6 +582,7 @@ pub fn main() !void {
         ManPageRunner.init(),
         SearchRunner.init(),
         FileRunner.init(),
+        FirefoxHistoryRunner.init(),
         LogsRunner.init(),
         QalcRunner.init(),
         SelfDocRunner.init(),
