@@ -153,9 +153,12 @@ const ProcessWithOutput = struct {
         }
     }
 
-    fn deinit(self: *ProcessWithOutput) void {
+    fn deinit(self: *ProcessWithOutput) !void {
         self.stdout_buf.deinit();
         self.stderr_buf.deinit();
+        if (self.is_running()) {
+            _ = try self.process.kill();
+        }
         self.process.deinit();
     }
 };
@@ -189,7 +192,7 @@ const Runner = struct {
                         return err;
                     },
                 };
-                process.deinit();
+                try process.deinit();
             }
         }
 
@@ -222,9 +225,9 @@ const Runner = struct {
         return "<no output>";
     }
 
-    fn deinit(self: *Runner) void {
+    fn deinit(self: *Runner) !void {
         if (self.process) |*process| {
-            process.deinit();
+            try process.deinit();
         }
     }
 };
@@ -832,7 +835,7 @@ pub fn main() !void {
 
     // clean up memory and processes
     for (commands) |*command| {
-        command.deinit();
+        try command.deinit();
     }
 }
 
