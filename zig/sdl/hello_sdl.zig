@@ -338,8 +338,8 @@ const ManPageRunner = struct {
     }
 
     fn toArgv(cmd: []const u8) []const []const u8 {
-        _ = std.fmt.bufPrint(&cmd_buf, "{s}\x00", .{cmd["man ".len..]}) catch "???";
-        return &[_][]const u8{ "man", &cmd_buf };
+        _ = std.fmt.bufPrint(&cmd_buf, "MAN_KEEP_FORMATTING=yesplease man {s}\x00", .{cmd["man ".len..]}) catch "???";
+        return &[_][]const u8{ "bash", "-c", &cmd_buf };
     }
 };
 
@@ -355,11 +355,13 @@ const SearchRunner = struct {
     fn toArgv(cmd: []const u8) []const []const u8 {
         _ = std.fmt.bufPrint(&cmd_buf, "{s}\x00", .{cmd["s ".len..]}) catch "???";
         argv_buf[0] = "ag";
-        argv_buf[1] = &cmd_buf;
+        argv_buf[1] = "--color";
+        argv_buf[2] = "--unrestricted";
+        argv_buf[3] = &cmd_buf;
         for (Config.searchDirectories) |dir, i| {
-            argv_buf[2 + i] = dir;
+            argv_buf[4 + i] = dir;
         }
-        return argv_buf[0 .. 2 + Config.searchDirectories.len];
+        return argv_buf[0 .. 4 + Config.searchDirectories.len];
     }
 };
 
@@ -465,6 +467,13 @@ pub fn main() !void {
     };
     defer c.TTF_CloseFont(font);
     c.SDL_Log("Using font %s", font_file.ptr);
+
+    var bold_font_file = if (args.len > 2) args[2] else "/usr/share/fonts/TTF/FantasqueSansMono-Bold.ttf";
+    const bold_font = c.TTF_OpenFont(bold_font_file, 16) orelse {
+        c.SDL_Log("Unable to load font: %s", c.TTF_GetError());
+        return error.TTFInitializationFailed;
+    };
+    defer c.TTF_CloseFont(bold_font);
 
     // assume monospace font
     var glyph_width: c_int = 0;
@@ -702,6 +711,7 @@ pub fn main() !void {
 
         var i: c_int = 1;
         var line_buf = [_]u8{0} ** 10000;
+        var part_buf = [_]u8{0} ** 10000;
         for (commands) |*command| {
             if (!command.isActive(cmd)) {
                 continue;
@@ -739,20 +749,76 @@ pub fn main() !void {
                 _ = std.mem.replace(u8, skipped_line, "\t", " " ** 8, &line_buf);
                 line_buf[repl_size] = 0;
 
+                var j: c_int = 0;
+
                 // TODO: implement some terminal colors
                 var parts = std.mem.split(u8, line_buf[0..repl_size], "\x1B[");
                 var part = parts.next();
-                while (part != null and part.?.len != repl_size) : (part = parts.next()) {
-                    if (part.?.len > 0) {
-                        std.debug.print("escape char: {d} {s}\n", .{ part.?[0], part.?[0..] });
-                    }
-                }
+                while (part != null) : (part = parts.next()) {
+                    var fnt = font;
+                    var fg_color = white;
+                    var bg_color = black;
 
-                const result_text = c.TTF_RenderUTF8_Shaded(font, &line_buf, white, black);
-                const result_texture = c.SDL_CreateTextureFromSurface(renderer, result_text);
-                _ = c.SDL_RenderCopy(renderer, result_texture, null, &c.SDL_Rect{ .x = 0, .y = i * glyph_height, .w = @intCast(c_int, repl_size) * glyph_width, .h = glyph_height });
-                c.SDL_FreeSurface(result_text);
-                c.SDL_DestroyTexture(result_texture);
+                    var part_text = part.?;
+                    if (std.mem.startsWith(u8, part_text, "0m")) {
+                        part_text = part_text[2..];
+                    } else if (std.mem.startsWith(u8, part_text, "1;32m")) {
+                        fnt = bold_font;
+                        part_text = part_text[5..];
+                        fg_color = c.SDL_Color{ .r = 0, .g = 205, .b = 0, .a = 255 };
+                    } else if (std.mem.startsWith(u8, part_text, "1;33m")) {
+                        fnt = bold_font;
+                        part_text = part_text[5..];
+                        fg_color = c.SDL_Color{ .r = 205, .g = 205, .b = 0, .a = 255 };
+                    } else if (std.mem.startsWith(u8, part_text, "30;43m")) {
+                        part_text = part_text[6..];
+                        bg_color = c.SDL_Color{ .r = 205, .g = 205, .b = 0, .a = 255 };
+                    } else if (std.mem.startsWith(u8, part_text, "K")) {
+                        // no idea what this is, skipping it
+                        part_text = part_text[1..];
+                    } else {
+                        if (part.?.len > 0) {
+                            //std.debug.print("unhandled escape char: {d} {s}\n", .{ part.?[0], part.?[0..] });
+                        }
+                    }
+
+                    var k = j;
+                    var l: usize = 0;
+                    var skip_next = false;
+                    var was_overdraw = false;
+                    for (part_text) |ch, p| {
+                        if (skip_next) {
+                            skip_next = false;
+                            continue;
+                        }
+                        if (ch == 8 and p + 1 < part_text.len) {
+                            //std.debug.print("overdraw '{c}'\n", .{part_text[p + 1]});
+                            const result_text = c.TTF_RenderUTF8_Shaded(font, &[_]u8{ part_text[p + 1], 0 }, fg_color, bg_color);
+                            const result_texture = c.SDL_CreateTextureFromSurface(renderer, result_text);
+                            _ = c.SDL_RenderCopy(renderer, result_texture, null, &c.SDL_Rect{ .x = (k - 1) * glyph_width, .y = i * glyph_height, .w = @intCast(c_int, 1) * glyph_width, .h = glyph_height });
+                            c.SDL_FreeSurface(result_text);
+                            c.SDL_DestroyTexture(result_texture);
+
+                            skip_next = true;
+                            was_overdraw = true;
+                        } else {
+                            part_buf[l] = ch;
+                            l += 1;
+                            k += 1;
+                        }
+                    }
+                    part_buf[l] = 0;
+
+                    const result_text = c.TTF_RenderUTF8_Shaded(fnt, &part_buf, fg_color, bg_color);
+                    const result_texture = c.SDL_CreateTextureFromSurface(renderer, result_text);
+                    if (was_overdraw and c.SDL_SetTextureBlendMode(result_texture, c.SDL_BLENDMODE_ADD) != 0) {
+                        c.SDL_Log("Unable set texture blend mode: %s", c.SDL_GetError());
+                    }
+                    _ = c.SDL_RenderCopy(renderer, result_texture, null, &c.SDL_Rect{ .x = j * glyph_width, .y = i * glyph_height, .w = @intCast(c_int, l) * glyph_width, .h = glyph_height });
+                    c.SDL_FreeSurface(result_text);
+                    c.SDL_DestroyTexture(result_texture);
+                    j += @intCast(c_int, part_text.len);
+                }
 
                 i += 1;
                 line = lines.next();
