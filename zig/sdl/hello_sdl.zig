@@ -729,7 +729,10 @@ pub fn main() !void {
                 }
             }
             while (line != null and i * glyph_height < window_height) {
-                const skipped_line = line.?[std.math.min(skip_horizontal, line.?.len)..];
+                var skipped_line = line.?[std.math.min(skip_horizontal, line.?.len)..];
+                if (skipped_line.len > line_buf.len) {
+                    skipped_line = skipped_line[0 .. line_buf.len - 1];
+                }
 
                 // fix tabs
                 const repl_size = std.mem.replacementSize(u8, skipped_line, "\t", " " ** 8);
