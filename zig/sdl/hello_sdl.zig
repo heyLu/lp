@@ -417,11 +417,11 @@ const LogsRunner = struct {
 
     fn toArgv(cmd: []const u8) []const []const u8 {
         if (cmd.len <= "logs ".len) {
-            return &[_][]const u8{ "journalctl", "-b" };
+            return &[_][]const u8{ "bash", "-c", "SYSTEMD_COLORS=yes journalctl -b" };
         }
 
         const service = cmd["logs ".len..];
-        _ = std.fmt.bufPrint(&cmd_buf, "(systemctl status {s} &> /dev/null && journalctl -u {s} -f) || (systemctl status --user {s} &> /dev/null && journalctl --user -u {s} -f) || echo \"no logs for '{s}'\"\x00", .{ service, service, service, service, service }) catch "???";
+        _ = std.fmt.bufPrint(&cmd_buf, "export SYSTEMD_COLORS=yes; (systemctl status {s} &> /dev/null && journalctl -u {s} -f) || (systemctl status --user {s} &> /dev/null && journalctl --user -u {s} -f) || echo \"no logs for '{s}'\"\x00", .{ service, service, service, service, service }) catch "???";
         return &[_][]const u8{ "bash", "-c", &cmd_buf };
     }
 };
