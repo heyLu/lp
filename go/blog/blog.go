@@ -51,6 +51,7 @@ type Options struct {
 	Title          string `yaml:"title"`
 	After          string `yaml:"after"`
 	PostsDir       string `yaml:"posts_dir"`
+	Favicon        string `yaml:"favicon"`
 
 	// options only in the YAML prefix:
 
@@ -159,6 +160,7 @@ func init() {
 	flag.BoolVar(&flags.WriteBack, "write-back", false, "Rewrite the YAML file with the generated ids")
 	flag.BoolVar(&flags.HashIDs, "hash-ids", false, "Use hash-based post ids")
 	flag.BoolVar(&flags.Reverse, "reverse", false, "Reverse the order of the articles in the file")
+	flag.StringVar(&flags.Favicon, "favicon", "", "Link to favicon (can be a data:... url)")
 	flag.StringVar(&flags.CSS, "css", "", "Use custom `css` styles")
 	flag.BoolVar(&flags.NoDefaultStyle, "no-default-style", false, "Don't use the default styles")
 	flag.BoolVar(&flags.PrintDefaultStyle, "print-default-style", false, "Print the default styles")
@@ -229,6 +231,8 @@ func main() {
 				flags.HashIDs = opts.HashIDs
 			case "reverse":
 				flags.Reverse = opts.Reverse
+			case "favicon":
+				flags.Favicon = opts.Favicon
 			case "css":
 				flags.CSS = opts.CSS
 			case "no-default-style":
@@ -303,13 +307,14 @@ func writePosts(posts []Post, out io.WriteCloser, opts Options) {
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="icon" href="%s" />
 	<title>%s</title>
 	<style>%s</style>
 	<style>%s</style>
 </head>
 
 <body>
-`, template.HTMLEscapeString(flags.Title), defaultStyle, flags.CSS)
+`, flags.Favicon, template.HTMLEscapeString(flags.Title), defaultStyle, flags.CSS)
 
 	if flags.Reverse {
 		l := len(posts)
