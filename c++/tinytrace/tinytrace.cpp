@@ -1,3 +1,4 @@
+#include <chrono>
 #include <float.h>
 #include <iostream>
 
@@ -28,6 +29,8 @@ int main() {
   list[1] = new sphere(vec3(0, -100.5, -1), 100);
   hitable *world = new hitable_list(list, 2);
   camera cam;
+
+  auto start = std::chrono::high_resolution_clock::now();
   for (int j = ny - 1; j >= 0; j--) {
     for (int i = 0; i < nx; i++) {
       vec3 col(0, 0, 0);
@@ -48,6 +51,13 @@ int main() {
       std::cout << ir << " " << ig << " " << ib << "\n";
     }
   }
+  auto finish = std::chrono::high_resolution_clock::now();
+  std::cerr << "took "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(finish -
+                                                                     start)
+                   .count()
+            << "ms"
+            << "\n";
 }
 
 inline std::istream &operator>>(std::istream &is, vec3 &t) {
