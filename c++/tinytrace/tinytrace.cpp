@@ -144,6 +144,7 @@ int main(int argc, char **argv) {
   };
 
   int concurrency = std::thread::hardware_concurrency();
+  std::cerr << concurrency;
   std::thread *threads = new std::thread[concurrency + 1];
 
   auto start = std::chrono::high_resolution_clock::now();
@@ -182,7 +183,7 @@ int main(int argc, char **argv) {
 
 void draw_image(std::string path, int nx, int ny, vec3 *image) {
   std::ofstream out;
-  out.open(path, std::ios_base::trunc);
+  out.open(path + ".tmp", std::ios_base::trunc);
   out << "P3\n" << nx << " " << ny << "\n255\n";
   int cc = 0;
   for (int y = ny - 1; y >= 0; y--) {
@@ -195,6 +196,16 @@ void draw_image(std::string path, int nx, int ny, vec3 *image) {
       cc++;
     }
   }
+  out.flush();
+  out.close();
+
+  // use `rename` to get atomic appearance of the file to not confuse image
+  // viewers
+  rename((path + ".tmp").c_str(), path.c_str());
+
+  // write a single space at the end so the image viewer notices
+  out.open(path, std::ios_base::in | std::ios_base::ate);
+  out.write(" ", 1);
   out.flush();
   out.close();
 }
