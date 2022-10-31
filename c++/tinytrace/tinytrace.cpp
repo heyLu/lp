@@ -41,9 +41,12 @@ int main() {
   hitable *world = new hitable_list(list, 4);
   camera cam;
 
+  int c = 0;
   auto start = std::chrono::high_resolution_clock::now();
   for (int j = ny - 1; j >= 0; j--) {
     for (int i = 0; i < nx; i++) {
+      c++;
+
       vec3 col(0, 0, 0);
 
       // anti-aliasing (sample #ns rays)
@@ -63,8 +66,13 @@ int main() {
       int ig = int(255.99 * col.g());
       int ib = int(255.99 * col.b());
       std::cout << ir << " " << ig << " " << ib << "\n";
+
+      if ((c) % int(nx * ny / 100.0) == 0) {
+        std::cerr << "."; // progress dots ✨
+      }
     }
   }
+  std::cerr << "\n";
   auto finish = std::chrono::high_resolution_clock::now();
   std::cerr << "took "
             << std::chrono::duration_cast<std::chrono::milliseconds>(finish -
