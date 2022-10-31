@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
   camera cam;
 
   int c = 0;
-  vec3 *image[nx * ny];
+  vec3 *image[nx * ny + 100];
   for (int j = ny - 1; j >= 0; j--) {
     for (int i = 0; i < nx; i++) {
       image[c] = new vec3(254, 254, 254);
@@ -84,15 +84,15 @@ int main(int argc, char **argv) {
         if (write_partial) {
           // write updated image
           std::ofstream out;
-          out.open(out_name);
+          out.open(out_name, std::ios_base::trunc);
           out << "P3\n" << nx << " " << ny << "\n255\n";
           int cc = 0;
           for (int y = ny - 1; y >= 0; y--) {
             for (int x = 0; x < nx; x++) {
               vec3 col = *image[cc];
-              int ir = int(255.99 * col.r());
-              int ig = int(255.99 * col.g());
-              int ib = int(255.99 * col.b());
+              int ir = std::min(int(255.99 * col.r()), 254);
+              int ig = std::min(int(255.99 * col.g()), 254);
+              int ib = std::min(int(255.99 * col.b()), 254);
               out << ir << " " << ig << " " << ib << "\n";
               cc++;
             }
@@ -115,15 +115,15 @@ int main(int argc, char **argv) {
             << "\n";
 
   std::ofstream out;
-  out.open(out_name);
+  out.open(out_name, std::ios_base::trunc);
   out << "P3\n" << nx << " " << ny << "\n255\n";
   c = 0;
   for (int y = ny - 1; y >= 0; y--) {
     for (int x = 0; x < nx; x++) {
       vec3 col = *image[c];
-      int ir = int(255.99 * col.r());
-      int ig = int(255.99 * col.g());
-      int ib = int(255.99 * col.b());
+      int ir = std::min(int(255.99 * col.r()), 254);
+      int ig = std::min(int(255.99 * col.g()), 254);
+      int ib = std::min(int(255.99 * col.b()), 254);
       out << ir << " " << ig << " " << ib << "\n";
 
       c++;
