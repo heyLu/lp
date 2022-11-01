@@ -6,6 +6,7 @@
 #include <thread>
 
 #include "camera.h"
+#include "distributor.h"
 #include "hitable_list.h"
 #include "lambertian.h"
 #include "metal.h"
@@ -28,57 +29,6 @@ vec3 color(const ray &r, hitable *world, int depth) {
     return (1.0 - t) * vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
   }
 }
-
-class distributor {
-public:
-  distributor(int w, int h) {
-    done = false;
-    c = 0;
-    nx = w;
-    ny = h;
-    j = ny - 1;
-    i = 0;
-    lock = new std::mutex;
-  }
-
-  bool next_pixel(int &count, int &x, int &y) {
-    if (c >= nx * ny || (i > nx && j < 0)) {
-      done = true;
-      return false;
-    }
-
-    lock->lock();
-
-    count = c;
-    if (i < nx) {
-      x = i++;
-      y = j;
-    } else {
-      x = 0;
-      i = 1;
-      y = --j;
-    }
-
-    c++;
-
-    lock->unlock();
-
-    return true;
-  };
-
-  bool is_done() { return done; }
-  int count() { return c; }
-  int width() { return nx; }
-  int height() { return ny; }
-
-  bool done;
-  int c;
-  int nx;
-  int ny;
-  int i;
-  int j;
-  std::mutex *lock;
-};
 
 void draw_image(std::string path, int nx, int ny, vec3 *image);
 
@@ -115,45 +65,61 @@ int main(int argc, char **argv) {
   draw_image(out_name, nx, ny, image);
 
   auto d = new distributor(nx, ny);
+  d->set_randomize(true);
   std::mutex image_lock;
-
-  auto render = [&d, world, ns, image, &image_lock] {
-    camera cam;
-
-    int c, i, j;
-    while (d->next_pixel(c, i, j)) {
-      vec3 col(0, 0, 0);
-
-      // anti-aliasing (sample #ns rays)
-      for (int s = 0; s < ns; s++) {
-        float u = float(i + drand48()) / float(d->width());
-        float v = float(j + drand48()) / float(d->height());
-        ray r = cam.get_ray(u, v);
-        vec3 p = r.point_at_parameter(2.0);
-        col += color(r, world, 0);
-      }
-      col /= float(ns);
-
-      // gamme correct?
-      col = vec3(sqrt(col.r()), sqrt(col.g()), sqrt(col.b()));
-
-      image_lock.lock();
-      image[c] = vec3(col.r(), col.g(), col.b());
-      image_lock.unlock();
-    }
-  };
 
   int concurrency = std::thread::hardware_concurrency();
   std::cerr << concurrency;
   std::thread *threads = new std::thread[concurrency + 1];
+  bool *done = new bool[concurrency + 1];
+  int *counts = new int[concurrency + 1];
 
   auto start = std::chrono::high_resolution_clock::now();
   for (int t = 0; t < concurrency; t++) {
+    auto render = [t, done, counts, &d, world, ns, image, &image_lock] {
+      camera cam;
+
+      int c, i, j;
+      while (d->next_pixel(c, i, j)) {
+        counts[t] += 1;
+
+        vec3 col(0, 0, 0);
+
+        // anti-aliasing (sample #ns rays)
+        for (int s = 0; s < ns; s++) {
+          float u = float(i + drand48()) / float(d->width());
+          float v = float(j + drand48()) / float(d->height());
+          ray r = cam.get_ray(u, v);
+          vec3 p = r.point_at_parameter(2.0);
+          col += color(r, world, 0);
+        }
+        col /= float(ns);
+
+        // gamme correct?
+        col = vec3(sqrt(col.r()), sqrt(col.g()), sqrt(col.b()));
+
+        image_lock.lock();
+        image[c] = vec3(col.r(), col.g(), col.b());
+        image_lock.unlock();
+      }
+
+      std::cerr << "_";
+      done[t] = true;
+    };
+
     threads[t] = std::thread(render);
   }
 
   int i, j;
   while (!d->is_done()) {
+    bool all_done = true;
+    for (int k = 0; k < concurrency; k++) {
+      all_done = all_done && done[k];
+    }
+    if (all_done) {
+      break;
+    }
+
     if ((d->count()) % int(nx * ny / 100.0) == 0) {
       std::cerr << "."; // progress dots ✨
 
@@ -166,6 +132,7 @@ int main(int argc, char **argv) {
 
   std::cerr << "!";
   for (int t = 0; t < concurrency; t++) {
+    // std::cerr << " " << counts[t];
     threads[t].join();
   }
 
