@@ -1,3 +1,6 @@
+#ifndef VEC3_H
+#define VEC3_H
+
 #include <math.h>
 #include <stdlib.h>
 
@@ -56,6 +59,10 @@ inline vec3 operator*(float t, const vec3 &v) {
   return vec3(t * v.e[0], t * v.e[1], t * v.e[2]);
 }
 
+inline vec3 operator*(const vec3 &v, float t) {
+  return vec3(t * v.e[0], t * v.e[1], t * v.e[2]);
+}
+
 inline vec3 operator/(vec3 v, float t) {
   return vec3(v.e[0] / t, v.e[1] / t, v.e[2] / t);
 }
@@ -80,3 +87,5 @@ inline vec3 &vec3::operator/=(const float t) {
 }
 
 inline vec3 unit_vector(vec3 v) { return v / v.length(); }
+
+#endif
