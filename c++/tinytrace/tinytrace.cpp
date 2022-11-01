@@ -89,9 +89,13 @@ int main(int argc, char **argv) {
     done[t] = false;
     counts[t] = 0;
 
-    auto render = [t, done, counts, &d, world, ns, image, &image_lock] {
-      camera cam;
-
+    vec3 look_from = vec3(8, 2, 2);
+    vec3 look_at = vec3(0, 0, 0);
+    float dist_to_focus = (look_from - look_at).length();
+    float aperture = 0.3;
+    camera cam(look_from, look_at, vec3(0, 1, 0), 30, float(nx) / float(ny),
+               aperture, dist_to_focus);
+    auto render = [t, done, counts, &d, cam, world, ns, image, &image_lock] {
       int c, i, j;
       while (d->next_pixel(c, i, j)) {
         counts[t] += 1;
@@ -189,6 +193,12 @@ hitable *random_scene(int n) {
       }
     }
   }
+
+  list[i++] = new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5));
+  list[i++] =
+      new sphere(vec3(-3, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1)));
+  list[i++] =
+      new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
 
   return new hitable_list(list, i);
 }
