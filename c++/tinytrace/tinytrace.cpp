@@ -89,11 +89,11 @@ int main(int argc, char **argv) {
     done[t] = false;
     counts[t] = 0;
 
-    vec3 look_from = vec3(8, 2, 2);
-    vec3 look_at = vec3(0, 0, 0);
+    vec3 look_from = vec3(11, 2, 3.5);
+    vec3 look_at = vec3(5, 1, 1.5);
     float dist_to_focus = (look_from - look_at).length();
-    float aperture = 0.3;
-    camera cam(look_from, look_at, vec3(0, 1, 0), 30, float(nx) / float(ny),
+    float aperture = 0.05;
+    camera cam(look_from, look_at, vec3(0, 1, 0), 20, float(nx) / float(ny),
                aperture, dist_to_focus);
     auto render = [t, done, counts, &d, cam, world, ns, image, &image_lock] {
       int c, i, j;
