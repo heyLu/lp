@@ -10,3 +10,6 @@
 [submodule "clj/datomic/checkouts/day-of-datomic"]
 	path = clj/datomic/checkouts/day-of-datomic
 	url = git://github.com/Datomic/day-of-datomic
+[submodule "c++/tinytrace/tracy"]
+	path = c++/tinytrace/tracy
+	url = https://github.com/wolfpld/tracy

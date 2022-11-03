@@ -5,6 +5,8 @@
 #include <iostream>
 #include <mutex>
 
+#include "tracy/public/tracy/Tracy.hpp"
+
 #include "vec3.h"
 
 class distributor {
@@ -19,22 +21,31 @@ public:
     lock = new std::mutex;
     randomize = false;
     seen = new bool[nx * ny + 1];
+    linear_start = 0;
     for (int i = 0; i < nx * ny; i++) {
       seen[i] = false;
     }
   }
 
   bool next_pixel(int &count, int &x, int &y) {
+    ZoneScoped;
+
     if (randomize) {
       lock->lock();
       int i = 0;
-      do {
-        count = int(drand48() * nx * ny);
-        i++;
-      } while (seen[count] && i < 10);
+
+      {
+        ZoneNamedN(random, "random", true);
+        do {
+          count = int(drand48() * nx * ny);
+          i++;
+        } while (seen[count] && i < 10);
+      }
       if (seen[count]) {
-        for (i = 0; i < nx * ny; i++) {
+        ZoneNamedN(find_linear, "find_linear", true);
+        for (i = linear_start; i < nx * ny; i++) {
           if (!seen[i]) {
+            linear_start = i;
             // std::cerr << "found at " << i;
             count = i;
             break;
@@ -98,6 +109,7 @@ public:
   void set_randomize(bool b) { randomize = b; }
   bool randomize;
   bool *seen;
+  int linear_start;
 
   bool is_done() { return done; }
   int count() { return c; }

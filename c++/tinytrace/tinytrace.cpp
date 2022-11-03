@@ -7,6 +7,8 @@
 #include <sstream>
 #include <thread>
 
+#include "tracy/public/tracy/Tracy.hpp"
+
 #include "camera.h"
 #include "dielectric.h"
 #include "distributor.h"
@@ -16,8 +18,13 @@
 #include "sphere.h"
 
 vec3 color(const ray &r, hitable *world, int depth) {
+  ZoneScoped;
+  TracyPlot("depth", int64_t(depth));
+
   hit_record rec;
   if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+    ZoneScopedN("hit");
+
     ray scattered;
     vec3 attenuation;
     if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
@@ -39,6 +46,8 @@ vec3 *read_image(std::string name, int &nx, int &ny);
 hitable *random_scene(int n);
 
 int main(int argc, char **argv) {
+  // TracyAppInfo("tinytrace", 16);
+
   std::string out_name = "/dev/stdout";
   bool write_partial = false;
   if (argc > 1) {
@@ -55,8 +64,8 @@ int main(int argc, char **argv) {
   // srand48(seed);
   // std::cerr << "s" << seed << " ";
 
-  int nx = 400;
-  int ny = 200;
+  int nx = 2000;
+  int ny = 1000;
   int ns = 100;
 
   // hitable *list[5];
@@ -118,6 +127,8 @@ int main(int argc, char **argv) {
     auto render = [t, done, counts, &d, cam, world, ns, image, &image_lock] {
       int c, i, j;
       while (d->next_pixel(c, i, j)) {
+        ZoneScopedN("render");
+
         counts[t] += 1;
 
         vec3 col(0, 0, 0);
@@ -224,6 +235,8 @@ hitable *random_scene(int n) {
 }
 
 void draw_image(std::string path, int nx, int ny, vec3 *image) {
+  ZoneScoped;
+
   std::ofstream out;
   out.open(path + ".tmp", std::ios_base::trunc);
   out << "P3\n" << nx << " " << ny << "\n255\n";
