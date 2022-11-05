@@ -1,3 +1,4 @@
 /distributor_test
 /tinytrace
+*.o
 /example.ppm*
