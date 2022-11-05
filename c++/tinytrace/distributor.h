@@ -93,6 +93,7 @@ public:
 
   void continue_from(vec3 *image) {
     c = 0;
+    int num_seen = 0;
     for (int p = 0; p < nx * ny; p++) {
       vec3 px = image[p];
       if (px.r() >= 0.98 && px.g() >= 0.98 && px.b() >= 0.98) {
@@ -103,7 +104,19 @@ public:
       seen[p] = true;
       c++;
     }
-    std::cerr << c << ":";
+
+    // was a finished image, just start from scratch again
+    if (c == nx * ny) {
+      c = 0;
+      for (int i = 0; i < nx * ny; i++) {
+        image[i] = vec3(1.0, 1.0, 1.0);
+        seen[i] = false;
+      }
+    }
+
+    if (c > 0) {
+      std::cerr << int(float(c) / float(nx * ny) * 100) << "%:";
+    }
   }
 
   void set_randomize(bool b) { randomize = b; }
