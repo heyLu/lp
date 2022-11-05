@@ -2,6 +2,7 @@
 #include <chrono>
 #include <float.h>
 #include <fstream>
+#include <getopt.h>
 #include <iostream>
 #include <mutex>
 #include <sstream>
@@ -50,23 +51,78 @@ int main(int argc, char **argv) {
 
   std::string out_name = "/dev/stdout";
   bool write_partial = false;
-  if (argc > 1) {
-    write_partial = true;
-    out_name = argv[1];
-  }
-
+  int nx = 200;
+  int ny = 100;
+  int ns = 30;
+  int concurrency = std::thread::hardware_concurrency();
   bool continue_render = false;
-  if (argc > 2 && std::string("continue").compare(argv[2]) == 0) {
-    continue_render = true;
+  long *seed = NULL;
+  bool verbose = false;
+
+  while (true) {
+    char opt_char = 0;
+    int option_index = 0;
+    long opt_seed = 0;
+    static struct option long_options[] = {
+        {"width", required_argument, 0, 'w'},
+        {"height", required_argument, 0, 'h'},
+        {"seed", required_argument, 0, 's'},
+        {"jobs", required_argument, 0, 'j'},
+        {"continue", no_argument, 0, 'c'},
+        {"verbose", no_argument, 0, 'v'},
+        {"help", no_argument, 0, 0},
+        {0, 0, 0, 0},
+    };
+
+    opt_char =
+        getopt_long(argc, argv, "w:h:s:j:cvh", long_options, &option_index);
+    if (opt_char == -1) {
+      break;
+    }
+    switch (opt_char) {
+    case 'w':
+      nx = std::stoi(optarg);
+      break;
+    case 'h':
+      ny = std::stoi(optarg);
+      break;
+    case 's':
+      opt_seed = std::stol(optarg);
+      seed = &opt_seed;
+      break;
+    case 'j':
+      concurrency = std::stoi(optarg);
+      break;
+    case 'c':
+      continue_render = true;
+      break;
+    case 'v':
+      verbose = true;
+      break;
+    default:
+      std::cerr << "Usage: " << argv[0] << "[flags] [<filename>]"
+                << "\n";
+      std::cerr << R"(
+  -w N, --width=N   Set width of output image to N
+  -h N, --height=N  Set height of output image to N
+  -s N, --seed=N    Use seed N
+  -j N, --jobs=N    Render with N threads concurrently
+  -c  , --continue  Continue rendering image contained in 'filename' (if it exists and is specified)
+  -v  , --verbose   Enable verbose mode
+        --help      This very message!
+)";
+      exit(1);
+    }
   }
 
-  // int seed = time(0);
-  // srand48(seed);
-  // std::cerr << "s" << seed << " ";
+  if (optind < argc) {
+    write_partial = true;
+    out_name = argv[optind];
+  }
 
-  int nx = 2000;
-  int ny = 1000;
-  int ns = 100;
+  if (seed != NULL) {
+    srand48(*seed);
+  }
 
   // hitable *list[5];
   // list[0] =
@@ -107,7 +163,6 @@ int main(int argc, char **argv) {
   // TODO: render small image first (10% per side if > 1000) -> blow up  to size
   // -> render full size
 
-  int concurrency = std::thread::hardware_concurrency();
   std::cerr << concurrency;
   std::thread *threads = new std::thread[concurrency + 1];
   bool *done = new bool[concurrency + 1];
