@@ -9,12 +9,15 @@
 #include <thread>
 
 #include "tracy/public/tracy/Tracy.hpp"
+// #define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 #include "bvh_node.h"
 #include "camera.h"
 #include "dielectric.h"
 #include "distributor.h"
 #include "hitable_list.h"
+#include "image_texture.h"
 #include "lambertian.h"
 #include "metal.h"
 #include "sphere.h"
@@ -299,9 +302,15 @@ hitable **random_scene(int &n) {
   }
 
   list[i++] = new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5));
-  list[i++] =
-      new sphere(vec3(-3, 1, 0), 1.0,
-                 new lambertian(new constant_texture(vec3(0.4, 0.2, 0.1))));
+  int nx, ny, nn;
+  texture *tex;
+#ifdef STB_IMAGE_IMPLEMENTATION
+  unsigned char *tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
+  tex = new image_texture(tex_data, nx, ny)
+#else
+  tex = new constant_texture(vec3(0.4, 0.2, 0.1));
+#endif
+      list[i++] = new sphere(vec3(-3, 1, 0), 1.0, new lambertian(tex));
   list[i++] =
       new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
 

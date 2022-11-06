@@ -17,6 +17,13 @@ public:
   material *mat_ptr;
 };
 
+inline void get_sphere_uv(const vec3 &p, float &u, float &v) {
+  float phi = atan2(p.z(), p.x());
+  float theta = asin(p.y());
+  u = 1 - (phi + M_PI) / (2 * M_PI);
+  v = (theta + M_PI / 2) / M_PI;
+}
+
 inline bool sphere::hit(const ray &r, float t_min, float t_max,
                         hit_record &rec) const {
   vec3 oc = r.origin() - center;
@@ -31,6 +38,7 @@ inline bool sphere::hit(const ray &r, float t_min, float t_max,
       rec.p = r.point_at_parameter(rec.t);
       rec.normal = (rec.p - center) / radius;
       rec.mat_ptr = mat_ptr;
+      get_sphere_uv((rec.p - center) / radius, rec.u, rec.v);
       return true;
     }
     temp = (-b + sqrt(b * b - a * c)) / a;
@@ -39,6 +47,7 @@ inline bool sphere::hit(const ray &r, float t_min, float t_max,
       rec.p = r.point_at_parameter(rec.t);
       rec.normal = (rec.p - center) / radius;
       rec.mat_ptr = mat_ptr;
+      get_sphere_uv((rec.p - center) / radius, rec.u, rec.v);
       return true;
     }
   }

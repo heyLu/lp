@@ -2,3 +2,6 @@
 /tinytrace
 *.o
 /example.ppm*
+# external dependencies
+stb_image.h
+earthmap.jpg
