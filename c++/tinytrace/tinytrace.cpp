@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
   bool write_partial = false;
   int nx = 200;
   int ny = 100;
-  int ns = 30;
+  int ns = 100;
   int concurrency = std::thread::hardware_concurrency();
   bool continue_render = false;
   long *seed = NULL;
@@ -66,7 +66,8 @@ int main(int argc, char **argv) {
     static struct option long_options[] = {
         {"width", required_argument, 0, 'w'},
         {"height", required_argument, 0, 'h'},
-        {"seed", required_argument, 0, 's'},
+        {"samples", required_argument, 0, 's'},
+        {"seed", required_argument, 0, 'r'},
         {"jobs", required_argument, 0, 'j'},
         {"continue", no_argument, 0, 'c'},
         {"verbose", no_argument, 0, 'v'},
@@ -87,6 +88,8 @@ int main(int argc, char **argv) {
       ny = std::stoi(optarg);
       break;
     case 's':
+      ns = std::stoi(optarg);
+    case 'r':
       opt_seed = std::stol(optarg);
       seed = &opt_seed;
       break;
@@ -105,7 +108,8 @@ int main(int argc, char **argv) {
       std::cerr << R"(
   -w N, --width=N   Set width of output image to N
   -h N, --height=N  Set height of output image to N
-  -s N, --seed=N    Use seed N
+  -s N, --samples=N Sample each ray per pixel N times (anti-aliasing)
+  -r N, --seed=N    Use seed N
   -j N, --jobs=N    Render with N threads concurrently
   -c  , --continue  Continue rendering image contained in 'filename' (if it exists and is specified)
   -v  , --verbose   Enable verbose mode
@@ -114,6 +118,11 @@ int main(int argc, char **argv) {
       exit(1);
     }
   }
+
+  // nx = 200;
+  // ny = 100;
+  // ns = 100;
+  // continue_render = false;
 
   if (optind < argc) {
     write_partial = true;
