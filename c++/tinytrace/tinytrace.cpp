@@ -8,6 +8,8 @@
 #include <sstream>
 #include <thread>
 
+#include <SDL2/SDL.h>
+
 #include "tracy/public/tracy/Tracy.hpp"
 // #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -41,11 +43,11 @@ vec3 color(const ray &r, hitable *world, int depth) {
       return emitted;
     }
   } else {
-    // vec3 unit_direction = unit_vector(r.direction());
-    // float t = 0.5 * (unit_direction.y() + 1.0);
-    // // lerp() for sky color
-    // return (1.0 - t) * vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
-    return vec3(0, 0, 0);
+    vec3 unit_direction = unit_vector(r.direction());
+    float t = 0.5 * (unit_direction.y() + 1.0);
+    // lerp() for sky color
+    return (1.0 - t) * vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
+    // return vec3(0, 0, 0);
   }
 }
 
@@ -172,6 +174,26 @@ int main(int argc, char **argv) {
     }
   }
 
+  SDL_Init(SDL_INIT_VIDEO);
+  atexit(SDL_Quit);
+
+  int bit_depth = 16;
+  auto window = SDL_CreateWindow("tinytrace!", 0, 0, nx, ny, SDL_WINDOW_VULKAN);
+
+  auto screen = SDL_CreateRGBSurface(0, nx, ny, 32, 0, 0, 0, 0);
+  auto renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+  auto texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
+                                   SDL_TEXTUREACCESS_STATIC, nx, ny);
+  Uint32 *pixels = new Uint32[nx * ny];
+  memset(pixels, 255, nx * ny * sizeof(Uint32)); // init to white
+
+  SDL_UpdateTexture(texture, NULL, pixels, nx * sizeof(Uint32));
+
+  SDL_RenderClear(renderer);
+  SDL_RenderCopy(renderer, texture, NULL, NULL);
+  SDL_RenderPresent(renderer);
+
   draw_image(out_name, nx, ny, image);
   // exit(0);
 
@@ -182,6 +204,8 @@ int main(int argc, char **argv) {
 
   // TODO: render small image first (10% per side if > 1000) -> blow up  to size
   // -> render full size
+
+  bool quit = false;
 
   std::cerr << concurrency;
   std::thread *threads = new std::thread[concurrency + 1];
@@ -199,9 +223,10 @@ int main(int argc, char **argv) {
     float aperture = 0.05;
     camera cam(look_from, look_at, vec3(0, 1, 0), 20, float(nx) / float(ny),
                aperture, dist_to_focus);
-    auto render = [t, done, counts, &d, cam, world, ns, image, &image_lock] {
+    auto render = [t, done, counts, &d, cam, world, ns, image, &image_lock,
+                   pixels, &quit] {
       int c, i, j;
-      while (d->next_pixel(c, i, j)) {
+      while (!quit && d->next_pixel(c, i, j)) {
         ZoneScopedN("render");
 
         counts[t] += 1;
@@ -222,6 +247,9 @@ int main(int argc, char **argv) {
         col = vec3(sqrt(col.r()), sqrt(col.g()), sqrt(col.b()));
 
         // image_lock.lock();
+        pixels[c] = (std::max(0, std::min(int(254.99 * col.r()), 255)) << 24) +
+                    (std::max(0, std::min(int(254.99 * col.g()), 255)) << 16) +
+                    (std::max(0, std::min(int(254.99 * col.b()), 255)) << 8);
         image[c] = vec3(col.r(), col.g(), col.b());
         // image_lock.unlock();
       }
@@ -233,42 +261,81 @@ int main(int argc, char **argv) {
     threads[t] = std::thread(render);
   }
 
-  int i, j;
-  while (!d->is_done()) {
-    bool all_done = true;
-    for (int k = 0; k < concurrency; k++) {
-      all_done = all_done && done[k];
+  std::thread check([d, concurrency, done, write_partial, threads, out_name, nx,
+                     ny, image, start, &quit] {
+    int i, j;
+    while (!quit && !d->is_done()) {
+      bool all_done = true;
+      for (int k = 0; k < concurrency; k++) {
+        all_done = all_done && done[k];
+      }
+      if (all_done) {
+        break;
+      }
+
+      if ((d->count()) % int(nx * ny / 100.0) == 0) {
+        std::cerr << "."; // progress dots ✨
+
+        if (write_partial) {
+          // write updated image
+          draw_image(out_name, nx, ny, image);
+        }
+      }
     }
-    if (all_done) {
+
+    std::cerr << "!";
+    for (int t = 0; t < concurrency; t++) {
+      // std::cerr << " " << counts[t];
+      threads[t].join();
+    }
+
+    std::cerr << "\n";
+    auto finish = std::chrono::high_resolution_clock::now();
+    std::cerr << "took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(finish -
+                                                                       start)
+                     .count()
+              << "ms"
+              << "\n";
+
+    draw_image(out_name, nx, ny, image);
+  });
+
+  bool fullscreen = false;
+  while (!quit) {
+    SDL_UpdateTexture(texture, NULL, pixels, nx * sizeof(Uint32));
+
+    SDL_Event event;
+    SDL_WaitEventTimeout(&event, 16);
+
+    switch (event.type) {
+    case SDL_KEYDOWN:
+      switch (event.key.keysym.sym) {
+      case SDLK_F11:
+        fullscreen = !fullscreen;
+        SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+        break;
+      case SDLK_ESCAPE:
+        quit = true;
+        break;
+      }
+      break;
+    case SDL_QUIT:
+      quit = true;
       break;
     }
 
-    if ((d->count()) % int(nx * ny / 100.0) == 0) {
-      std::cerr << "."; // progress dots ✨
-
-      if (write_partial) {
-        // write updated image
-        draw_image(out_name, nx, ny, image);
-      }
-    }
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderPresent(renderer);
   }
 
-  std::cerr << "!";
-  for (int t = 0; t < concurrency; t++) {
-    // std::cerr << " " << counts[t];
-    threads[t].join();
-  }
+  check.join();
 
-  std::cerr << "\n";
-  auto finish = std::chrono::high_resolution_clock::now();
-  std::cerr << "took "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(finish -
-                                                                     start)
-                   .count()
-            << "ms"
-            << "\n";
-
-  draw_image(out_name, nx, ny, image);
+  SDL_DestroyTexture(texture);
+  SDL_DestroyRenderer(renderer);
+  SDL_DestroyWindow(window);
+  SDL_Quit();
 }
 
 hitable **random_scene(int &n) {

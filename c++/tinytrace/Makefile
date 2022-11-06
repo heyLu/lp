@@ -1,6 +1,6 @@
 all: tinytrace example.png
 
-CFLAGS = -O3 -march=native -g
+CFLAGS = -O3 -march=native -g $(shell pkg-config --libs sdl2)
 TRACY_FLAGS = -DTRACY_ENABLE -DTRACY_ON_DEMAND 
 
 tinytrace: *.cpp *.h stb_image.h earthmap.jpg tracy.o

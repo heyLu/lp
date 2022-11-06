@@ -3,4 +3,4 @@
 IMAGE_VIEWER="${IMAGE_VIEWER:-xdg-open}"
 $IMAGE_VIEWER example.ppm&
 
-git ls-files -co '*.cpp' '*.h' | entr -c -r -s 'echo compile && make tinytrace && echo run && ./tinytrace --continue --verbose example.ppm; echo exit status $?'
+git ls-files -co '*.cpp' '*.h' | entr -c -r -s 'echo compile && make tinytrace && echo run && ./tinytrace --verbose example.ppm; echo exit status $?'
