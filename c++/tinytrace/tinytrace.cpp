@@ -10,6 +10,7 @@
 
 #include "tracy/public/tracy/Tracy.hpp"
 
+#include "bvh_node.h"
 #include "camera.h"
 #include "dielectric.h"
 #include "distributor.h"
@@ -45,7 +46,7 @@ vec3 color(const ray &r, hitable *world, int depth) {
 void draw_image(std::string path, int nx, int ny, vec3 *image);
 vec3 *read_image(std::string name, int &nx, int &ny);
 
-hitable *random_scene(int n);
+hitable **random_scene(int &n);
 
 int main(int argc, char **argv) {
   // TracyAppInfo("tinytrace", 16);
@@ -145,7 +146,10 @@ int main(int argc, char **argv) {
   // list[3] = new sphere(vec3(-1, 0, -1), 0.5, new dielectric(1.5));
   // list[4] = new sphere(vec3(-1, 0, -1), -0.45, new dielectric(1.5));
   // hitable *world = new hitable_list(list, 5);
-  hitable *world = random_scene(500);
+  int size = 500;
+  hitable **objects = random_scene(size);
+  hitable *world = new bvh_node(objects, size, 0, 0);
+  world = new hitable_list(objects, size);
 
   vec3 *image = new vec3[nx * ny + 1];
   for (int j = ny - 1, c = 0; j >= 0; j--) {
@@ -261,7 +265,7 @@ int main(int argc, char **argv) {
   draw_image(out_name, nx, ny, image);
 }
 
-hitable *random_scene(int n) {
+hitable **random_scene(int &n) {
   hitable **list = new hitable *[n + 1];
   texture *base_texture =
       new checker_texture(new constant_texture(vec3(0.2, 0.3, 0.1)),
@@ -301,7 +305,8 @@ hitable *random_scene(int n) {
   list[i++] =
       new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
 
-  return new hitable_list(list, i);
+  n = i;
+  return list;
 }
 
 void draw_image(std::string path, int nx, int ny, vec3 *image) {

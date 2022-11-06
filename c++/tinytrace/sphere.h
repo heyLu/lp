@@ -10,14 +10,15 @@ public:
 
   virtual bool hit(const ray &r, float t_min, float t_max,
                    hit_record &rec) const;
+  virtual bool bounding_box(float t0, float t1, aabb &box) const;
 
   vec3 center;
   float radius;
   material *mat_ptr;
 };
 
-bool sphere::hit(const ray &r, float t_min, float t_max,
-                 hit_record &rec) const {
+inline bool sphere::hit(const ray &r, float t_min, float t_max,
+                        hit_record &rec) const {
   vec3 oc = r.origin() - center;
   float a = dot(r.direction(), r.direction());
   float b = dot(oc, r.direction());
@@ -42,6 +43,12 @@ bool sphere::hit(const ray &r, float t_min, float t_max,
     }
   }
   return false;
+}
+
+inline bool sphere::bounding_box(float t0, float t1, aabb &box) const {
+  box = aabb(center - vec3(radius, radius, radius),
+             center + vec3(radius, radius, radius));
+  return true;
 }
 
 #endif
