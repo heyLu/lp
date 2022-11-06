@@ -20,6 +20,7 @@
 #include "image_texture.h"
 #include "lambertian.h"
 #include "metal.h"
+#include "rectangle.h"
 #include "sphere.h"
 #include "texture.h"
 
@@ -33,16 +34,18 @@ vec3 color(const ray &r, hitable *world, int depth) {
 
     ray scattered;
     vec3 attenuation;
+    vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
     if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
-      return attenuation * color(scattered, world, depth + 1);
+      return emitted + attenuation * color(scattered, world, depth + 1);
     } else {
-      return vec3(0, 0, 0);
+      return emitted;
     }
   } else {
-    vec3 unit_direction = unit_vector(r.direction());
-    float t = 0.5 * (unit_direction.y() + 1.0);
-    // lerp() for sky color
-    return (1.0 - t) * vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
+    // vec3 unit_direction = unit_vector(r.direction());
+    // float t = 0.5 * (unit_direction.y() + 1.0);
+    // // lerp() for sky color
+    // return (1.0 - t) * vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
+    return vec3(0, 0, 0);
   }
 }
 
@@ -56,8 +59,8 @@ int main(int argc, char **argv) {
 
   std::string out_name = "/dev/stdout";
   bool write_partial = false;
-  int nx = 200;
-  int ny = 100;
+  int nx = 800;
+  int ny = 400;
   int ns = 100;
   int concurrency = std::thread::hardware_concurrency();
   bool continue_render = false;
@@ -301,6 +304,14 @@ hitable **random_scene(int &n) {
     }
   }
 
+  // lights
+  list[i++] = new xy_rect(
+      3, 5, 1, 3, -2, new diffuse_light(new constant_texture(vec3(4, 4, 4))));
+  list[i++] =
+      new sphere(vec3(0, 0, 3), 1.0,
+                 new diffuse_light(new constant_texture(vec3(1, 1, 1))));
+
+  // big spheres
   list[i++] = new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5));
   int nx, ny, nn;
   texture *tex;
