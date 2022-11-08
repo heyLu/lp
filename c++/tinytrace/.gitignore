@@ -5,3 +5,7 @@
 # external dependencies
 stb_image.h
 earthmap.jpg
+# AppImage
+/AppDir
+/squashfs-root
+/*.AppImage
