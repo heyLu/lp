@@ -212,46 +212,64 @@ int main(int argc, char **argv) {
   bool *done = new bool[concurrency + 1];
   int *counts = new int[concurrency + 1];
 
+  vec3 look_from = vec3(11, 2, 3.5);
+  vec3 look_at = vec3(5, 1, 1.5);
+  float dist_to_focus = (look_from - look_at).length();
+  float aperture = 0.05;
+  camera cam(look_from, look_at, vec3(0, 1, 0), 20, float(nx) / float(ny),
+             aperture, dist_to_focus);
+
+  int samples = 1;
+
   auto start = std::chrono::high_resolution_clock::now();
   for (int t = 0; t < concurrency; t++) {
     done[t] = false;
     counts[t] = 0;
 
-    vec3 look_from = vec3(11, 2, 3.5);
-    vec3 look_at = vec3(5, 1, 1.5);
-    float dist_to_focus = (look_from - look_at).length();
-    float aperture = 0.05;
-    camera cam(look_from, look_at, vec3(0, 1, 0), 20, float(nx) / float(ny),
-               aperture, dist_to_focus);
-    auto render = [t, done, counts, &d, cam, world, ns, image, &image_lock,
-                   pixels, &quit] {
-      int c, i, j;
-      while (!quit && d->next_pixel(c, i, j)) {
-        ZoneScopedN("render");
-
-        counts[t] += 1;
-
-        vec3 col(0, 0, 0);
-
-        // anti-aliasing (sample #ns rays)
-        for (int s = 0; s < ns; s++) {
-          float u = float(i + drand48()) / float(d->width());
-          float v = float(j + drand48()) / float(d->height());
-          ray r = cam.get_ray(u, v);
-          vec3 p = r.point_at_parameter(2.0);
-          col += color(r, world, 0);
+    auto render = [t, &samples, done, counts, &d, &cam, world, ns, image,
+                   &image_lock, pixels, &quit] {
+      for (int local_samples = samples; local_samples < ns;
+           local_samples += 2) {
+        if (quit) {
+          break;
         }
-        col /= float(ns);
 
-        // gamme correct?
-        col = vec3(sqrt(col.r()), sqrt(col.g()), sqrt(col.b()));
+        int c, i, j;
+        while (d->next_pixel(c, i, j)) {
+          ZoneScopedN("render");
+          if (quit) {
+            break;
+          }
 
-        // image_lock.lock();
-        pixels[c] = (std::max(0, std::min(int(254.99 * col.r()), 255)) << 24) +
-                    (std::max(0, std::min(int(254.99 * col.g()), 255)) << 16) +
-                    (std::max(0, std::min(int(254.99 * col.b()), 255)) << 8);
-        image[c] = vec3(col.r(), col.g(), col.b());
-        // image_lock.unlock();
+          counts[t] += 1;
+
+          vec3 col(0, 0, 0);
+
+          // anti-aliasing (sample #ns rays)
+          for (int s = 0; s < local_samples; s++) {
+            float u = float(i + drand48()) / float(d->width());
+            float v = float(j + drand48()) / float(d->height());
+            ray r = cam.get_ray(u, v);
+            vec3 p = r.point_at_parameter(2.0);
+            col += color(r, world, 0);
+          }
+          col /= float(local_samples);
+
+          // gamme correct?
+          col = vec3(sqrt(col.r()), sqrt(col.g()), sqrt(col.b()));
+
+          // image_lock.lock();
+          pixels[c] =
+              (std::max(0, std::min(int(254.99 * col.r()), 255)) << 24) +
+              (std::max(0, std::min(int(254.99 * col.g()), 255)) << 16) +
+              (std::max(0, std::min(int(254.99 * col.b()), 255)) << 8);
+          image[c] = vec3(col.r(), col.g(), col.b());
+          // image_lock.unlock();
+        }
+
+        if (t == 0) {
+          d->reset();
+        }
       }
 
       std::cerr << "_";
@@ -311,6 +329,18 @@ int main(int argc, char **argv) {
     switch (event.type) {
     case SDL_KEYDOWN:
       switch (event.key.keysym.sym) {
+      case SDLK_s:
+        // memset(pixels, 255, nx * ny * sizeof(Uint32)); // init to white
+
+        look_from = vec3(look_from.x() + 1, look_from.y(), look_from.z());
+        cam = camera(look_from, look_at, vec3(0, 1, 0), 20,
+                     float(nx) / float(ny), aperture, dist_to_focus);
+
+        d->reset();
+        samples = 1;
+
+        break;
+
       case SDLK_F11:
         fullscreen = !fullscreen;
         SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);

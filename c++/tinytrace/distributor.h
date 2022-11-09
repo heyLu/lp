@@ -27,6 +27,17 @@ public:
     }
   }
 
+  void reset() {
+    lock->lock();
+    done = false;
+    c = 0;
+    linear_start = 0;
+    for (int i = 0; i < nx * ny; i++) {
+      seen[i] = false;
+    }
+    lock->unlock();
+  }
+
   bool next_pixel(int &count, int &x, int &y) {
     ZoneScoped;
 
