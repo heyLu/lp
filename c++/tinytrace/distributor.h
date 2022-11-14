@@ -104,7 +104,6 @@ public:
 
   void continue_from(vec3 *image) {
     c = 0;
-    int num_seen = 0;
     for (int p = 0; p < nx * ny; p++) {
       vec3 px = image[p];
       if (px.r() >= 0.98 && px.g() >= 0.98 && px.b() >= 0.98) {

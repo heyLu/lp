@@ -4,7 +4,7 @@
 #include "material.h"
 #include "texture.h"
 
-vec3 random_in_unit_sphere() {
+inline vec3 random_in_unit_sphere() {
   vec3 p;
   do {
     p = 2.0 * vec3(drand48(), drand48(), drand48()) - vec3(1, 1, 1);

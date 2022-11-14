@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
   int concurrency = std::thread::hardware_concurrency();
   bool continue_render = false;
   long *seed = NULL;
-  bool verbose = false;
+  bool _verbose = false;
 
   while (true) {
     char opt_char = 0;
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
       continue_render = true;
       break;
     case 'v':
-      verbose = true;
+      _verbose = true;
       break;
     default:
       std::cerr << "Usage: " << argv[0] << "[flags] [<filename>]"
@@ -177,10 +177,8 @@ int main(int argc, char **argv) {
   SDL_Init(SDL_INIT_VIDEO);
   atexit(SDL_Quit);
 
-  int bit_depth = 16;
   auto window = SDL_CreateWindow("tinytrace!", 0, 0, nx, ny, SDL_WINDOW_VULKAN);
 
-  auto screen = SDL_CreateRGBSurface(0, nx, ny, 32, 0, 0, 0, 0);
   auto renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
   auto texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
@@ -200,7 +198,6 @@ int main(int argc, char **argv) {
   auto d = new distributor(nx, ny);
   d->set_randomize(true);
   d->continue_from(image);
-  std::mutex image_lock;
 
   // TODO: render small image first (10% per side if > 1000) -> blow up  to size
   // -> render full size
@@ -227,7 +224,7 @@ int main(int argc, char **argv) {
     counts[t] = 0;
 
     auto render = [t, &samples, done, counts, &d, &cam, world, ns, image,
-                   &image_lock, pixels, &quit] {
+                   pixels, &quit] {
       for (int local_samples = samples; local_samples < ns;
            local_samples += 2) {
         if (quit) {
@@ -250,7 +247,7 @@ int main(int argc, char **argv) {
             float u = float(i + drand48()) / float(d->width());
             float v = float(j + drand48()) / float(d->height());
             ray r = cam.get_ray(u, v);
-            vec3 p = r.point_at_parameter(2.0);
+            // vec3 p = r.point_at_parameter(2.0);
             col += color(r, world, 0);
           }
           col /= float(local_samples);
@@ -258,13 +255,11 @@ int main(int argc, char **argv) {
           // gamme correct?
           col = vec3(sqrt(col.r()), sqrt(col.g()), sqrt(col.b()));
 
-          // image_lock.lock();
           pixels[c] =
               (std::max(0, std::min(int(254.99 * col.r()), 255)) << 24) +
               (std::max(0, std::min(int(254.99 * col.g()), 255)) << 16) +
               (std::max(0, std::min(int(254.99 * col.b()), 255)) << 8);
           image[c] = vec3(col.r(), col.g(), col.b());
-          // image_lock.unlock();
         }
 
         if (t == 0) {
@@ -281,7 +276,6 @@ int main(int argc, char **argv) {
 
   std::thread check([d, concurrency, done, write_partial, threads, out_name, nx,
                      ny, image, start, &quit] {
-    int i, j;
     while (!quit && !d->is_done()) {
       bool all_done = true;
       for (int k = 0; k < concurrency; k++) {
@@ -410,10 +404,9 @@ hitable **random_scene(int &n) {
 
   // big spheres
   list[i++] = new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5));
-  int nx, ny, nn;
   texture *tex;
 #ifdef STB_IMAGE_IMPLEMENTATION
-  unsigned char *tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
+  unsigned char *tex_data = stbi_load("earthmap.jpg", NULL, NULL, NULL, 0);
   tex = new image_texture(tex_data, nx, ny)
 #else
   tex = new constant_texture(vec3(0.4, 0.2, 0.1));
