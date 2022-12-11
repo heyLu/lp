@@ -129,8 +129,8 @@
 </div>
 
 <label for="width">line width ({lineWidth}):</label>
-<input type="range" name="width" value="1" min="1" max="10" on:change={setLineWidth} />
+<input type="range" name="width" value={lineWidth} min="1" max="10" on:change={setLineWidth} />
 
-<input type="color" name="color" on:change={setColor} />
+<input type="color" name="color" value={color} on:change={setColor} />
 
 <button on:click={clearDrawing}>Clear</button>
