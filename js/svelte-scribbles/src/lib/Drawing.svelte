@@ -1,16 +1,40 @@
 <script>
   let artsyMode = false;
   let isDrawing = false;
+  let haveDrawn = false;
   let color = localStorage.getItem('color') || 'black';
   let lineWidth = parseInt(localStorage.getItem('lineWidth')) || 1;
   let lastEv = null;
 
+  let undoing = false;
+  let undoHistory = [];
+  window.undoHistory = undoHistory;
+
   const startDrawing = (/** @type MouseEvent */ ev) => {
     if (ev.button != 0) { // is not left-click/main button
-      ev.preventDefault();
       return;
     }
     isDrawing = true;
+    haveDrawn = false;
+    undoing = false;
+  }
+
+  const undo = () => {
+    if (!undoing) {
+      undoHistory.pop(); // discard last step, which was the last scribble, restore the one before
+      undoing = true;
+    }
+
+    const prev = undoHistory.pop();
+
+    const cv = document.querySelector("canvas");
+    const ctx = cv.getContext("2d");
+
+    if (prev) {
+      ctx.putImageData(prev, 0, 0);
+    } else { // initial state, no history
+      ctx.clearRect(0, 0, cv.width, cv.height);
+    }
   }
 
   const stopDrawing = (/** @type MouseEvent */ ev) => {
@@ -18,8 +42,17 @@
       ev.preventDefault();
       return;
     }
+
+    if (isDrawing && haveDrawn) {
+      console.log("save", ev);
+      const cv = document.querySelector("canvas");
+      const ctx = cv.getContext("2d");   
+      undoHistory.push(ctx.getImageData(0, 0, cv.width, cv.height));
+    }
+
     isDrawing = false;
     lastEv = null;
+    haveDrawn = false;
   }
 
   const startTouchDrawing = (/** @type TouchEvent */ ev) => {
@@ -78,6 +111,8 @@
       ctx.moveTo(lastEv.offsetX, lastEv.offsetY);
       ctx.lineTo(x, y);
       ctx.stroke();
+
+      haveDrawn = true;
     }
   };
 
@@ -118,7 +153,7 @@
   on:mousemove={drawMouse}
   
   on:touchstart={startTouchDrawing}
-  on:touchend={stopTouchDrawing}
+  on:touchend={stopTouchDrawing} on:touchcancel={stopTouchDrawing}
   on:touchmove={drawTouch}
   >
 </canvas>
@@ -132,5 +167,7 @@
 <input type="range" name="width" value={lineWidth} min="1" max="10" on:change={setLineWidth} />
 
 <input type="color" name="color" value={color} on:change={setColor} />
+
+<button on:click={undo}>Undo ↩</button>
 
 <button on:click={clearDrawing}>Clear</button>
