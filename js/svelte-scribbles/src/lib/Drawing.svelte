@@ -17,6 +17,8 @@
     isDrawing = true;
     haveDrawn = false;
     undoing = false;
+
+    ev.preventDefault()
   }
 
   const undo = () => {
@@ -39,7 +41,6 @@
 
   const stopDrawing = (/** @type MouseEvent */ ev) => {
     if (ev.button != 0) { // is not left-click/main button
-      ev.preventDefault();
       return;
     }
 
@@ -53,16 +54,20 @@
     isDrawing = false;
     lastEv = null;
     haveDrawn = false;
+
+    ev.preventDefault()
   }
 
   const startTouchDrawing = (/** @type TouchEvent */ ev) => {
     isDrawing = true;
     lastEv = null;
+    ev.preventDefault();
   };
 
   const stopTouchDrawing = (/** @type TouchEvent */ ev) => {
     isDrawing = true;
     lastEv = null;
+    ev.preventDefault()
   };
 
   const drawTouch = (/** @type TouchEvent */ ev) => {
@@ -88,12 +93,14 @@
       return;
     }
 
-    draw(ev.offsetX, ev.offsetY);
+    const x = (ev.clientX - ev.target.offsetLeft) * (ev.target.width / ev.target.offsetWidth);
+    const y = (ev.clientY - ev.target.offsetTop) * (ev.target.height / ev.target.offsetHeight);
+    draw(x, y);
 
     if (artsyMode) {
       lastEv = { offsetX: 0, offsetY: 0 };
     } else {
-      lastEv = { offsetX: ev.offsetX, offsetY: ev.offsetY };
+      lastEv = { offsetX: x, offsetY: y };
     }
   };
 
@@ -142,6 +149,8 @@
 <style>
   canvas {
     border: 1px solid #ddd;
+    max-width: 100%;
+    max-height: 100%;
   }
 </style>
 
