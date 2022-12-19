@@ -126,7 +126,7 @@
   const clearDrawing = () => {
     const cv = document.querySelector("canvas");
     const ctx = cv.getContext("2d");
-    ctx.clearRect(0, 0, 1000, 1000);
+    ctx.clearRect(0, 0, cv.width, cv.height);
 
     isDrawing = false;
   }
