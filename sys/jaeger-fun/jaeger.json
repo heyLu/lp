@@ -1,0 +1,9 @@
+{
+  "deepDependencies": {
+    "menuEnabled": true
+  },
+  "qualityMetrics": {
+    "menuLabel": "Quality",
+    "menuEnabled": true
+  }
+}

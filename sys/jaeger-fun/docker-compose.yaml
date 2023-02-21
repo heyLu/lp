@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.42
+    command:
+      - --query.ui-config=/jaeger.json
+    volumes:
+      - ./jaeger.json:/jaeger.json
+    environment:
+      SPAN_STORAGE_TYPE: memory
+      METRICS_STORAGE_TYPE: prometheus
+    network_mode: host
+    ports:
+      - 16686:16686 # ui
+      - 14268:14248 # collector
+
+  prometheus:
+    image: quay.io/prometheus/prometheus:v2.34.0
+    command:
+      - --config.file=/prometheus.yaml
+    volumes:
+      - ./prometheus.yaml:/prometheus.yaml
+    network_mode: host
+    ports:
+      - 9090:9090
