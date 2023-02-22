@@ -14,6 +14,19 @@ hacked in using two custom Prometheus metrics.
 
 How neat!
 
+## Monitor(ing) without `calls_total` and `latency_bucket`
+
+This is just an idea, but maybe worth playing around with for systems with lots of existing metrics that already have most of the required info?
+
+- metrics only use [range queries](https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries) ([source](https://github.com/jaegertracing/jaeger/blob/main/plugin/metrics/prometheus/metricsstore/reader.go))
+- would need to "find" or map existing metrics
+  - different metric name
+  - different label names
+  - missing labels (`span_kind`, `status_code`)
+    - generate based on defaults ("SPAN_KIND_SERVER") and `http_status_code`
+  - looks like we need an "on the fly" Prometheus proxy that rewrites queries as needed
+- there is <https://pkg.go.dev/github.com/prometheus/prometheus/promql/parser>, which may be exactly what is needed?
+
 ## Resources
 
 - https://www.jaegertracing.io/docs/1.42/spm/
