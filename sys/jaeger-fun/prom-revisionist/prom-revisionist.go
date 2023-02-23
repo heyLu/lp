@@ -32,6 +32,12 @@ func (r Revisionist) Visit(node parser.Node, path []parser.Node) (parser.Visitor
 	}
 
 	switch val := node.(type) {
+	case *parser.AggregateExpr:
+		for i, label := range val.Grouping {
+			if label == "service_name" {
+				val.Grouping[i] = "service"
+			}
+		}
 	case *parser.VectorSelector:
 		if val.Name == "calls_total" {
 			val.Name = "my_calls_total"
