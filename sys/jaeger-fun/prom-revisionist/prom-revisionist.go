@@ -104,6 +104,40 @@ func main() {
 		}
 	})
 
+	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		u := req.URL
+		u.Scheme = upstreamURL.Scheme
+		u.Host = upstreamURL.Host
+		proxyReq, err := http.NewRequest(req.Method, u.String(), req.Body)
+		if err != nil {
+			log.Printf("failed to created request: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		proxyReq.Header = req.Header
+
+		resp, err := http.DefaultClient.Do(proxyReq)
+		if err != nil {
+			log.Printf("failed to created request: %s", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		defer resp.Body.Close()
+
+		for name, vals := range resp.Header {
+			for _, val := range vals {
+				w.Header().Add(name, val)
+			}
+		}
+		w.WriteHeader(resp.StatusCode)
+
+		_, err = io.Copy(w, resp.Body)
+		if err != nil {
+			log.Printf("could not write body: %s", err)
+			return
+		}
+	})
+
 	log.Printf("Listening on http://%s", config.Addr)
 	log.Fatal(http.ListenAndServe(config.Addr, nil))
 }
