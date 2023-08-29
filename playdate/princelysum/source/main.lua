@@ -5,8 +5,7 @@ import "CoreLibs/ui"
 local gfx <const> = playdate.graphics
 
 local magicNumber = 0
-local saveState = {["magicNumber"] = 0}
-local saveTimer = nil
+local saveState = {["magicNumber"] = 0, timePlayed = 0}
 
 local evilNumber = nil
 
@@ -14,37 +13,7 @@ local piDigits = ".1415926535897932384626433832795028841971693993751058209749445
 local piTimer = nil
 local piPos = 1
 local piSynth = nil
-local piSeed
-
-function myGameSetUp()
-    local data = playdate.datastore.read()
-    if data ~= nil then
-        saveState = data
-
-        magicNumber = saveState.magicNumber
-    end
-
-    saveTimer = playdate.timer.new(1000, function()
-        if magicNumber == saveState.magicNumber then
-            return
-        end
-
-        saveState.magicNumber = magicNumber
-
-        print("saving...", saveState.magicNumber)
-        playdate.datastore.write(saveState)
-    end)
-    saveTimer.repeats = true
-
-    evilNumber = gfx.image.new("images/evil.png")
-    assert(evilNumber)
-
-    playdate.ui.crankIndicator:start()
-
-    print("HELO")
-end
-
-myGameSetUp()
+local piSeed = nil
 
 -- function genPrimes(upto)
 --     if n == 2 then
@@ -85,6 +54,7 @@ function playdate.graphics.drawTextScaled(text, x, y, scale, font)
     gfx.drawTextAligned(text, w / 2, 0, kTextAlignment.center)
     gfx.unlockFocus()
     img:drawScaled(x - (scale * w) / 2, y - (scale * h) / 2, scale)
+    return w, h
 end
 
 function playdate.graphics.drawTextRotated(text, x, y, angle, font)
@@ -97,15 +67,71 @@ function playdate.graphics.drawTextRotated(text, x, y, angle, font)
     gfx.drawTextAligned(text, w / 2, 0, kTextAlignment.center)
     gfx.unlockFocus()
     img:drawRotated(x, y, angle)
+    return w, h
+end
+
+local function restoreGame()
+    local data = playdate.datastore.read()
+    if data ~= nil then
+        saveState = data
+
+        magicNumber = saveState.magicNumber
+    end
+end
+
+local function saveGame()
+    if magicNumber == saveState.magicNumber then
+        return
+    end
+
+    saveState.magicNumber = magicNumber
+
+    print("saving...", saveState.magicNumber)
+    playdate.datastore.write(saveState)
+end
+
+local function myGameSetUp()
+    restoreGame()
+
+    evilNumber = gfx.image.new("images/evil.png")
+    assert(evilNumber)
+
+    playdate.ui.crankIndicator:start()
+
+    playdate.getSystemMenu():addMenuItem("save game", saveGame)
+
+    print("HELO")
+end
+
+myGameSetUp()
+
+function playdate.deviceWillSleep()
+    print("zZzz")
+
+    saveGame()
+end
+
+function playdate.gameWillTerminate()
+    saveState.timePlayed += math.ceil(playdate.getCurrentTimeMillseconds() / 1000)
+    saveGame()
+
+    print("BYEEE")
 end
 
 function playdate.update()
-    playdate.ui.crankIndicator:update()
-
     playdate.display.setInverted(magicNumber < 0)
 
     gfx.clear()
 
+    playdate.drawFPS(385, 0)
+
+    local timePlayed = playdate.getCurrentTimeMilliseconds()
+    if timePlayed < 2000 then
+        playdate.ui.crankIndicator:update()
+    end
+    gfx.drawText(tostring(saveState.timePlayed + math.ceil(timePlayed / 1000)), 5, 220)
+
+    local drawNumber = true
     if magicNumber == 3 then
         if piTimer == nil then
             piPos = 0
@@ -135,6 +161,8 @@ function playdate.update()
 
         piSeed = nil
     elseif magicNumber == 666 or magicNumber == 6 then
+        drawNumber = false
+
         local width, height = evilNumber:getSize()
         local scale = 3
         evilNumber:drawScaled(200-5-(width/2)*scale, 120-(height/2)*scale, scale)
