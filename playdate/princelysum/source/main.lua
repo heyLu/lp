@@ -170,13 +170,28 @@ function playdate.update()
     -- TODO: prime numbers (?), maybe naive check that brute forces things?
     -- TODO: 583 the best
     -- TODO: 999 HI SCORE (hi!)
-    else
-        gfx.drawTextScaled("*" .. tostring(magicNumber) .. "*", 200, 120, 4, gfx.getSystemFont())
+    -- TODO: 11 (D.M. number)
+    -- TODO: 12 also great
+    -- TODO: 13: trying too hard
+    elseif magicNumber == 42 then
+        gfx.drawText("the answer...", 250, 130)
+    elseif magicNumber % 2 == 0 then
+        gfx.drawText("2", 200, 150)
     end
 
-    if piTimer ~= nil then
-        gfx.drawTextScaled("*" .. tostring(magicNumber) .. "*", 200, 120, 4, gfx.getSystemFont())
+    local textWidth = 0
+    local textHeight = 0
+    if drawNumber then
+        textWidth, textHeight = gfx.drawTextScaled("*" .. tostring(magicNumber) .. "*", 200, 120, 4, gfx.getSystemFont())
+    end
 
+    local now = playdate.getTime()
+    if magicNumber == now.year or magicNumber == now.weekday or magicNumber == now.month or magicNumber == now.day or magicNumber == now.hour or magicNumber == now.minute or magicNumber == now.second then
+        gfx.drawText("*!*", 200+textWidth+4, 120+textHeight-2)
+    end
+
+
+    if piTimer ~= nil then
         if piPos > 0 then
             math.randomseed(piSeed)
             if math.random() < 0.9 then
