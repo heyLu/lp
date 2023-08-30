@@ -73,6 +73,11 @@ local function initGame()
     end
 
     playdate.getSystemMenu():addMenuItem("save game", saveGame)
+    playdate.getSystemMenu():addMenuItem("reset", function()
+        magicNumber = 0
+        saveState.timePlayed = 0
+        saveGame()
+    end)
 
     print("HELO")
 end
