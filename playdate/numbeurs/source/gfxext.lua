@@ -1,5 +1,7 @@
 import "CoreLibs/graphics"
 
+playdate = playdate
+
 local gfx <const> = playdate.graphics
 
 playdate.graphicsext = {
