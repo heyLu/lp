@@ -68,7 +68,9 @@ local function initGame()
     evilNumber = gfx.image.new("images/evil.png")
     assert(evilNumber)
 
-    playdate.ui.crankIndicator:start()
+    if saveState.timePlayed < 10 then
+        playdate.ui.crankIndicator:start()
+    end
 
     playdate.getSystemMenu():addMenuItem("save game", saveGame)
 
@@ -98,7 +100,7 @@ function playdate.update()
     playdate.drawFPS(385, 0)
 
     local timePlayed = playdate.getCurrentTimeMilliseconds()
-    if timePlayed < 2000 then
+    if timePlayed < 2000 and saveState.timePlayed < 10 then
         playdate.ui.crankIndicator:update()
     end
     gfx.drawText(tostring(saveState.timePlayed + math.ceil(timePlayed / 1000)), 5, 220)
