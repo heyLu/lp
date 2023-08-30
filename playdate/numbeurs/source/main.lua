@@ -170,7 +170,7 @@ function playdate.update()
     -- TODO: prime numbers (?), maybe naive check that brute forces things?
     -- TODO: 583 the best
     -- TODO: 999 HI SCORE (hi!)
-    -- TODO: 11 (D.M. number)
+    -- TODO: 11 (D.M. number) -> "said" by a character/speech bubble after a while
     -- TODO: 12 also great
     -- TODO: 13: trying too hard
     elseif magicNumber == 42 then
