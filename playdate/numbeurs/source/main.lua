@@ -56,10 +56,6 @@ local function restoreGame()
 end
 
 local function saveGame()
-    if magicNumber == saveState.magicNumber then
-        return
-    end
-
     saveState.magicNumber = magicNumber
 
     print("saving...", saveState.magicNumber)
@@ -88,7 +84,7 @@ function playdate.deviceWillSleep()
 end
 
 function playdate.gameWillTerminate()
-    saveState.timePlayed = saveState.timePlayed + math.ceil(playdate.getCurrentTimeMillseconds() / 1000)
+    saveState.timePlayed = saveState.timePlayed + math.ceil(playdate.getCurrentTimeMilliseconds() / 1000)
     saveGame()
 
     print("BYEEE")
