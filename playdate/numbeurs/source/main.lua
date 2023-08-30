@@ -2,7 +2,10 @@ import "CoreLibs/graphics"
 import "CoreLibs/timer"
 import "CoreLibs/ui"
 
+import "gfxext"
+
 local gfx <const> = playdate.graphics
+local gfxext <const> = playdate.graphicsext
 
 local magicNumber = 0
 local saveState = {["magicNumber"] = 0, timePlayed = 0}
@@ -42,33 +45,6 @@ local piSeed = nil
 --         if table[i]:
 --             yield i
 -- end
-
--- from https://devforum.play.date/t/add-a-drawtextscaled-api-see-code-example/7108
-function playdate.graphics.drawTextScaled(text, x, y, scale, font)
-    local padding = string.upper(text) == text and 6 or 0 -- Weird padding hack?
-    local w <const> = font:getTextWidth(text)
-    local h <const> = font:getHeight() - padding
-    local img <const> = gfx.image.new(w, h, gfx.kColorClear)
-    gfx.lockFocus(img)
-    gfx.setFont(font)
-    gfx.drawTextAligned(text, w / 2, 0, kTextAlignment.center)
-    gfx.unlockFocus()
-    img:drawScaled(x - (scale * w) / 2, y - (scale * h) / 2, scale)
-    return w, h
-end
-
-function playdate.graphics.drawTextRotated(text, x, y, angle, font)
-    local padding = string.upper(text) == text and 6 or 0 -- Weird padding hack?
-    local w <const> = font:getTextWidth(text)
-    local h <const> = font:getHeight() - padding
-    local img <const> = gfx.image.new(w, h, gfx.kColorClear)
-    gfx.lockFocus(img)
-    gfx.setFont(font)
-    gfx.drawTextAligned(text, w / 2, 0, kTextAlignment.center)
-    gfx.unlockFocus()
-    img:drawRotated(x, y, angle)
-    return w, h
-end
 
 local function restoreGame()
     local data = playdate.datastore.read()
@@ -182,7 +158,7 @@ function playdate.update()
     local textWidth = 0
     local textHeight = 0
     if drawNumber then
-        textWidth, textHeight = gfx.drawTextScaled("*" .. tostring(magicNumber) .. "*", 200, 120, 4, gfx.getSystemFont())
+        textWidth, textHeight = gfxext.drawTextScaled("*" .. tostring(magicNumber) .. "*", 200, 120, 4, gfx.getSystemFont())
     end
 
     local now = playdate.getTime()
@@ -198,7 +174,7 @@ function playdate.update()
                 gfx.drawTextInRect(string.sub(piDigits, 1, piPos), 222, 130, 180, 120)
             else
                 for i = 1,piPos do
-                    gfx.drawTextRotated(string.sub(piDigits, i, i), math.random(400), math.random(240), math.random(360), gfx.getSystemFont())
+                    gfxext.drawTextRotated(string.sub(piDigits, i, i), math.random(400), math.random(240), math.random(360), gfx.getSystemFont())
                 end
             end
         end
