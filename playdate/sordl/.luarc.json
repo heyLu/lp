@@ -1,0 +1,15 @@
+{
+  "Lua.format.defaultConfig": {
+      "indent_style": "space",
+      "indent_size": "2"
+  },
+  "Lua.workspace.library": [
+    "$PLAYDATE_SDK_PATH/CoreLibs/__stub.lua"
+  ],
+  "Lua.runtime.special": {
+    "include": "require"
+  },
+  "Lua.diagnostics.globals": [
+    "playdate"
+  ]
+}
