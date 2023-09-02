@@ -81,11 +81,36 @@ function make(x, y)
   }
 end
 
-local player = make(200, 120)
+function toTilePos(pos)
+    local virtualTileX = pos.x / 16
+    local virtualTileY = pos.y / 8
+
+    local isoTileX = virtualTileX - (400 / 16) / 2
+    local isoTileY = virtualTileY - (240 / 8) / 2
+
+    return math.floor(isoTileX+0.5), math.floor(isoTileY+0.5)
+end
+
+local player
+local platform = nil
+
+function initGame()
+  platform = playdate.graphics.image.new("platform.png")
+  assert(platform)
+
+  player = make(200, 120)
+end
+
+initGame()
 
 function playdate.update()
   gfx.clear()
   playdate.drawFPS(380, 2)
+
+  platform:draw(0, 0)
+
+  local x, y = toTilePos(player.pos)
+  gfx.drawText(tostring(x).." "..tostring(y), 5, 220)
 
   player:draw()
 
