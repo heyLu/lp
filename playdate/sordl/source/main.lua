@@ -53,6 +53,14 @@ function make(x, y)
         self.speed = 2
       end
 
+      -- fix moving diagonally (y is 2x the pixel size of x)
+      local bothDirections = (playdate.buttonIsPressed(playdate.kButtonLeft) or playdate.buttonIsPressed(playdate.kButtonRight)) and (playdate.buttonIsPressed(playdate.kButtonUp) or playdate.buttonIsPressed(playdate.kButtonDown))
+      print(bothDirections)
+      local speedChange = 1
+      if bothDirections then
+        speedChange = 2
+      end
+
       if button == playdate.kButtonLeft then
         self.pos.x = self.pos.x - self.speed
         self.dir = self.arc:length()*0.75
@@ -62,11 +70,11 @@ function make(x, y)
         self.dir = self.arc:length()*0.25
       end
       if button == playdate.kButtonUp then
-        self.pos.y = self.pos.y - self.speed
+        self.pos.y = self.pos.y - self.speed/speedChange
         self.dir = 0
       end
       if button == playdate.kButtonDown then
-        self.pos.y = self.pos.y + self.speed
+        self.pos.y = self.pos.y + self.speed/speedChange
         self.dir = self.arc:length()*0.5
       end
     end,
