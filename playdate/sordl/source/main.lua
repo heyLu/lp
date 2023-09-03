@@ -63,18 +63,26 @@ function make(x, y)
 
       if button == playdate.kButtonLeft then
         self.pos.x = self.pos.x - self.speed
+        -- self.pos.x = self.pos.x - 1
+        -- self.pos.y = self.pos.y - 0.5
         self.dir = self.arc:length()*0.75
       end
       if button == playdate.kButtonRight then
         self.pos.x = self.pos.x + self.speed
+        -- self.pos.x = self.pos.x + 1
+        -- self.pos.y = self.pos.y + 0.5
         self.dir = self.arc:length()*0.25
       end
       if button == playdate.kButtonUp then
         self.pos.y = self.pos.y - self.speed/speedChange
+        -- self.pos.x = self.pos.x + 1
+        -- self.pos.y = self.pos.y - 0.5
         self.dir = 0
       end
       if button == playdate.kButtonDown then
         self.pos.y = self.pos.y + self.speed/speedChange
+        -- self.pos.x = self.pos.x - 1
+        -- self.pos.y = self.pos.y + 0.5
         self.dir = self.arc:length()*0.5
       end
     end,
@@ -89,14 +97,32 @@ function make(x, y)
   }
 end
 
-function toTilePos(pos)
-    local virtualTileX = pos.x / 8
-    local virtualTileY = pos.y / 8
+local numberOfTilesInX <const> = 16
+local numberOfTilesInY <const> = 8
 
-    local isoTileX = virtualTileX - (400 / 8) / 2
-    local isoTileY = virtualTileY - (240 / 8) / 2
+function toTilePos(pos)
+    local virtualTileX = pos.x / numberOfTilesInX
+    local virtualTileY = pos.y / numberOfTilesInY
+
+    local isoTileX = virtualTileX - (400 / numberOfTilesInX) / 2
+    local isoTileY = virtualTileY - (240 / numberOfTilesInY) / 2
 
     return math.floor(isoTileX+0.5), math.floor(isoTileY+0.5)
+    -- return math.floor(isoTileX), math.floor(isoTileY)
+end
+
+function toScreenPos(pos)
+    local screenTileX = pos.x + (400 / numberOfTilesInX) / 2
+    local screenTileY = pos.y + (240 / numberOfTilesInY) / 2
+
+    return math.floor(screenTileX * numberOfTilesInX), math.floor(screenTileY * numberOfTilesInY)
+end
+
+function toMapPos(pos, width, height)
+    local screenTileX = pos.x + (width / 1) / 2
+    local screenTileY = pos.y + (height / 1) / 2
+
+    return math.floor(screenTileX + 0.5), math.floor(screenTileY + 0.5)
 end
 
 local player
@@ -110,25 +136,43 @@ function initGame()
   platform = playdate.graphics.image.new("platform.png")
   assert(platform)
 
-  player = make(200+4, 120+2)
+  player = make(200+2, 120)
 end
 
 initGame()
 
 function playdate.update()
   gfx.clear()
-  playdate.drawFPS(380, 2)
+  playdate.drawFPS(385, 2)
 
   platform:draw(0, 0)
-  local width, height = map:getSize()
-  map:draw(400-1-width, 15)
 
   local x, y = toTilePos(player.pos)
-  gfx.drawText(tostring(x).." "..tostring(y), 5, 220)
 
-  gfx.setColor(playdate.graphics.kColorXOR)
-  gfx.drawPixel(400-1-width + x + width/2, 15 + y + height/2)
-  gfx.setColor(playdate.graphics.kColorBlack)
+  local xOffset = 10
+  local yOffset = 7
+
+  local mapCopy = map:rotatedImage(45)
+  local width, height = mapCopy:getSize()
+  playdate.graphics.lockFocus(mapCopy)
+  -- local sx, sy = toMapPos({x = x, y = y}, width, height)
+  -- local sx = player.pos.x/400*width
+  -- local sy = player.pos.y/240*height
+  local sx = math.floor(x/width * width) + width/2 --- xOffset
+  local sy = math.floor(y/height * height) + height/2 --- yOffset
+  local color = mapCopy:sample(sx, sy)
+  if color == playdate.graphics.kColorBlack then
+    color = playdate.graphics.kColorWhite
+  else
+    color = playdate.graphics.kColorBlack
+  end
+  gfx.setColor(color)
+  gfx.drawPixel(sx, sy)
+  playdate.graphics.unlockFocus()
+
+  mapCopy:draw(400-50, 15)
+
+  gfx.drawText(tostring(x).." "..tostring(y).." / "..tostring(sx).." "..tostring(sy).." / "..tostring(player.pos.x).." "..tostring(player.pos.y), 5, 220)
 
   player:draw()
 
