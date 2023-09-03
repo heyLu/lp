@@ -82,23 +82,27 @@ function make(x, y)
 end
 
 function toTilePos(pos)
-    local virtualTileX = pos.x / 16
+    local virtualTileX = pos.x / 8
     local virtualTileY = pos.y / 8
 
-    local isoTileX = virtualTileX - (400 / 16) / 2
+    local isoTileX = virtualTileX - (400 / 8) / 2
     local isoTileY = virtualTileY - (240 / 8) / 2
 
     return math.floor(isoTileX+0.5), math.floor(isoTileY+0.5)
 end
 
 local player
+local map = nil
 local platform = nil
 
 function initGame()
+  map = playdate.graphics.image.new("map.png")
+  assert(map)
+
   platform = playdate.graphics.image.new("platform.png")
   assert(platform)
 
-  player = make(200, 120)
+  player = make(200+4, 120+2)
 end
 
 initGame()
@@ -108,9 +112,15 @@ function playdate.update()
   playdate.drawFPS(380, 2)
 
   platform:draw(0, 0)
+  local width, height = map:getSize()
+  map:draw(400-1-width, 15)
 
   local x, y = toTilePos(player.pos)
   gfx.drawText(tostring(x).." "..tostring(y), 5, 220)
+
+  gfx.setColor(playdate.graphics.kColorXOR)
+  gfx.drawPixel(400-1-width + x + width/2, 15 + y + height/2)
+  gfx.setColor(playdate.graphics.kColorBlack)
 
   player:draw()
 
