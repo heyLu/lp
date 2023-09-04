@@ -108,14 +108,16 @@ function toTilePos(pos)
     local isoTileY = virtualTileY - (240 / numberOfTilesInY) / 2
 
     return math.floor(isoTileX+0.5), math.floor(isoTileY+0.5)
-    -- return math.floor(isoTileX), math.floor(isoTileY)
 end
 
 function toScreenPos(pos)
-    local screenTileX = pos.x + (400 / numberOfTilesInX) / 2
-    local screenTileY = pos.y + (240 / numberOfTilesInY) / 2
+  -- local screenTileX = pos.x + (400 / numberOfTilesInX) / 2
+  -- local screenTileY = pos.y + (240 / numberOfTilesInY) / 2
 
-    return math.floor(screenTileX * numberOfTilesInX), math.floor(screenTileY * numberOfTilesInY)
+  -- return math.floor(screenTileX * numberOfTilesInX), math.floor(screenTileY * numberOfTilesInY)
+
+  -- https://clintbellanger.net/articles/isometric_math/
+  return (pos.x - pos.y) * numberOfTilesInX / 2, (pos.x + pos.y) * numberOfTilesInY / 2
 end
 
 function toMapPos(pos, width, height)
