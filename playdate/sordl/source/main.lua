@@ -55,7 +55,6 @@ function make(x, y)
 
       -- fix moving diagonally (y is 2x the pixel size of x)
       local bothDirections = (playdate.buttonIsPressed(playdate.kButtonLeft) or playdate.buttonIsPressed(playdate.kButtonRight)) and (playdate.buttonIsPressed(playdate.kButtonUp) or playdate.buttonIsPressed(playdate.kButtonDown))
-      print(bothDirections)
       local speedChange = 1
       if bothDirections then
         speedChange = 2
@@ -97,27 +96,17 @@ function make(x, y)
   }
 end
 
-local numberOfTilesInX <const> = 16
-local numberOfTilesInY <const> = 8
+local tileWidthHalf <const> = 16 / 2
+local tileHeightHalf <const> = 8 / 2
 
 function toTilePos(pos)
-    local virtualTileX = pos.x / numberOfTilesInX
-    local virtualTileY = pos.y / numberOfTilesInY
-
-    local isoTileX = virtualTileX - (400 / numberOfTilesInX) / 2
-    local isoTileY = virtualTileY - (240 / numberOfTilesInY) / 2
-
-    return math.floor(isoTileX+0.5), math.floor(isoTileY+0.5)
+  return math.floor((pos.x / tileWidthHalf + pos.y / tileHeightHalf) / 2),
+         math.floor((pos.y / tileHeightHalf - (pos.x / tileWidthHalf)) / 2)
 end
 
 function toScreenPos(pos)
-  -- local screenTileX = pos.x + (400 / numberOfTilesInX) / 2
-  -- local screenTileY = pos.y + (240 / numberOfTilesInY) / 2
-
-  -- return math.floor(screenTileX * numberOfTilesInX), math.floor(screenTileY * numberOfTilesInY)
-
   -- https://clintbellanger.net/articles/isometric_math/
-  return (pos.x - pos.y) * numberOfTilesInX / 2, (pos.x + pos.y) * numberOfTilesInY / 2
+  return (pos.x - pos.y) * tileWidthHalf, (pos.x + pos.y) * tileHeightHalf
 end
 
 function toMapPos(pos, width, height)
@@ -134,6 +123,8 @@ local brick = nil
 
 local world = {}
 
+local editMode = false
+
 function initGame()
   map = playdate.graphics.image.new("map.png")
   assert(map)
@@ -144,16 +135,22 @@ function initGame()
   brick = playdate.graphics.image.new("brick.png")
   assert(brick)
 
-  player = make(200+2, 120)
+  local sx, sy = toScreenPos({x = 15, y = 3})
+  player = make(sx, sy)
 
   local worldData = playdate.datastore.read("world")
   if worldData ~= nil then
     world = worldData
   end
+
+  playdate.getSystemMenu():addCheckmarkMenuItem("edit", editMode, function()
+    editMode = not editMode
+  end)
 end
 
 function playdate.gameWillTerminate()
   print("saving")
+  playdate.datastore.write(world, "world")
   print("saved")
 end
 
@@ -164,12 +161,16 @@ local cursor = {
   y = 0,
 }
 
+function fix(pos)
+  return {x = math.floor(pos.x), y = math.floor(pos.y)}
+end
+
 function playdate.update()
   gfx.clear()
   playdate.drawFPS(385, 2)
 
-  for x = -12, 12, 0.5 do
-    for y = -14, 14, 0.5 do
+  for x = 0, 52, 1 do
+    for y = -24, 39, 1 do
       if world[x] ~= nil and world[x][y] then
         local sx, sy = toScreenPos({x = x, y = y})
         brick:draw(sx, sy)
@@ -177,76 +178,72 @@ function playdate.update()
     end
   end
 
-  local sx, sy = toScreenPos(cursor)
+  player:draw()
+
+  if editMode then
+    edit()
+  else
+    play()
+  end
+end
+
+function edit()
+  local pos = fix(cursor)
+  gfx.drawText(tostring(pos.x).." "..tostring(pos.y), 5, 220)
+
+  local sx, sy = toScreenPos({x = pos.x, y = pos.y})
   gfx.setColor(gfx.kColorXOR)
   gfx.drawPixel(sx, sy)
   gfx.drawRect(sx, sy, 16, 16)
 
-  gfx.drawText(tostring(cursor.x).." "..tostring(cursor.y), 5, 220)
-
   if playdate.buttonJustPressed(playdate.kButtonA) then
-    if world[cursor.x] == nil then
-      world[cursor.x] = {}
+    if world[pos.x] == nil then
+      world[pos.x] = {}
     end
 
-    world[cursor.x][cursor.y] = not world[cursor.x][cursor.y]
-    playdate.datastore.write(world)
-  end
-
-  local change = 1
-  local bothDirections = (playdate.buttonIsPressed(playdate.kButtonLeft) or playdate.buttonIsPressed(playdate.kButtonRight)) and (playdate.buttonIsPressed(playdate.kButtonUp) or playdate.buttonIsPressed(playdate.kButtonDown))
-  if bothDirections then
-    change = 0.5
+    world[pos.x][pos.y] = not world[pos.x][pos.y]
   end
 
   if playdate.buttonJustPressed(playdate.kButtonLeft) then
-    cursor.x = cursor.x - change
+    cursor.x = cursor.x - 0.5
+    cursor.y = cursor.y + 0.5
   end
   if playdate.buttonJustPressed(playdate.kButtonRight) then
-    cursor.x = cursor.x + change
+    -- cursor.x = cursor.x + change
+    cursor.x = cursor.x + 0.5
+    cursor.y = cursor.y - 0.5
   end
   if playdate.buttonJustPressed(playdate.kButtonUp) then
-    cursor.y = cursor.y - change
+    -- cursor.y = cursor.y - change
+    cursor.x = cursor.x - 1
+    cursor.y = cursor.y - 1
   end
   if playdate.buttonJustPressed(playdate.kButtonDown) then
-    cursor.y = cursor.y + change
+    -- cursor.y = cursor.y + change
+    cursor.x = cursor.x + 1
+    cursor.y = cursor.y + 1
   end
 end
 
 function play()
-  gfx.clear()
-  playdate.drawFPS(385, 2)
-
-  platform:draw(0, 0)
-
   local x, y = toTilePos(player.pos)
+  gfx.drawText(tostring(x).." "..tostring(y), 0, 220)
 
-  local xOffset = 10
-  local yOffset = 7
+  local sx, sy = toScreenPos({x = x, y = y})
+  local tx, ty = toTilePos({x = sx, y = sy})
+  gfx.drawText(tostring(tx).." "..tostring(ty), 50, 220)
 
-  local mapCopy = map:rotatedImage(45)
-  local width, height = mapCopy:getSize()
-  playdate.graphics.lockFocus(mapCopy)
-  -- local sx, sy = toMapPos({x = x, y = y}, width, height)
-  -- local sx = player.pos.x/400*width
-  -- local sy = player.pos.y/240*height
-  local sx = math.floor(x/width * width) + width/2 --- xOffset
-  local sy = math.floor(y/height * height) + height/2 --- yOffset
-  local color = mapCopy:sample(sx, sy)
-  if color == playdate.graphics.kColorBlack then
-    color = playdate.graphics.kColorWhite
+  if world[x] ~= nil and world[x][y] then
+    gfx.drawText("*on*", 100, 220)
   else
-    color = playdate.graphics.kColorBlack
+    gfx.drawText("off", 100, 220)
+    player.pos.y = player.pos.y + 5
   end
-  gfx.setColor(color)
-  gfx.drawPixel(sx, sy)
-  playdate.graphics.unlockFocus()
 
-  mapCopy:draw(400-50, 15)
-
-  gfx.drawText(tostring(x).." "..tostring(y).." / "..tostring(sx).." "..tostring(sy).." / "..tostring(player.pos.x).." "..tostring(player.pos.y), 5, 220)
-
-  player:draw()
+  if player.pos.y > 240 then
+    gfx.drawText("*oops*", 200, 120)
+    playdate.stop()
+  end
 
   if playdate.buttonIsPressed(playdate.kButtonLeft) then
     player:move(playdate.kButtonLeft)
