@@ -128,6 +128,9 @@ end
 local player
 local map = nil
 local platform = nil
+local brick = nil
+
+local world = {}
 
 function initGame()
   map = playdate.graphics.image.new("map.png")
@@ -136,12 +139,79 @@ function initGame()
   platform = playdate.graphics.image.new("platform.png")
   assert(platform)
 
+  brick = playdate.graphics.image.new("brick.png")
+  assert(brick)
+
   player = make(200+2, 120)
+
+  local worldData = playdate.datastore.read("world")
+  if worldData ~= nil then
+    world = worldData
+  end
+end
+
+function playdate.gameWillTerminate()
+  print("saving")
+  print("saved")
 end
 
 initGame()
 
+local cursor = {
+  x = 0,
+  y = 0,
+}
+
 function playdate.update()
+  gfx.clear()
+  playdate.drawFPS(385, 2)
+
+  for x = -12, 12, 0.5 do
+    for y = -14, 14, 0.5 do
+      if world[x] ~= nil and world[x][y] then
+        local sx, sy = toScreenPos({x = x, y = y})
+        brick:draw(sx, sy)
+      end
+    end
+  end
+
+  local sx, sy = toScreenPos(cursor)
+  gfx.setColor(gfx.kColorXOR)
+  gfx.drawPixel(sx, sy)
+  gfx.drawRect(sx, sy, 16, 16)
+
+  gfx.drawText(tostring(cursor.x).." "..tostring(cursor.y), 5, 220)
+
+  if playdate.buttonJustPressed(playdate.kButtonA) then
+    if world[cursor.x] == nil then
+      world[cursor.x] = {}
+    end
+
+    world[cursor.x][cursor.y] = not world[cursor.x][cursor.y]
+    playdate.datastore.write(world)
+  end
+
+  local change = 1
+  local bothDirections = (playdate.buttonIsPressed(playdate.kButtonLeft) or playdate.buttonIsPressed(playdate.kButtonRight)) and (playdate.buttonIsPressed(playdate.kButtonUp) or playdate.buttonIsPressed(playdate.kButtonDown))
+  if bothDirections then
+    change = 0.5
+  end
+
+  if playdate.buttonJustPressed(playdate.kButtonLeft) then
+    cursor.x = cursor.x - change
+  end
+  if playdate.buttonJustPressed(playdate.kButtonRight) then
+    cursor.x = cursor.x + change
+  end
+  if playdate.buttonJustPressed(playdate.kButtonUp) then
+    cursor.y = cursor.y - change
+  end
+  if playdate.buttonJustPressed(playdate.kButtonDown) then
+    cursor.y = cursor.y + change
+  end
+end
+
+function play()
   gfx.clear()
   playdate.drawFPS(385, 2)
 
