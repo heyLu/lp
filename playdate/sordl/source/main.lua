@@ -126,8 +126,9 @@ local platform = nil
 local brick = nil
 
 local world = {}
+local worldUp = {}
 
-local editMode = false
+local editMode = true
 
 function initGame()
   map = playdate.graphics.image.new("map.png")
@@ -163,6 +164,7 @@ initGame()
 local cursor = {
   x = 0,
   y = 0,
+  z = 0,
 }
 
 function fix(pos)
@@ -173,11 +175,19 @@ function playdate.update()
   gfx.clear()
   playdate.drawFPS(385, 2)
 
-  for x = 0, 52, 1 do
-    for y = -24, 39, 1 do
-      if world[x] ~= nil and world[x][y] then
-        local sx, sy = toScreenPos({x = x, y = y})
-        brick:draw(sx, sy)
+  for h = 0,1,1 do
+    local level = world
+    local offsetY = 0
+    if h == 1 then
+      level = worldUp
+      offsetY = -(tileHeightHalf*2)
+    end
+    for x = 0, 52, 1 do
+      for y = -24, 39, 1 do
+        if level[x] ~= nil and level[x][y] then
+          local sx, sy = toScreenPos({x = x, y = y})
+          brick:draw(sx, sy+offsetY)
+        end
       end
     end
   end
@@ -193,19 +203,36 @@ end
 
 function edit()
   local pos = fix(cursor)
-  gfx.drawText(tostring(pos.x).." "..tostring(pos.y), 5, 220)
+  gfx.drawText(tostring(pos.x).." "..tostring(pos.y).." @ "..tostring(cursor.z), 5, 220)
 
+  local offsetY = 0
+  if cursor.z == 1 then
+    offsetY = -(tileHeightHalf*2)
+  end
   local sx, sy = toScreenPos({x = pos.x, y = pos.y})
   gfx.setColor(gfx.kColorXOR)
-  gfx.drawPixel(sx, sy)
-  gfx.drawRect(sx, sy, 16, 16)
+  gfx.drawRect(sx, sy+offsetY, 16, 16)
 
+  local level = world
+  if cursor.z == 1 then
+    level = worldUp
+  end
   if playdate.buttonJustPressed(playdate.kButtonA) then
-    if world[pos.x] == nil then
-      world[pos.x] = {}
+    if level[pos.x] == nil then
+      level[pos.x] = {}
     end
 
-    world[pos.x][pos.y] = not world[pos.x][pos.y]
+    level[pos.x][pos.y] = not level[pos.x][pos.y]
+  end
+
+  if playdate.buttonIsPressed(playdate.kButtonB) then
+    if playdate.buttonJustPressed(playdate.kButtonUp) then
+      cursor.z = cursor.z + 1
+    elseif playdate.buttonJustPressed(playdate.kButtonDown) then
+      cursor.z = cursor.z - 1
+    end
+
+    return
   end
 
   if playdate.buttonJustPressed(playdate.kButtonLeft) then
