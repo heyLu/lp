@@ -93,6 +93,10 @@ function make(x, y)
 
       self.anim = playdate.graphics.animator.new(700, self.dir, self.dir+self.arc:length()*0.25)
     end,
+
+    jump = function(self)
+      self.pos.y = self.pos.y - 30
+    end
   }
 end
 
@@ -258,7 +262,9 @@ function play()
     player:move(playdate.kButtonDown)
   end
 
-  if playdate.buttonJustPressed(playdate.kButtonA) then
+  if playdate.buttonIsPressed(playdate.kButtonA) and playdate.buttonJustPressed(playdate.kButtonUp) then
+    player:jump()
+  elseif playdate.buttonJustPressed(playdate.kButtonA) then
     player:attack()
   end
   if playdate.buttonIsPressed(playdate.kButtonB) then
