@@ -125,10 +125,38 @@ local map = nil
 local platform = nil
 local brick = nil
 
-local world = {}
-local worldUp = {}
+local state = {
+  levels = {},
+  editMode = true,
+}
 
-local editMode = true
+local world = {}
+
+function world.getTile(pos)
+  local level = state.levels[pos.z]
+  if level == nil then
+    return nil
+  end
+  local row = level[pos.x]
+  if row == nil then
+    return nil
+  end
+  return row[pos.y]
+end
+
+function world.setTile(pos, tile)
+  if state.levels[pos.z] == nil then
+    state.levels[pos.z] = {}
+  end
+  local level = state.levels[pos.z]
+
+  if level[pos.x] == nil then
+    level[pos.x] = {}
+  end
+
+  level[pos.x][pos.y] = tile
+  return tile
+end
 
 function initGame()
   map = playdate.graphics.image.new("map.png")
@@ -143,19 +171,19 @@ function initGame()
   local sx, sy = toScreenPos({x = 15, y = 3})
   player = make(sx, sy)
 
-  local worldData = playdate.datastore.read("world")
-  if worldData ~= nil then
-    world = worldData
+  local savedState = playdate.datastore.read()
+  if savedState ~= nil then
+    state = savedState
   end
 
-  playdate.getSystemMenu():addCheckmarkMenuItem("edit", editMode, function()
-    editMode = not editMode
+  playdate.getSystemMenu():addCheckmarkMenuItem("edit", state.editMode, function()
+    state.editMode = not state.editMode
   end)
 end
 
 function playdate.gameWillTerminate()
   print("saving")
-  playdate.datastore.write(world, "world")
+  playdate.datastore.write(state)
   print("saved")
 end
 
@@ -164,27 +192,23 @@ initGame()
 local cursor = {
   x = 0,
   y = 0,
-  z = 0,
+  z = 1,
 }
 
 function fix(pos)
-  return {x = math.floor(pos.x), y = math.floor(pos.y)}
+  return {x = math.floor(pos.x), y = math.floor(pos.y), z = pos.z}
 end
 
 function playdate.update()
   gfx.clear()
   playdate.drawFPS(385, 2)
 
-  for h = 0,1,1 do
-    local level = world
-    local offsetY = 0
-    if h == 1 then
-      level = worldUp
-      offsetY = -(tileHeightHalf*2)
-    end
+  for h = 1,3,1 do
+    local offsetY = -h * (tileHeightHalf*2) + (tileHeightHalf*2)
     for x = 0, 52, 1 do
       for y = -24, 39, 1 do
-        if level[x] ~= nil and level[x][y] then
+        local tile = world.getTile({x = x, y = y, z = h})
+        if tile then
           local sx, sy = toScreenPos({x = x, y = y})
           brick:draw(sx, sy+offsetY)
         end
@@ -194,7 +218,7 @@ function playdate.update()
 
   player:draw()
 
-  if editMode then
+  if state.editMode then
     edit()
   else
     play()
@@ -205,24 +229,14 @@ function edit()
   local pos = fix(cursor)
   gfx.drawText(tostring(pos.x).." "..tostring(pos.y).." @ "..tostring(cursor.z), 5, 220)
 
-  local offsetY = 0
-  if cursor.z == 1 then
-    offsetY = -(tileHeightHalf*2)
-  end
+  local offsetY = -cursor.z * (tileHeightHalf*2) + (tileHeightHalf*2)
   local sx, sy = toScreenPos({x = pos.x, y = pos.y})
   gfx.setColor(gfx.kColorXOR)
   gfx.drawRect(sx, sy+offsetY, 16, 16)
 
-  local level = world
-  if cursor.z == 1 then
-    level = worldUp
-  end
   if playdate.buttonJustPressed(playdate.kButtonA) then
-    if level[pos.x] == nil then
-      level[pos.x] = {}
-    end
-
-    level[pos.x][pos.y] = not level[pos.x][pos.y]
+    local tile = world.getTile(pos)
+    world.setTile(pos, not tile)
   end
 
   if playdate.buttonIsPressed(playdate.kButtonB) then
