@@ -3,6 +3,8 @@ import "CoreLibs/graphics"
 import "CoreLibs/object"
 import "CoreLibs/timer"
 
+import "fps"
+
 local gfx <const> = playdate.graphics
 
 local function translateMovement(button, factor)
@@ -503,33 +505,14 @@ end
 
 initGame()
 
-local fpsHistory = {}
-local fpsOffset = 0
-
-for i=0,61,1 do
-  fpsHistory[i] = 30
-end
+local fps = FPS.new(320, 2, 60, 16)
 
 function playdate.update()
   gfx.clear()
   playdate.drawFPS(385, 2)
 
-  fpsHistory[fpsOffset] = playdate.getFPS()
-  if fpsHistory[fpsOffset] < 0 then
-    -- playdate wrongly shows negative fps at the start?
-    fpsHistory[fpsOffset] = 30
-  end
-  local p = 60
-  for i=fpsOffset,1,-1 do
-    gfx.drawLine(320+p, 16, 320+p, 16-math.max(fpsHistory[i]/2, 0))
-    p = p-1
-  end
-  for i=#fpsHistory,fpsOffset+1,-1 do
-    gfx.drawLine(320+p, 16, 320+p, 16-math.max(fpsHistory[i]/2, 0))
-    p = p-1
-  end
-  fpsOffset = (fpsOffset + 1) % 60
-
+  fps:draw()
+ 
   -- TODO: proper draw order would mean drawing front to back or kind of diagonally?
   world:draw(-10, math.floor(player.pos.z)+1)
   player:draw()
