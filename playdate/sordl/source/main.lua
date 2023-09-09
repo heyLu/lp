@@ -126,35 +126,65 @@ local platform = nil
 local brick = nil
 
 local state = {
-  levels = {},
   editMode = true,
 }
 
-local world = {}
+local world = {
+  layers = {},
+  offset = {x = 50, y = 50, z = 0},
+}
 
-function world.getTile(pos)
-  local level = state.levels[pos.z]
-  if level == nil then
-    return nil
+function world.load(self)
+  for i = -10, 10, 1 do
+    local name = "world-"..tostring(i)
+    local img = playdate.datastore.readImage(name)
+    -- print("tried to load "..name.." -> "..tostring(img))
+    if img ~= nil then
+      self.layers[i] = img
+    end
   end
-  local row = level[pos.x]
-  if row == nil then
-    return nil
-  end
-  return row[pos.y]
 end
 
-function world.setTile(pos, tile)
-  if state.levels[pos.z] == nil then
-    state.levels[pos.z] = {}
+function world.save(self)
+  for i = -10, 10, 1 do
+    if self.layers[i] ~= nil then
+      local name = "world-"..tostring(i)
+      playdate.datastore.writeImage(self.layers[i], name)
+      if playdate.isSimulator then
+        playdate.datastore.writeImage(self.layers[i], name..".gif")
+        -- print("saved "..name)
+      end
+    end
   end
-  local level = state.levels[pos.z]
+end
 
-  if level[pos.x] == nil then
-    level[pos.x] = {}
+function world.getTile(self, pos)
+  local layer = self.layers[pos.z+self.offset.z]
+  if layer == nil then
+    return false
+  end
+  local color = layer:sample(pos.x+self.offset.x, pos.y+self.offset.y)
+  if color ~= playdate.graphics.kColorBlack then
+    return false
   end
 
-  level[pos.x][pos.y] = tile
+  return true
+end
+
+function world.setTile(self, pos, tile)
+  if self.layers[pos.z+self.offset.z] == nil then
+    self.layers[pos.z+self.offset.z] = playdate.graphics.image.new(100, 100)
+  end
+  local layer = self.layers[pos.z+self.offset.z]
+
+  playdate.graphics.pushContext(layer)
+  local color = playdate.graphics.kColorClear
+  if tile then
+    color = playdate.graphics.kColorBlack
+  end
+  playdate.graphics.setColor(color)
+  playdate.graphics.drawPixel(pos.x+self.offset.x, pos.y+self.offset.y)
+  playdate.graphics.popContext()
   return tile
 end
 
@@ -176,6 +206,8 @@ function initGame()
     state = savedState
   end
 
+  world:load()
+
   playdate.getSystemMenu():addCheckmarkMenuItem("edit", state.editMode, function()
     state.editMode = not state.editMode
   end)
@@ -184,6 +216,7 @@ end
 function playdate.gameWillTerminate()
   print("saving")
   playdate.datastore.write(state)
+  world:save()
   print("saved")
 end
 
@@ -192,7 +225,7 @@ initGame()
 local cursor = {
   x = 0,
   y = 0,
-  z = 1,
+  z = 0,
 }
 
 function fix(pos)
@@ -203,11 +236,11 @@ function playdate.update()
   gfx.clear()
   playdate.drawFPS(385, 2)
 
-  for h = 1,3,1 do
-    local offsetY = -h * (tileHeightHalf*2) + (tileHeightHalf*2)
+  for h = -10,10,1 do
+    local offsetY = -h * (tileHeightHalf*2)
     for x = 0, 52, 1 do
       for y = -24, 39, 1 do
-        local tile = world.getTile({x = x, y = y, z = h})
+        local tile = world:getTile({x = x, y = y, z = h})
         if tile then
           local sx, sy = toScreenPos({x = x, y = y})
           brick:draw(sx, sy+offsetY)
@@ -229,21 +262,21 @@ function edit()
   local pos = fix(cursor)
   gfx.drawText(tostring(pos.x).." "..tostring(pos.y).." @ "..tostring(cursor.z), 5, 220)
 
-  local offsetY = -cursor.z * (tileHeightHalf*2) + (tileHeightHalf*2)
+  local offsetY = -cursor.z * (tileHeightHalf*2)
   local sx, sy = toScreenPos({x = pos.x, y = pos.y})
   gfx.setColor(gfx.kColorXOR)
   gfx.drawRect(sx, sy+offsetY, 16, 16)
 
   if playdate.buttonJustPressed(playdate.kButtonA) then
-    local tile = world.getTile(pos)
-    world.setTile(pos, not tile)
+    local tile = world:getTile(pos)
+    world:setTile(pos, not tile)
   end
 
   if playdate.buttonIsPressed(playdate.kButtonB) then
     if playdate.buttonJustPressed(playdate.kButtonUp) then
-      cursor.z = cursor.z + 1
+      cursor.z = math.min(cursor.z + 1, 10)
     elseif playdate.buttonJustPressed(playdate.kButtonDown) then
-      cursor.z = cursor.z - 1
+      cursor.z = math.max(cursor.z - 1, -10)
     end
 
     return
