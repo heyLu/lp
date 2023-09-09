@@ -526,9 +526,9 @@ function playdate.update()
   end
   fpsOffset = (fpsOffset + 1) % 60
 
-  world:draw(-10, math.floor(player.pos.z))
+  world:draw(-10, math.floor(player.pos.z)+1)
   player:draw()
-  world:draw(math.floor(player.pos.z)+1, 10)
+  world:draw(math.floor(player.pos.z)+2, 10)
 
   mode.update()
 
