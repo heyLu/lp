@@ -5,7 +5,7 @@ import "CoreLibs/timer"
 
 local gfx <const> = playdate.graphics
 
-function translateMovement(button, factor)
+local function translateMovement(button, factor)
   local offsetX = 0
   local offsetY = 0
 
@@ -32,7 +32,7 @@ function translateMovement(button, factor)
   return offsetX*factor, offsetY*factor
 end
 
-function make(x, y)
+local function make(x, y)
   local len = 10
   return {
     pos = {x = x, y = y, z = 0},
@@ -130,8 +130,8 @@ function make(x, y)
 
       local layer = world.cachedLayers[math.floor(self.pos.z+1)]
       if layer ~= nil then
-        -- if world:getTile({x = math.floor(self.pos.x+offsetX), y = math.floor(self.pos.y+offsetY), z = self.pos.z + 1}) then
-        if gfx.checkAlphaCollision(layer, 0, 0, gfx.kImageUnflipped, self.collisionImage, 0, 0, gfx.kImageUnflipped) then
+        if world:getTile({x = math.floor(self.pos.x+offsetX), y = math.floor(self.pos.y+offsetY), z = self.pos.z + 1}) then
+        -- if gfx.checkAlphaCollision(layer, 0, 0, gfx.kImageUnflipped, self.collisionImage, 0, 0, gfx.kImageUnflipped) then
           -- colliding with the next level up, stop!
 
           -- need to undo collision/position update
@@ -514,7 +514,11 @@ function playdate.update()
   gfx.clear()
   playdate.drawFPS(385, 2)
 
-  fpsHistory[fpsOffset] = math.max(playdate.getFPS(), 0)
+  fpsHistory[fpsOffset] = playdate.getFPS()
+  if fpsHistory[fpsOffset] < 0 then
+    -- playdate wrongly shows negative fps at the start?
+    fpsHistory[fpsOffset] = 30
+  end
   local p = 60
   for i=fpsOffset,1,-1 do
     gfx.drawLine(320+p, 16, 320+p, 16-math.max(fpsHistory[i]/2, 0))
@@ -526,6 +530,7 @@ function playdate.update()
   end
   fpsOffset = (fpsOffset + 1) % 60
 
+  -- TODO: proper draw order would mean drawing front to back or kind of diagonally?
   world:draw(-10, math.floor(player.pos.z)+1)
   player:draw()
   world:draw(math.floor(player.pos.z)+2, 10)
