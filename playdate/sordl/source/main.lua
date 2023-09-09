@@ -85,7 +85,7 @@ function make(x, y)
       gfx.popContext(self.collisionImage)
     end,
 
-    move = function(self, button)
+    move = function(self, button, world)
       if self.anim ~= nil then
         return
       end
@@ -119,9 +119,25 @@ function make(x, y)
       local offsetX, offsetY = translateMovement(button, self.speed)
       self.pos.x = self.pos.x + offsetX
       self.pos.y = self.pos.y + offsetY
-
       if math.abs(offsetX) > 0 or math.abs(offsetY) > 0 then
         self:updateCollision()
+      end
+
+      local layer = world.cachedLayers[math.floor(self.pos.z+1)]
+      if layer ~= nil then
+        -- if world:getTile({x = math.floor(self.pos.x+offsetX), y = math.floor(self.pos.y+offsetY), z = self.pos.z + 1}) then
+        if gfx.checkAlphaCollision(layer, 0, 0, gfx.kImageUnflipped, self.collisionImage, 0, 0, gfx.kImageUnflipped) then
+          -- colliding with the next level up, stop!
+
+          -- need to undo collision/position update
+          self.pos.x = self.pos.x - offsetX
+          self.pos.y = self.pos.y - offsetY
+          if math.abs(offsetX) > 0 or math.abs(offsetY) > 0 then
+            self:updateCollision()
+          end
+
+          return
+        end
       end
     end,
 
@@ -405,16 +421,16 @@ local modePlay = {
     end
 
     if playdate.buttonIsPressed(playdate.kButtonLeft) then
-      player:move(playdate.kButtonLeft)
+      player:move(playdate.kButtonLeft, world)
     end
     if playdate.buttonIsPressed(playdate.kButtonRight) then
-      player:move(playdate.kButtonRight)
+      player:move(playdate.kButtonRight, world)
     end
     if playdate.buttonIsPressed(playdate.kButtonUp) then
-      player:move(playdate.kButtonUp)
+      player:move(playdate.kButtonUp, world)
     end
     if playdate.buttonIsPressed(playdate.kButtonDown) then
-      player:move(playdate.kButtonDown)
+      player:move(playdate.kButtonDown, world)
     end
 
     if playdate.buttonIsPressed(playdate.kButtonA) and playdate.buttonJustPressed(playdate.kButtonUp) then
