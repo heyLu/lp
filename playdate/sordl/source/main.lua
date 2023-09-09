@@ -17,7 +17,7 @@ function make(x, y)
     anim = nil,
 
     draw = function(self)
-      gfx.setDitherPattern(0.3, playdate.graphics.image.kDitherTypeDiagonalLine)
+      gfx.setDitherPattern(0.3, gfx.image.kDitherTypeDiagonalLine)
       -- gfx.fillRect(self.pos.x-5, self.pos.y-5, 10, 10)
       gfx.fillCircleAtPoint(self.pos.x, self.pos.y, 5)
       gfx.setDitherPattern(0)
@@ -91,7 +91,7 @@ function make(x, y)
         return
       end
 
-      self.anim = playdate.graphics.animator.new(700, self.dir, self.dir+self.arc:length()*0.25)
+      self.anim = gfx.animator.new(700, self.dir, self.dir+self.arc:length()*0.25)
     end,
 
     jump = function(self)
@@ -162,7 +162,7 @@ function world.getTile(self, pos)
     return false
   end
   local color = layer:sample(pos.x+self.offset.x, pos.y+self.offset.y)
-  if color ~= playdate.graphics.kColorBlack then
+  if color ~= gfx.kColorBlack then
     return false
   end
 
@@ -171,18 +171,18 @@ end
 
 function world.setTile(self, pos, tile)
   if self.layers[pos.z+self.offset.z] == nil then
-    self.layers[pos.z+self.offset.z] = playdate.graphics.image.new(100, 100)
+    self.layers[pos.z+self.offset.z] = gfx.image.new(100, 100)
   end
   local layer = self.layers[pos.z+self.offset.z]
 
-  playdate.graphics.pushContext(layer)
-  local color = playdate.graphics.kColorClear
+  gfx.pushContext(layer)
+  local color = gfx.kColorClear
   if tile then
-    color = playdate.graphics.kColorBlack
+    color = gfx.kColorBlack
   end
-  playdate.graphics.setColor(color)
-  playdate.graphics.drawPixel(pos.x+self.offset.x, pos.y+self.offset.y)
-  playdate.graphics.popContext()
+  gfx.setColor(color)
+  gfx.drawPixel(pos.x+self.offset.x, pos.y+self.offset.y)
+  gfx.popContext()
 
   self.isCached[pos.z+self.offset.z] = false
   return tile
@@ -228,13 +228,13 @@ function world.draw(self)
 end
 
 function initGame()
-  map = playdate.graphics.image.new("map.png")
+  map = gfx.image.new("map.png")
   assert(map)
 
-  platform = playdate.graphics.image.new("platform.png")
+  platform = gfx.image.new("platform.png")
   assert(platform)
 
-  brick = playdate.graphics.image.new("brick.png")
+  brick = gfx.image.new("brick.png")
   assert(brick)
 
   local sx, sy = toScreenPos({x = 15, y = 3})
