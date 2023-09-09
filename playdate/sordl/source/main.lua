@@ -42,6 +42,7 @@ function make(x, y)
     len = len,
     shield = false,
     collisionImage = gfx.image.new(400, 240),
+    sprite = nil,
 
     anim = nil,
 
@@ -50,28 +51,32 @@ function make(x, y)
       local screenPos = {x = sx, y = sy}
 
       gfx.setDitherPattern(0.3, gfx.image.kDitherTypeDiagonalLine)
-      -- gfx.fillRect(self.pos.x-5, self.pos.y-5, 10, 10)
-      gfx.fillCircleAtPoint(screenPos.x, screenPos.y, 5)
+      if self.sprite == nil then
+        -- gfx.fillRect(self.pos.x-5, self.pos.y-5, 10, 10)
+        gfx.fillCircleAtPoint(screenPos.x, screenPos.y, 5)
+      else
+        self.sprite:drawAnchored(screenPos.x, screenPos.y, 0.25, 0.25)
+      end
       gfx.setDitherPattern(0)
 
-      if not self.shield then
-        if self.anim == nil then
-          local dx, dy = self.arc:pointOnArc(self.dir):unpack()
-          gfx.drawLine(screenPos.x, screenPos.y, screenPos.x+dx, screenPos.y+dy)
-        else
-          local dx, dy = self.arc:pointOnArc(self.anim:currentValue()):unpack()
-          gfx.drawLine(screenPos.x, screenPos.y, screenPos.x+dx, screenPos.y+dy)
+      -- if not self.shield then
+      --   if self.anim == nil then
+      --     local dx, dy = self.arc:pointOnArc(self.dir):unpack()
+      --     gfx.drawLine(screenPos.x, screenPos.y, screenPos.x+dx, screenPos.y+dy)
+      --   else
+      --     local dx, dy = self.arc:pointOnArc(self.anim:currentValue()):unpack()
+      --     gfx.drawLine(screenPos.x, screenPos.y, screenPos.x+dx, screenPos.y+dy)
 
-          if self.anim:ended() then
-            self.anim = nil
-          end
-        end
-      else
-        -- TODO: draw arc "behind" character to get an offset arc for bigger size
-        local dx, dy = self.arc:pointOnArc(self.dir):unpack()
-        local angle = (self.dir / self.arc:length()) * 360
-        gfx.drawArc(screenPos.x+dx*3, screenPos.y+dy*3, 5, angle-30, angle+30)
-      end
+      --     if self.anim:ended() then
+      --       self.anim = nil
+      --     end
+      --   end
+      -- else
+      --   -- TODO: draw arc "behind" character to get an offset arc for bigger size
+      --   local dx, dy = self.arc:pointOnArc(self.dir):unpack()
+      --   local angle = (self.dir / self.arc:length()) * 360
+      --   gfx.drawArc(screenPos.x+dx*3, screenPos.y+dy*3, 5, angle-30, angle+30)
+      -- end
     end,
 
     updateCollision = function(self)
@@ -469,7 +474,11 @@ function initGame()
   brick = gfx.image.new("brick.png")
   assert(brick)
 
+  ghost = gfx.image.new("ghost.png")
+  assert(ghost)
+
   player = make(15, 3)
+  player.sprite = ghost
 
   local savedState = playdate.datastore.read()
   if savedState ~= nil then
