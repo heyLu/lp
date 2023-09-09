@@ -126,6 +126,9 @@ local state = {
 local world = {
   layers = {},
   offset = {x = 50, y = 50, z = 0},
+
+  cachedLayers = {},
+  isCached = {},
 }
 
 function world.load(self)
@@ -180,7 +183,48 @@ function world.setTile(self, pos, tile)
   playdate.graphics.setColor(color)
   playdate.graphics.drawPixel(pos.x+self.offset.x, pos.y+self.offset.y)
   playdate.graphics.popContext()
+
+  self.isCached[pos.z+self.offset.z] = false
   return tile
+end
+
+function world.draw(self)
+  playdate.resetElapsedTime()
+  local wasNotCached = false
+  for h = -10,10,1 do
+    if not self.isCached[h] then
+      wasNotCached = true
+
+      if self.cachedLayers[h] == nil then
+        self.cachedLayers[h] = gfx.image.new(400, 240)
+      end
+
+      self.cachedLayers[h]:clear(gfx.kColorClear)
+
+      gfx.pushContext(self.cachedLayers[h])
+      gfx.drawRect(0, 0, 400, 240)
+      local offsetY = -h * (tileHeightHalf*2)
+      for x = 0, 52, 1 do
+        for y = -24, 39, 1 do
+          local tile = world:getTile({x = x, y = y, z = h})
+          if tile then
+            local sx, sy = toScreenPos({x = x, y = y})
+            brick:draw(sx, sy+offsetY)
+          end
+        end
+      end
+      gfx.popContext()
+
+      self.isCached[h] = true
+    end
+
+    gfx.setImageDrawMode(gfx.kDrawModeCopy)
+    self.cachedLayers[h]:draw(0, 0)
+  end
+
+  if wasNotCached then
+    print("tile cache took "..tostring(playdate.getElapsedTime()*1000).."ms")
+  end
 end
 
 function initGame()
@@ -227,9 +271,6 @@ function fix(pos)
   return {x = math.floor(pos.x), y = math.floor(pos.y), z = pos.z}
 end
 
-local tilesChanged = true
-local tileCache = gfx.image.new(400, 240)
-
 local fpsHistory = {}
 local fpsOffset = 0
 
@@ -238,31 +279,8 @@ for i=0,61,1 do
 end
 
 function playdate.update()
-  if tilesChanged then
-    playdate.resetElapsedTime()
-    gfx.pushContext(tileCache)
-    gfx.clear()
-    for h = -10,10,1 do
-      local offsetY = -h * (tileHeightHalf*2)
-      for x = 0, 52, 1 do
-        for y = -24, 39, 1 do
-          local tile = world:getTile({x = x, y = y, z = h})
-          if tile then
-            local sx, sy = toScreenPos({x = x, y = y})
-            brick:draw(sx, sy+offsetY)
-          end
-        end
-      end
-    end
-    gfx.popContext()
-
-    local cacheTime = playdate.getElapsedTime()
-    print("tile cache took "..tostring(cacheTime*1000).."ms")
-    tilesChanged = false
-  end
-
   gfx.clear()
-  tileCache:draw(0, 0)
+  world:draw()
   playdate.drawFPS(385, 2)
 
   fpsHistory[fpsOffset] = math.max(playdate.getFPS(), 0)
