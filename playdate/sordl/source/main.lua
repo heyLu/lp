@@ -5,31 +5,62 @@ import "CoreLibs/timer"
 
 local gfx <const> = playdate.graphics
 
+function translateMovement(button, factor)
+  local offsetX = 0
+  local offsetY = 0
+
+  if button == playdate.kButtonLeft then
+    offsetX = -0.5
+    offsetY = 0.5
+  end
+
+  if button == playdate.kButtonRight then
+    offsetX = 0.5
+    offsetY = -0.5
+  end
+
+  if button == playdate.kButtonUp then
+    offsetX = -1
+    offsetY = -1
+  end
+
+  if button == playdate.kButtonDown then
+    offsetX = 1
+    offsetY = 1
+  end
+
+  return offsetX*factor, offsetY*factor
+end
+
 function make(x, y)
   local len = 10
   return {
     pos = {x = x, y = y, z = 0},
     arc = playdate.geometry.arc.new(0, 0, len, 0, 360),
     dir = 10,
-    speed = 2,
+    speed = 0.01,
     len = len,
     shield = false,
+    collisionImage = gfx.image.new(400, 240),
 
     anim = nil,
 
     draw = function(self)
+      local sx, sy = toScreenPos(self.pos)
+      local screenPos = {x = sx, y = sy}
+
       gfx.setDitherPattern(0.3, gfx.image.kDitherTypeDiagonalLine)
       -- gfx.fillRect(self.pos.x-5, self.pos.y-5, 10, 10)
-      gfx.fillCircleAtPoint(self.pos.x, self.pos.y, 5)
+      gfx.fillCircleAtPoint(screenPos.x, screenPos.y, 5)
       gfx.setDitherPattern(0)
 
       if not self.shield then
         if self.anim == nil then
           local dx, dy = self.arc:pointOnArc(self.dir):unpack()
-          gfx.drawLine(self.pos.x, self.pos.y, self.pos.x+dx, self.pos.y+dy)
+          gfx.drawLine(screenPos.x, screenPos.y, screenPos.x+dx, screenPos.y+dy)
         else
           local dx, dy = self.arc:pointOnArc(self.anim:currentValue()):unpack()
-          gfx.drawLine(self.pos.x, self.pos.y, self.pos.x+dx, self.pos.y+dy)
+          gfx.drawLine(screenPos.x, screenPos.y, screenPos.x+dx, screenPos.y+dy)
 
           if self.anim:ended() then
             self.anim = nil
@@ -39,8 +70,19 @@ function make(x, y)
         -- TODO: draw arc "behind" character to get an offset arc for bigger size
         local dx, dy = self.arc:pointOnArc(self.dir):unpack()
         local angle = (self.dir / self.arc:length()) * 360
-        gfx.drawArc(self.pos.x+dx*3, self.pos.y+dy*3, 5, angle-30, angle+30)
+        gfx.drawArc(screenPos.x+dx*3, screenPos.y+dy*3, 5, angle-30, angle+30)
       end
+    end,
+
+    updateCollision = function(self)
+      self.collisionImage:clear(gfx.kColorClear)
+      gfx.pushContext(self.collisionImage)
+
+      local sx, sy = toScreenPos(self.pos)
+      local screenPos = {x = sx, y = sy}
+      gfx.fillCircleAtPoint(screenPos.x, screenPos.y, 3)
+
+      gfx.popContext(self.collisionImage)
     end,
 
     move = function(self, button)
@@ -49,41 +91,37 @@ function make(x, y)
       end
 
       if playdate.buttonIsPressed(playdate.kButtonB) then
-        self.speed = 1
+        self.speed = 0.125
       else
-        self.speed = 2
+        self.speed = 0.25
       end
 
       -- fix moving diagonally (y is 2x the pixel size of x)
-      local bothDirections = (playdate.buttonIsPressed(playdate.kButtonLeft) or playdate.buttonIsPressed(playdate.kButtonRight)) and (playdate.buttonIsPressed(playdate.kButtonUp) or playdate.buttonIsPressed(playdate.kButtonDown))
-      local speedChange = 1
-      if bothDirections then
-        speedChange = 2
-      end
+      -- local bothDirections = (playdate.buttonIsPressed(playdate.kButtonLeft) or playdate.buttonIsPressed(playdate.kButtonRight)) and (playdate.buttonIsPressed(playdate.kButtonUp) or playdate.buttonIsPressed(playdate.kButtonDown))
+      -- local speedChange = 1
+      -- if bothDirections then
+      --   speedChange = 2
+      -- end
 
       if button == playdate.kButtonLeft then
-        self.pos.x = self.pos.x - self.speed
-        -- self.pos.x = self.pos.x - 1
-        -- self.pos.y = self.pos.y - 0.5
         self.dir = self.arc:length()*0.75
       end
       if button == playdate.kButtonRight then
-        self.pos.x = self.pos.x + self.speed
-        -- self.pos.x = self.pos.x + 1
-        -- self.pos.y = self.pos.y + 0.5
         self.dir = self.arc:length()*0.25
       end
       if button == playdate.kButtonUp then
-        self.pos.y = self.pos.y - self.speed/speedChange
-        -- self.pos.x = self.pos.x + 1
-        -- self.pos.y = self.pos.y - 0.5
         self.dir = 0
       end
       if button == playdate.kButtonDown then
-        self.pos.y = self.pos.y + self.speed/speedChange
-        -- self.pos.x = self.pos.x - 1
-        -- self.pos.y = self.pos.y + 0.5
         self.dir = self.arc:length()*0.5
+      end
+
+      local offsetX, offsetY = translateMovement(button, self.speed)
+      self.pos.x = self.pos.x + offsetX
+      self.pos.y = self.pos.y + offsetY
+
+      if math.abs(offsetX) > 0 or math.abs(offsetY) > 0 then
+        self:updateCollision()
       end
     end,
 
@@ -96,7 +134,7 @@ function make(x, y)
     end,
 
     jump = function(self)
-      self.pos.y = self.pos.y - 30
+      self.pos.z = self.pos.z + 4
     end
   }
 end
@@ -111,8 +149,9 @@ function toTilePos(pos)
 end
 
 function toScreenPos(pos)
+  local heightOffsetY = -pos.z * (tileHeightHalf*2)
   -- https://clintbellanger.net/articles/isometric_math/
-  return (pos.x - pos.y) * tileWidthHalf, (pos.x + pos.y) * tileHeightHalf
+  return (pos.x - pos.y) * tileWidthHalf, (pos.x + pos.y) * tileHeightHalf + heightOffsetY
 end
 
 local player
@@ -204,13 +243,12 @@ function world.draw(self)
 
       gfx.pushContext(self.cachedLayers[h])
       gfx.drawRect(0, 0, 400, 240)
-      local offsetY = -h * (tileHeightHalf*2)
       for x = 0, 52, 1 do
         for y = -24, 39, 1 do
           local tile = world:getTile({x = x, y = y, z = h})
           if tile then
-            local sx, sy = toScreenPos({x = x, y = y})
-            brick:draw(sx, sy+offsetY)
+            local sx, sy = toScreenPos({x = x, y = y, z = h})
+            brick:draw(sx, sy)
           end
         end
       end
@@ -254,7 +292,7 @@ local modeEdit = {
     gfx.drawText(tostring(pos.x).." "..tostring(pos.y).." @ "..tostring(cursor.z).." "..tostring(world:getTile(pos)), 5, 220)
 
     local offsetY = -cursor.z * (tileHeightHalf*2)
-    local sx, sy = toScreenPos({x = pos.x, y = pos.y})
+    local sx, sy = toScreenPos(pos)
     gfx.setColor(gfx.kColorXOR)
     gfx.drawRect(sx, sy+offsetY, 16, 16)
 
@@ -298,6 +336,9 @@ local modeEdit = {
     end,
 
     upButtonDown = function()
+      if playdate.buttonIsPressed(playdate.kButtonB) then
+        return
+      end
       removeRepeatTimer()
       repeatTimer = playdate.timer.keyRepeatTimer(function()
         cursor.x = cursor.x - 1
@@ -305,10 +346,14 @@ local modeEdit = {
       end)
     end,
     upButtonUp = function()
+
       removeRepeatTimer()
     end,
 
     downButtonDown = function()
+      if playdate.buttonIsPressed(playdate.kButtonB) then
+        return
+      end
       removeRepeatTimer()
       repeatTimer = playdate.timer.keyRepeatTimer(function()
         cursor.x = cursor.x + 1
@@ -320,28 +365,43 @@ local modeEdit = {
     end,
   },
 }
+
+local falling = false
+local lastOnPos = {x = 0, y = 0, z = 0}
 local modePlay = {
   name = "play",
   update = function()
-    local x, y = toTilePos(player.pos)
-    gfx.drawText(tostring(x).." "..tostring(y), 0, 220)
+    gfx.drawText(tostring(player.pos.x).." "..tostring(player.pos.y), 0, 220)
 
-    local sx, sy = toScreenPos({x = x, y = y})
+    local sx, sy = toScreenPos(player.pos)
     local tx, ty = toTilePos({x = sx, y = sy})
     gfx.drawText(tostring(tx).." "..tostring(ty), 50, 220)
 
 
-    if player.pos.y > 240 then
+    if sy > 240 then
       gfx.drawText("*oops*", 200, 120)
       -- playdate.stop()
       return
     end
 
-    if world:getTile({x=x, y=y, z=player.pos.z}) then
+    local layer = world.cachedLayers[math.floor(player.pos.z)]
+    local collide = false
+    if layer ~= nil then
+      collide = gfx.checkAlphaCollision(layer, 0, 0, gfx.kImageUnflipped, player.collisionImage, 0, 0, gfx.kImageUnflipped)
+    end
+
+    local correctedPos = table.shallowcopy(player.pos) --{x = math.floor(player.pos.x), y = math.floor(player.pos.y), z = player.pos.z}
+    local onTile = world:getTile(correctedPos)
+    if onTile or collide then
+      lastOnPos = correctedPos
       gfx.drawText("*on*", 100, 220)
-    else
+    else --if math.abs(lastOnPos.x-correctedPos.x) > 0.5 or math.abs(lastOnPos.y-correctedPos.y)>0.5 then
+      if not falling then -- now falling...
+        printTable(correctedPos,lastOnPos)
+      end
       gfx.drawText("off", 100, 220)
-      player.pos.y = player.pos.y + 5
+      player.pos.z = player.pos.z - 0.25
+      falling = true
     end
 
     if playdate.buttonIsPressed(playdate.kButtonLeft) then
@@ -392,8 +452,7 @@ function initGame()
   brick = gfx.image.new("brick.png")
   assert(brick)
 
-  local sx, sy = toScreenPos({x = 15, y = 3})
-  player = make(sx, sy)
+  player = make(15, 3)
 
   local savedState = playdate.datastore.read()
   if savedState ~= nil then
