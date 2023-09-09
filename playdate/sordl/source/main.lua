@@ -1,6 +1,7 @@
 import "CoreLibs/animator"
 import "CoreLibs/graphics"
 import "CoreLibs/object"
+import "CoreLibs/timer"
 
 local gfx <const> = playdate.graphics
 
@@ -223,8 +224,162 @@ function world.draw(self)
   end
 
   if wasNotCached then
-    print("tile cache took "..tostring(playdate.getElapsedTime()*1000).."ms")
+    local tookMs = playdate.getElapsedTime()*1000
+    local availableMs = 1 / playdate.display.getRefreshRate() * 1000
+    print("tile cache took "..tookMs.."ms ("..(tookMs/availableMs*100).."% of "..availableMs.."ms)")
   end
+end
+
+local cursor = {
+  x = 0,
+  y = 0,
+  z = 0,
+}
+
+function fix(pos)
+  return {x = math.floor(pos.x), y = math.floor(pos.y), z = pos.z}
+end
+
+local repeatTimer = nil
+function removeRepeatTimer()
+  if repeatTimer ~= nil then
+    repeatTimer:remove()
+  end
+end
+
+local modeEdit = {
+  name = "edit",
+  update = function()
+    local pos = fix(cursor)
+    gfx.drawText(tostring(pos.x).." "..tostring(pos.y).." @ "..tostring(cursor.z).." "..tostring(world:getTile(pos)), 5, 220)
+
+    local offsetY = -cursor.z * (tileHeightHalf*2)
+    local sx, sy = toScreenPos({x = pos.x, y = pos.y})
+    gfx.setColor(gfx.kColorXOR)
+    gfx.drawRect(sx, sy+offsetY, 16, 16)
+
+    if playdate.buttonJustPressed(playdate.kButtonA) then
+      local tile = world:getTile(pos)
+      world:setTile(pos, not tile)
+    end
+
+    if playdate.buttonIsPressed(playdate.kButtonB) then
+      if playdate.buttonJustPressed(playdate.kButtonUp) then
+        cursor.z = math.min(cursor.z + 1, 10)
+      elseif playdate.buttonJustPressed(playdate.kButtonDown) then
+        cursor.z = math.max(cursor.z - 1, -10)
+      end
+
+      return
+    end
+  end,
+
+  inputHandlers = {
+    leftButtonDown = function()
+      removeRepeatTimer()
+      repeatTimer = playdate.timer.keyRepeatTimer(function()
+        cursor.x = cursor.x - 0.5
+        cursor.y = cursor.y + 0.5
+      end)
+    end,
+    leftButtonUp = function()
+      removeRepeatTimer()
+    end,
+
+    rightButtonDown = function()
+      removeRepeatTimer()
+      repeatTimer = playdate.timer.keyRepeatTimer(function()
+        cursor.x = cursor.x + 0.5
+        cursor.y = cursor.y - 0.5
+      end)
+    end,
+    rightButtonUp = function()
+      removeRepeatTimer()
+    end,
+
+    upButtonDown = function()
+      removeRepeatTimer()
+      repeatTimer = playdate.timer.keyRepeatTimer(function()
+        cursor.x = cursor.x - 1
+        cursor.y = cursor.y - 1
+      end)
+    end,
+    upButtonUp = function()
+      removeRepeatTimer()
+    end,
+
+    downButtonDown = function()
+      removeRepeatTimer()
+      repeatTimer = playdate.timer.keyRepeatTimer(function()
+        cursor.x = cursor.x + 1
+        cursor.y = cursor.y + 1
+      end)
+    end,
+    downButtonUp = function()
+      removeRepeatTimer()
+    end,
+  },
+}
+local modePlay = {
+  name = "play",
+  update = function()
+    local x, y = toTilePos(player.pos)
+    gfx.drawText(tostring(x).." "..tostring(y), 0, 220)
+
+    local sx, sy = toScreenPos({x = x, y = y})
+    local tx, ty = toTilePos({x = sx, y = sy})
+    gfx.drawText(tostring(tx).." "..tostring(ty), 50, 220)
+
+
+    if player.pos.y > 240 then
+      gfx.drawText("*oops*", 200, 120)
+      -- playdate.stop()
+      return
+    end
+
+    if world:getTile({x=x, y=y, z=player.pos.z}) then
+      gfx.drawText("*on*", 100, 220)
+    else
+      gfx.drawText("off", 100, 220)
+      player.pos.y = player.pos.y + 5
+    end
+
+    if playdate.buttonIsPressed(playdate.kButtonLeft) then
+      player:move(playdate.kButtonLeft)
+    end
+    if playdate.buttonIsPressed(playdate.kButtonRight) then
+      player:move(playdate.kButtonRight)
+    end
+    if playdate.buttonIsPressed(playdate.kButtonUp) then
+      player:move(playdate.kButtonUp)
+    end
+    if playdate.buttonIsPressed(playdate.kButtonDown) then
+      player:move(playdate.kButtonDown)
+    end
+
+    if playdate.buttonIsPressed(playdate.kButtonA) and playdate.buttonJustPressed(playdate.kButtonUp) then
+      player:jump()
+    elseif playdate.buttonJustPressed(playdate.kButtonA) then
+      player:attack()
+    end
+    if playdate.buttonIsPressed(playdate.kButtonB) then
+      player.shield = true
+    else
+      player.shield = false
+    end
+  end,
+  inputHandlers = {},
+}
+
+local mode = modeEdit
+
+function setupState()
+  playdate.inputHandlers.pop()
+  mode = modeEdit
+  if not state.editMode then
+    mode = modePlay
+  end
+  playdate.inputHandlers.push(mode.inputHandlers)
 end
 
 function initGame()
@@ -247,8 +402,10 @@ function initGame()
 
   world:load()
 
+  setupState()
   playdate.getSystemMenu():addCheckmarkMenuItem("edit", state.editMode, function()
     state.editMode = not state.editMode
+    setupState()
   end)
 end
 
@@ -260,16 +417,6 @@ function playdate.gameWillTerminate()
 end
 
 initGame()
-
-local cursor = {
-  x = 0,
-  y = 0,
-  z = 0,
-}
-
-function fix(pos)
-  return {x = math.floor(pos.x), y = math.floor(pos.y), z = pos.z}
-end
 
 local fpsHistory = {}
 local fpsOffset = 0
@@ -297,102 +444,7 @@ function playdate.update()
 
   player:draw()
 
-  if state.editMode then
-    edit()
-  else
-    play()
-  end
-end
+  mode.update()
 
-function edit()
-  local pos = fix(cursor)
-  gfx.drawText(tostring(pos.x).." "..tostring(pos.y).." @ "..tostring(cursor.z).." "..tostring(world:getTile(pos)), 5, 220)
-
-  local offsetY = -cursor.z * (tileHeightHalf*2)
-  local sx, sy = toScreenPos({x = pos.x, y = pos.y})
-  gfx.setColor(gfx.kColorXOR)
-  gfx.drawRect(sx, sy+offsetY, 16, 16)
-
-  if playdate.buttonJustPressed(playdate.kButtonA) then
-    local tile = world:getTile(pos)
-    world:setTile(pos, not tile)
-    tilesChanged = true
-  end
-
-  if playdate.buttonIsPressed(playdate.kButtonB) then
-    if playdate.buttonJustPressed(playdate.kButtonUp) then
-      cursor.z = math.min(cursor.z + 1, 10)
-    elseif playdate.buttonJustPressed(playdate.kButtonDown) then
-      cursor.z = math.max(cursor.z - 1, -10)
-    end
-
-    return
-  end
-
-  if playdate.buttonJustPressed(playdate.kButtonLeft) then
-    cursor.x = cursor.x - 0.5
-    cursor.y = cursor.y + 0.5
-  end
-  if playdate.buttonJustPressed(playdate.kButtonRight) then
-    -- cursor.x = cursor.x + change
-    cursor.x = cursor.x + 0.5
-    cursor.y = cursor.y - 0.5
-  end
-  if playdate.buttonJustPressed(playdate.kButtonUp) then
-    -- cursor.y = cursor.y - change
-    cursor.x = cursor.x - 1
-    cursor.y = cursor.y - 1
-  end
-  if playdate.buttonJustPressed(playdate.kButtonDown) then
-    -- cursor.y = cursor.y + change
-    cursor.x = cursor.x + 1
-    cursor.y = cursor.y + 1
-  end
-end
-
-function play()
-  local x, y = toTilePos(player.pos)
-  gfx.drawText(tostring(x).." "..tostring(y), 0, 220)
-
-  local sx, sy = toScreenPos({x = x, y = y})
-  local tx, ty = toTilePos({x = sx, y = sy})
-  gfx.drawText(tostring(tx).." "..tostring(ty), 50, 220)
-
-
-  if player.pos.y > 240 then
-    gfx.drawText("*oops*", 200, 120)
-    -- playdate.stop()
-    return
-  end
-
-  if world:getTile({x=x, y=y, z=player.pos.z}) then
-    gfx.drawText("*on*", 100, 220)
-  else
-    gfx.drawText("off", 100, 220)
-    player.pos.y = player.pos.y + 5
-  end
-
-  if playdate.buttonIsPressed(playdate.kButtonLeft) then
-    player:move(playdate.kButtonLeft)
-  end
-  if playdate.buttonIsPressed(playdate.kButtonRight) then
-    player:move(playdate.kButtonRight)
-  end
-  if playdate.buttonIsPressed(playdate.kButtonUp) then
-    player:move(playdate.kButtonUp)
-  end
-  if playdate.buttonIsPressed(playdate.kButtonDown) then
-    player:move(playdate.kButtonDown)
-  end
-
-  if playdate.buttonIsPressed(playdate.kButtonA) and playdate.buttonJustPressed(playdate.kButtonUp) then
-    player:jump()
-  elseif playdate.buttonJustPressed(playdate.kButtonA) then
-    player:attack()
-  end
-  if playdate.buttonIsPressed(playdate.kButtonB) then
-    player.shield = true
-  else
-    player.shield = false
-  end
+  playdate.timer.updateTimers()
 end
