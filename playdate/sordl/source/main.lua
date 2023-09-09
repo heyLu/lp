@@ -236,8 +236,16 @@ end
 local tilesChanged = true
 local tileCache = gfx.image.new(400, 240)
 
+local fpsHistory = {}
+local fpsOffset = 0
+
+for i=0,61,1 do
+  fpsHistory[i] = 30
+end
+
 function playdate.update()
   if tilesChanged then
+    playdate.resetElapsedTime()
     gfx.pushContext(tileCache)
     gfx.clear()
     for h = -10,10,1 do
@@ -254,12 +262,26 @@ function playdate.update()
     end
     gfx.popContext()
 
+    local cacheTime = playdate.getElapsedTime()
+    print("tile cache took "..tostring(cacheTime*1000).."ms")
     tilesChanged = false
   end
 
   gfx.clear()
   tileCache:draw(0, 0)
   playdate.drawFPS(385, 2)
+
+  fpsHistory[fpsOffset] = math.max(playdate.getFPS(), 0)
+  local p = 60
+  for i=fpsOffset,1,-1 do
+    gfx.drawLine(320+p, 16, 320+p, 16-math.max(fpsHistory[i]/2, 0))
+    p = p-1
+  end
+  for i=#fpsHistory,fpsOffset+1,-1 do
+    gfx.drawLine(320+p, 16, 320+p, 16-math.max(fpsHistory[i]/2, 0))
+    p = p-1
+  end
+  fpsOffset = (fpsOffset + 1) % 60
 
   player:draw()
 
