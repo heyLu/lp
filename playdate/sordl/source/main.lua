@@ -159,6 +159,7 @@ function world.save(self)
 end
 
 function world.getTile(self, pos)
+  -- TODO: check if table is faster than image in memory
   local layer = self.layers[pos.z+self.offset.z]
   if layer == nil then
     return false
@@ -232,22 +233,33 @@ function fix(pos)
   return {x = math.floor(pos.x), y = math.floor(pos.y), z = pos.z}
 end
 
-function playdate.update()
-  gfx.clear()
-  playdate.drawFPS(385, 2)
+local tilesChanged = true
+local tileCache = gfx.image.new(400, 240)
 
-  for h = -10,10,1 do
-    local offsetY = -h * (tileHeightHalf*2)
-    for x = 0, 52, 1 do
-      for y = -24, 39, 1 do
-        local tile = world:getTile({x = x, y = y, z = h})
-        if tile then
-          local sx, sy = toScreenPos({x = x, y = y})
-          brick:draw(sx, sy+offsetY)
+function playdate.update()
+  if tilesChanged then
+    gfx.pushContext(tileCache)
+    gfx.clear()
+    for h = -10,10,1 do
+      local offsetY = -h * (tileHeightHalf*2)
+      for x = 0, 52, 1 do
+        for y = -24, 39, 1 do
+          local tile = world:getTile({x = x, y = y, z = h})
+          if tile then
+            local sx, sy = toScreenPos({x = x, y = y})
+            brick:draw(sx, sy+offsetY)
+          end
         end
       end
     end
+    gfx.popContext()
+
+    tilesChanged = false
   end
+
+  gfx.clear()
+  tileCache:draw(0, 0)
+  playdate.drawFPS(385, 2)
 
   player:draw()
 
@@ -260,7 +272,7 @@ end
 
 function edit()
   local pos = fix(cursor)
-  gfx.drawText(tostring(pos.x).." "..tostring(pos.y).." @ "..tostring(cursor.z), 5, 220)
+  gfx.drawText(tostring(pos.x).." "..tostring(pos.y).." @ "..tostring(cursor.z).." "..tostring(world:getTile(pos)), 5, 220)
 
   local offsetY = -cursor.z * (tileHeightHalf*2)
   local sx, sy = toScreenPos({x = pos.x, y = pos.y})
@@ -270,6 +282,7 @@ function edit()
   if playdate.buttonJustPressed(playdate.kButtonA) then
     local tile = world:getTile(pos)
     world:setTile(pos, not tile)
+    tilesChanged = true
   end
 
   if playdate.buttonIsPressed(playdate.kButtonB) then
@@ -311,16 +324,18 @@ function play()
   local tx, ty = toTilePos({x = sx, y = sy})
   gfx.drawText(tostring(tx).." "..tostring(ty), 50, 220)
 
+
+  if player.pos.y > 240 then
+    gfx.drawText("*oops*", 200, 120)
+    -- playdate.stop()
+    return
+  end
+
   if world[x] ~= nil and world[x][y] then
     gfx.drawText("*on*", 100, 220)
   else
     gfx.drawText("off", 100, 220)
     player.pos.y = player.pos.y + 5
-  end
-
-  if player.pos.y > 240 then
-    gfx.drawText("*oops*", 200, 120)
-    playdate.stop()
   end
 
   if playdate.buttonIsPressed(playdate.kButtonLeft) then
