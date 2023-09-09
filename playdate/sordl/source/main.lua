@@ -267,7 +267,7 @@ function world.draw(self, from, to)
       self.cachedLayers[h]:clear(gfx.kColorClear)
 
       gfx.pushContext(self.cachedLayers[h])
-      gfx.drawRect(0, 0, 400, 240)
+      -- gfx.drawRect(0, 0, 400, 240)
       for x = 0, 52, 1 do
         for y = -24, 39, 1 do
           local tile = world:getTile({x = x, y = y, z = h})
@@ -508,6 +508,8 @@ initGame()
 local fps = FPS.new(320, 2, 60, 16)
 
 function playdate.update()
+  -- playdate.display.setInverted(true)
+
   gfx.clear()
   playdate.drawFPS(385, 2)
 
