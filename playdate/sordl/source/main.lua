@@ -316,9 +316,11 @@ local modeEdit = {
     local pos = fix(cursor)
     gfx.drawText(tostring(pos.x).." "..tostring(pos.y).." @ "..tostring(cursor.z).." "..tostring(world:getTile(pos)), 5, 220)
 
+    gfx.pushContext()
     local sx, sy = toScreenPos(pos)
     gfx.setColor(gfx.kColorXOR)
     gfx.drawRect(sx, sy, 16, 16)
+    gfx.popContext()
 
     if playdate.buttonJustPressed(playdate.kButtonA) then
       local tile = world:getTile(pos)
