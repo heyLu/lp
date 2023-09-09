@@ -150,6 +150,8 @@ function make(x, y)
     end,
 
     jump = function(self)
+      self.anim = nil
+
       self.pos.z = self.pos.z + 4
     end
   }
@@ -244,10 +246,10 @@ function world.setTile(self, pos, tile)
   return tile
 end
 
-function world.draw(self)
+function world.draw(self, from, to)
   playdate.resetElapsedTime()
   local wasNotCached = false
-  for h = -10,10,1 do
+  for h = math.max(-10, from),math.min(to, 10),1 do
     if not self.isCached[h] then
       wasNotCached = true
 
@@ -502,7 +504,6 @@ end
 
 function playdate.update()
   gfx.clear()
-  world:draw()
   playdate.drawFPS(385, 2)
 
   fpsHistory[fpsOffset] = math.max(playdate.getFPS(), 0)
@@ -517,7 +518,9 @@ function playdate.update()
   end
   fpsOffset = (fpsOffset + 1) % 60
 
+  world:draw(-10, math.floor(player.pos.z))
   player:draw()
+  world:draw(math.floor(player.pos.z)+1, 10)
 
   mode.update()
 
