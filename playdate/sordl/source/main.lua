@@ -268,12 +268,14 @@ function world.draw(self, from, to)
 
       gfx.pushContext(self.cachedLayers[h])
       -- gfx.drawRect(0, 0, 400, 240)
+      local fadedBrick = brick:fadedImage((10-math.abs(h))/10, gfx.image.kDitherTypeFloydSteinberg)
+      -- local fadedBrick = brick:blurredImage(3, 1, gfx.image.kDitherTypeFloydSteinberg)
       for x = 0, 52, 1 do
         for y = -24, 39, 1 do
           local tile = world:getTile({x = x, y = y, z = h})
           if tile then
             local sx, sy = toScreenPos({x = x, y = y, z = h})
-            brick:draw(sx, sy)
+            fadedBrick:draw(sx, sy)
           end
         end
       end
