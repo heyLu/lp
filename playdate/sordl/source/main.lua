@@ -7,7 +7,7 @@ local gfx <const> = playdate.graphics
 function make(x, y)
   local len = 10
   return {
-    pos = {x = x, y = y},
+    pos = {x = x, y = y, z = 0},
     arc = playdate.geometry.arc.new(0, 0, len, 0, 360),
     dir = 10,
     speed = 2,
@@ -105,19 +105,13 @@ local tileHeightHalf <const> = 8 / 2
 
 function toTilePos(pos)
   return math.floor((pos.x / tileWidthHalf + pos.y / tileHeightHalf) / 2),
-         math.floor((pos.y / tileHeightHalf - (pos.x / tileWidthHalf)) / 2)
+         math.floor((pos.y / tileHeightHalf - (pos.x / tileWidthHalf)) / 2),
+         pos.z
 end
 
 function toScreenPos(pos)
   -- https://clintbellanger.net/articles/isometric_math/
   return (pos.x - pos.y) * tileWidthHalf, (pos.x + pos.y) * tileHeightHalf
-end
-
-function toMapPos(pos, width, height)
-    local screenTileX = pos.x + (width / 1) / 2
-    local screenTileY = pos.y + (height / 1) / 2
-
-    return math.floor(screenTileX + 0.5), math.floor(screenTileY + 0.5)
 end
 
 local player
@@ -353,7 +347,7 @@ function play()
     return
   end
 
-  if world[x] ~= nil and world[x][y] then
+  if world:getTile({x=x, y=y, z=player.pos.z}) then
     gfx.drawText("*on*", 100, 220)
   else
     gfx.drawText("off", 100, 220)
