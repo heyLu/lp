@@ -49,6 +49,20 @@ end
 local function update()
     gridview:drawInRect(20, 20, 180, 200)
     listview:drawInRect(220, 20, 160, 210)
+
+    if playdate.buttonJustPressed(playdate.kButtonLeft) then
+        gridview:selectPreviousColumn(true)
+    end
+    if playdate.buttonJustPressed(playdate.kButtonRight) then
+        gridview:selectNextColumn(true)
+    end
+    if playdate.buttonJustPressed(playdate.kButtonUp) then
+        listview:selectPreviousRow(true)
+    end
+    if playdate.buttonJustPressed(playdate.kButtonDown) then
+        listview:selectNextRow(true)
+    end
+
     playdate.timer:updateTimers()
 end
 
