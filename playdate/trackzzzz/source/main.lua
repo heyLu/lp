@@ -28,11 +28,21 @@ gfx.setFont(bitmore)
 function makeTrack(waveform)
   local track1 = playdate.sound.track.new()
   for step = 1, 64, 1 do
-    local r = math.random()
-    if r > 0.95 then
-      track1:addNote(step, 60+math.random(12), 1, math.random(127)/255)
+    if waveform == playdate.sound.kWaveNoise then
+      if (step-1) % 4 == 0 then
+        local note = "C7"
+        if (step-1)%16 == 0 then
+          note = "C4"
+        end
+        track1:addNote(step, note, 1, 0.1)
+      end
     else
-      track1:addNote(step, "C4", 1, 0.0)
+      local r = math.random()
+      if r > 0.95 then
+        track1:addNote(step, 60+math.random(12), 4, math.random(127)/255)
+      else
+        track1:addNote(step, "C4", 4, 0.0)
+      end
     end
   end
   track1:setInstrument(playdate.sound.synth.new(waveform))
@@ -87,10 +97,10 @@ end
 
 local tracks = {
   makeTrack(playdate.sound.kWaveSine),
-  makeTrack(playdate.sound.kWaveSquare),
+  -- makeTrack(playdate.sound.kWaveSquare),
   -- makeTrack(playdate.sound.kWaveSawtooth),
   -- makeTrack(playdate.sound.kWaveTriangle),
-  -- makeTrack(playdate.sound.kWaveNoise),
+  makeTrack(playdate.sound.kWaveNoise),
   makeTrack(playdate.sound.kWavePOPhase),
   makeTrack(playdate.sound.kWavePODigital),
   -- makeTrack(playdate.sound.kWavePOVosim),
@@ -121,9 +131,8 @@ for _, track in ipairs(tracks) do
   sequence:addTrack(track.track)
 end
 
-local beats = 130
-local perMinute = 60
-sequence:setTempo(beats/perMinute)
+local bpm = 120
+sequence:setTempo(bpm/7.5) -- FIXME: not accurate, not sure how to exact bpm with integer steps?
 sequence:setLoops(0)
 sequence:play()
 
@@ -263,13 +272,15 @@ function playdate.update()
 
   gfx.pushContext()
   gfx.setColor(gfx.kColorWhite)
-  gfx.fillRect(2, 2, 10, 10)
+  gfx.fillRect(2, 2, 20, 10)
   gfx.popContext()
   if sequence:isPlaying() then
     gfx.fillTriangle(2, 2, 2, 9, 10, 6)
   else
     gfx.fillRect(2, 2, 8, 8)
   end
+  gfx.setImageDrawMode(gfx.kDrawModeCopy)
+  gfx.drawTextInRect(tostring(bpm).."bpm", 16, 2, 50, 11)
 
   local currentStep = (sequence:getCurrentStep()%sequence:getLength())
   if playhead:getSelectedRow() ~= currentStep then
@@ -278,19 +289,19 @@ function playdate.update()
   if needsDisplay or playhead.needsDisplay then
     gfx.pushContext()
     gfx.setColor(gfx.kColorWhite)
-    gfx.fillRect(0, 10, 20, 240-10)
+    gfx.fillRect(0, 12, 20, 240-12)
     gfx.popContext()
-    playhead:drawInRect(0, 10, 20, 240-10)
+    playhead:drawInRect(0, 20, 20, 240-12)
   end
 
   for i, track in ipairs(tracks) do
-    local width = 50
+    local width = 80
     if needsDisplay or track.view.needsDisplay then
       gfx.pushContext()
       gfx.setColor(gfx.kColorWhite)
-      gfx.fillRect(20+(i-1)*width, 10, width, 240-10)
+      gfx.fillRect(20+(i-1)*width, 12, width, 240-12)
       gfx.popContext()
-      track.view:drawInRect(20+(i-1)*width, 10, width, 240-10)
+      track.view:drawInRect(20+(i-1)*width, 12, width, 240-12)
     end
   end
 
