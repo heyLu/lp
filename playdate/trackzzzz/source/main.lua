@@ -11,6 +11,10 @@ local notes = {
   "C", "Db", "D", "Eb", "E", "F", "Gb", "Bb", "B", "Ab", "A", "C",
 }
 
+local modeSelect = 1
+local modeEdit = 2
+local mode = modeSelect
+
 function toNoteString(pitch)
   local note = math.floor(pitch%12)
   local octave = math.floor(pitch//12)
@@ -79,28 +83,31 @@ function makeTrack(waveform)
 
     selected = selected and active
 
+    if selected then
+      gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+    else
+      gfx.setImageDrawMode(gfx.kDrawModeCopy)
+    end
+
+    local drawRect = gfx.fillRect
+    if mode == modeEdit then
+      gfx.setImageDrawMode(gfx.kDrawModeCopy)
+      drawRect = gfx.drawRect
+    end
+
     if column == columnNote then
       if selected then
-        gfx.fillRect(x, y, width, height)
-        gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
-      else
-        gfx.setImageDrawMode(gfx.kDrawModeCopy)
+        drawRect(x, y, width, height)
       end
       gfx.drawTextInRect(noteString, x+1, y+1, width, height, nil, nil, kTextAlignment.left)
     elseif column == columnLength then
       if selected then
-        gfx.fillRect(x, y, width, height)
-        gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
-      else
-        gfx.setImageDrawMode(gfx.kDrawModeCopy)
+        drawRect(x, y, width, height)
       end
       gfx.drawTextInRect(lengthString, x+1, y+1, width, height, nil, nil, kTextAlignment.left)
     elseif column == columnVelocity then
       if selected then
-        gfx.fillRect(x, y, width, height)
-        gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
-      else
-        gfx.setImageDrawMode(gfx.kDrawModeCopy)
+        drawRect(x, y, width, height)
       end
       gfx.drawTextInRect(velocityString, x+1, y+1, width, height, nil, nil, kTextAlignment.left)  end
   end
@@ -206,6 +213,7 @@ end
 selectHandlers.AButtonDown = function()
   playdate.inputHandlers.pop()
   playdate.inputHandlers.push(editHandlers)
+  mode = modeEdit
 end
 selectHandlers.BButtonDown = function()
   if sequence:isPlaying() then
@@ -244,6 +252,7 @@ local notesChanged = false
 editHandlers.BButtonUp = function()
   playdate.inputHandlers.pop()
   playdate.inputHandlers.push(selectHandlers)
+  mode = modeSelect
 end
 editHandlers.leftButtonUp = function()
   moveToPreviousColumn()
