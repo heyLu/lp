@@ -1,0 +1,266 @@
+import "CoreLibs/graphics"
+import "CoreLibs/ui"
+
+local gfx <const> = playdate.graphics
+
+local columnNote = 1
+local columnVelocity = 2
+
+local notes = {
+  "C", "Db", "D", "Eb", "E", "F", "Gb", "Bb", "B", "Ab", "A", "C",
+}
+
+function toNoteString(pitch)
+  local note = math.floor(pitch%12)
+  local octave = math.floor(pitch//12)
+  return notes[note+1]..tostring(octave-1)
+end
+
+local sequence = playdate.sound.sequence.new()
+
+local bitmore = gfx.font.new("bitmore")
+assert(bitmore)
+bitmore:setTracking(1)
+gfx.setFont(bitmore)
+
+function makeTrack(waveform)
+  local track1 = playdate.sound.track.new()
+  for step = 1, 64, 1 do
+    local r = math.random()
+    if r > 0.95 then
+      track1:addNote(step, 60+math.random(12), 1, math.random(127)/255)
+    else
+      track1:addNote(step, "C4", 1, 0.0)
+    end
+  end
+  track1:setInstrument(playdate.sound.synth.new(waveform))
+
+  local track1View = playdate.ui.gridview.new(20, 11)
+  track1View:setNumberOfColumns(2)
+  track1View:setNumberOfRows(track1:getLength())
+  track1View:setScrollDuration(100)
+
+  local active = false
+  local setActive = function(a)
+    active = a
+  end
+
+  track1View.drawCell = function(self, section, row, column, selected, x, y, width, height)
+    local note = track1:getNotes(row)[1]
+
+    local noteString = "--"
+    local velocityString = "--"
+    if note.velocity > 0 then
+      noteString = toNoteString(note.note)
+      velocityString = tostring(math.floor(note.velocity*255))
+    end
+
+    selected = selected and active
+
+    if column == columnNote then
+      if selected then
+        gfx.fillRect(x, y, width, height)
+        gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+      else
+        gfx.setImageDrawMode(gfx.kDrawModeCopy)
+      end
+      gfx.drawTextInRect(noteString, x+1, y+1, width, height, nil, nil, kTextAlignment.left)
+    elseif column == columnVelocity then
+      if selected then
+        gfx.fillRect(x, y, width, height)
+        gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+      else
+        gfx.setImageDrawMode(gfx.kDrawModeCopy)
+      end
+      gfx.drawTextInRect(velocityString, x+1, y+1, width, height, nil, nil, kTextAlignment.left)  end
+  end
+
+  return {
+    track = track1,
+    view = track1View,
+    setActive = setActive,
+  }
+end
+
+local tracks = {
+  makeTrack(playdate.sound.kWaveSine),
+  makeTrack(playdate.sound.kWaveSquare),
+  -- makeTrack(playdate.sound.kWaveSawtooth),
+  -- makeTrack(playdate.sound.kWaveTriangle),
+  -- makeTrack(playdate.sound.kWaveNoise),
+  makeTrack(playdate.sound.kWavePOPhase),
+  makeTrack(playdate.sound.kWavePODigital),
+  -- makeTrack(playdate.sound.kWavePOVosim),
+}
+
+local selectedTrack = 1
+
+function setActive()
+  for i, track in ipairs(tracks) do
+    track.setActive(i == selectedTrack)
+  end
+end
+
+for _, track in ipairs(tracks) do
+  sequence:addTrack(track.track)
+end
+
+local beats = 120
+local perMinute = 60
+sequence:setTempo(beats/perMinute)
+sequence:setLoops(0)
+sequence:play()
+
+local playhead = playdate.ui.gridview.new(10, 11)
+playhead:setNumberOfColumns(1)
+playhead:setNumberOfRows(tracks[1].track:getLength())
+playhead:setScrollDuration(100)
+playhead.drawCell = function(self, section, row, column, selected, x, y, width, height)
+  if selected then
+    gfx.drawTextInRect(">", x, y, width, height, nil, nil, kTextAlignment.left)
+  end
+end
+
+local selectHandlers = {}
+local editHandlers = {}
+
+local function moveToPreviousColumn()
+  local _, _, oldColumn = tracks[selectedTrack].view:getSelection()
+  tracks[selectedTrack].view:selectPreviousColumn()
+  local section, row, column = tracks[selectedTrack].view:getSelection()
+
+  if column == oldColumn then
+    selectedTrack = selectedTrack - 1
+    if selectedTrack < 1 then
+      selectedTrack = #tracks
+    elseif selectedTrack > #tracks then
+      selectedTrack = 1
+    end
+    tracks[selectedTrack].view:setSelection(section, row, columnVelocity)
+  else
+    tracks[selectedTrack].view:scrollToCell(section, row, column)
+  end
+end
+
+local function moveToNextColumn()
+  local _, _, oldColumn = tracks[selectedTrack].view:getSelection()
+  tracks[selectedTrack].view:selectNextColumn()
+  local section, row, column = tracks[selectedTrack].view:getSelection()
+  tracks[selectedTrack].view:scrollToCell(section, row, column)
+
+  if column == oldColumn then
+    selectedTrack = selectedTrack + 1
+    if selectedTrack < 1 then
+      selectedTrack = #tracks
+    elseif selectedTrack > #tracks then
+      selectedTrack = 1
+    end
+    tracks[selectedTrack].view:setSelection(section, row, columnNote)
+  else
+    tracks[selectedTrack].view:scrollToCell(section, row, column)
+  end
+end
+
+selectHandlers.AButtonDown = function()
+  playdate.inputHandlers.pop()
+  playdate.inputHandlers.push(editHandlers)
+end
+selectHandlers.leftButtonUp = function()
+  moveToPreviousColumn()
+end
+selectHandlers.rightButtonUp = function()
+  moveToNextColumn()
+end
+selectHandlers.upButtonUp = function()
+  tracks[selectedTrack].view:selectPreviousRow(true)
+  local section, row, column = tracks[selectedTrack].view:getSelection()
+  tracks[selectedTrack].view:scrollToCell(section, row, column)
+end
+selectHandlers.downButtonUp = function()
+  tracks[selectedTrack].view:selectNextRow(true)
+  local section, row, column = tracks[selectedTrack].view:getSelection()
+  tracks[selectedTrack].view:scrollToCell(section, row, column)
+end
+
+editHandlers.BButtonUp = function()
+  playdate.inputHandlers.pop()
+  playdate.inputHandlers.push(selectHandlers)
+end
+editHandlers.leftButtonUp = function()
+  moveToPreviousColumn()
+end
+editHandlers.rightButtonUp = function()
+  moveToNextColumn()
+end
+editHandlers.upButtonUp = function()
+  local track = tracks[selectedTrack].track
+  local _, row, column = tracks[selectedTrack].view:getSelection()
+  local note = track:getNotes(row)[1]
+  track:removeNote(row, note.note)
+  if note.velocity == 0 then
+    note.velocity = 1.0
+  else
+    if column == columnNote then
+      note.note = note.note + 1 % 127
+    elseif column == columnVelocity then
+      note.velocity = ((note.velocity*255 + 1)%255) / 255
+    end
+  end
+  track:addNote(row, note.note, note.length, note.velocity)
+end
+editHandlers.downButtonUp = function()
+  local track = tracks[selectedTrack].track
+  local _, row, column = tracks[selectedTrack].view:getSelection()
+  local note = track:getNotes(row)[1]
+  track:removeNote(row, note.note)
+  if note.velocity == 0 then
+    note.velocity = 1.0
+  else
+    if column == columnNote then
+      note.note = note.note - 1 % 127
+    elseif column == columnVelocity then
+      note.velocity = ((note.velocity*255 - 1)%255) / 255
+    end
+  end
+  track:addNote(row, note.note, note.length, note.velocity)
+end
+
+playdate.inputHandlers.push(selectHandlers)
+
+math.randomseed(playdate.getSecondsSinceEpoch())
+
+function playdate.update()
+  playdate.display.setInverted(true)
+
+  setActive()
+
+  local needsDisplay = playdate.getButtonState() ~= 0
+
+  -- gfx.clear()
+  playdate.drawFPS(380, 2)
+
+  local currentStep = (sequence:getCurrentStep()%sequence:getLength())
+  if playhead:getSelectedRow() ~= currentStep then
+    playhead:setSelectedRow(currentStep)
+  end
+  if needsDisplay or playhead.needsDisplay then
+    gfx.pushContext()
+    gfx.setColor(gfx.kColorWhite)
+    gfx.fillRect(0, 10, 20, 240-10)
+    gfx.popContext()
+    playhead:drawInRect(0, 10, 20, 240-10)
+  end
+
+  for i, track in ipairs(tracks) do
+    local width = 50
+    if needsDisplay or track.view.needsDisplay then
+      gfx.pushContext()
+      gfx.setColor(gfx.kColorWhite)
+      gfx.fillRect(10+(i-1)*width, 10, width, 240-10)
+      gfx.popContext()
+      track.view:drawInRect(20+(i-1)*width, 10, width, 240-10)
+    end
+  end
+
+  playdate.timer:updateTimers()
+end
