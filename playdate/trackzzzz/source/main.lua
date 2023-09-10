@@ -206,12 +206,16 @@ end
 selectHandlers.upButtonUp = function()
   tracks[selectedTrack].view:selectPreviousRow(true)
   local section, row, column = tracks[selectedTrack].view:getSelection()
-  tracks[selectedTrack].view:scrollToCell(section, row, column)
+  for i=1,#tracks,1 do
+    tracks[i].view:scrollToCell(section, row, column)
+  end
 end
 selectHandlers.downButtonUp = function()
   tracks[selectedTrack].view:selectNextRow(true)
   local section, row, column = tracks[selectedTrack].view:getSelection()
-  tracks[selectedTrack].view:scrollToCell(section, row, column)
+  for i=1,#tracks,1 do
+    tracks[i].view:scrollToCell(section, row, column)
+  end
 end
 
 editHandlers.BButtonUp = function()
