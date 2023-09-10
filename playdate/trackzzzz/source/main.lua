@@ -210,6 +210,13 @@ local function moveToNextColumn()
   end
 end
 
+local repeatTimer = nil
+function resetRepeat()
+  if repeatTimer ~= nil then
+    repeatTimer:remove()
+  end
+end
+
 selectHandlers.AButtonDown = function()
   playdate.inputHandlers.pop()
   playdate.inputHandlers.push(editHandlers)
@@ -222,12 +229,16 @@ selectHandlers.BButtonDown = function()
     sequence:play()
   end
 end
-selectHandlers.leftButtonUp = function()
-  moveToPreviousColumn()
+selectHandlers.leftButtonDown = function()
+  resetRepeat()
+  repeatTimer = playdate.timer.keyRepeatTimer(moveToPreviousColumn)
 end
-selectHandlers.rightButtonUp = function()
-  moveToNextColumn()
+selectHandlers.leftButtonUp = resetRepeat
+selectHandlers.rightButtonDown = function()
+  resetRepeat()
+  repeatTimer = playdate.timer.keyRepeatTimer(moveToNextColumn)
 end
+selectHandlers.rightButtonUp = resetRepeat
 selectHandlers.upButtonUp = function()
   tracks[selectedTrack].view:selectPreviousRow(true)
   local section, row, column = tracks[selectedTrack].view:getSelection()
@@ -254,12 +265,16 @@ editHandlers.BButtonUp = function()
   playdate.inputHandlers.push(selectHandlers)
   mode = modeSelect
 end
-editHandlers.leftButtonUp = function()
-  moveToPreviousColumn()
+editHandlers.leftButtonDown = function()
+  resetRepeat()
+  repeatTimer = playdate.timer.keyRepeatTimer(moveToPreviousColumn)
 end
-editHandlers.rightButtonUp = function()
-  moveToNextColumn()
+editHandlers.leftButtonUp = resetRepeat
+editHandlers.rightButtonDown = function()
+  resetRepeat()
+  repeatTimer = playdate.timer.keyRepeatTimer(moveToNextColumn)
 end
+editHandlers.rightButtonUp = resetRepeat
 editHandlers.upButtonUp = function()
   notesChanged = true
 
