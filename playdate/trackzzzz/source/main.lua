@@ -20,6 +20,13 @@ local sequence = playdate.sound.sequence.new()
 
 local fuerElise = playdate.sound.sequence.new("fuer-elise.mid")
 
+local globalEffect = playdate.sound.twopolefilter.new(playdate.sound.kFilterBandPass)
+local filterFreq = 1000
+globalEffect:setMix(1)
+-- globalEffect:setResonance(0.3)
+globalEffect:setFrequency(filterFreq)
+playdate.sound.addEffect(globalEffect)
+
 local bitmore = gfx.font.new("bitmore")
 assert(bitmore)
 bitmore:setTracking(1)
@@ -217,6 +224,10 @@ selectHandlers.downButtonUp = function()
     tracks[i].view:scrollToCell(section, row, column)
   end
 end
+selectHandlers.cranked = function(change, acceleratedChange)
+  filterFreq = filterFreq + change
+  globalEffect:setFrequency(filterFreq)
+end
 
 editHandlers.BButtonUp = function()
   playdate.inputHandlers.pop()
@@ -292,7 +303,8 @@ function playdate.update()
     gfx.fillRect(2, 2, 8, 8)
   end
   gfx.setImageDrawMode(gfx.kDrawModeCopy)
-  gfx.drawTextInRect(tostring(bpm).."bpm", 16, 2, 50, 11)
+  local info = tostring(bpm).."bpm".." "..tostring(sequence:getTempo()).."st/s  "..sequence:getTrackCount().." tracks  "..tracks[1].track:getLength().."steps"
+  gfx.drawTextInRect(info, 16, 2, string.len(info)*10, 11)
 
   local currentStep = (sequence:getCurrentStep()%sequence:getLength())
   if playhead:getSelectedRow() ~= currentStep then
