@@ -5,6 +5,7 @@ import 'CoreLibs/crank'
 
 import 'plugin_manager'
 
+PluginManager:load("grid_view")
 PluginManager:load("dithering")
 
 local pluginNames = {}
