@@ -23,6 +23,9 @@ end
 
 local sequence = playdate.sound.sequence.new()
 
+local bpm = 120
+sequence:setTempo(bpm/7.5) -- FIXME: not accurate, not sure how to exact bpm with integer steps?
+
 local fuerElise = playdate.sound.sequence.new("fuer-elise.mid")
 
 local globalEffect = playdate.sound.twopolefilter.new(playdate.sound.kFilterBandPass)
@@ -39,7 +42,16 @@ gfx.setFont(bitmore)
 
 function makeTrack(waveform)
   local track1 = playdate.sound.track.new()
-  for step = 1, 64, 1 do
+
+  local numSteps = 64
+
+  local track1View = playdate.ui.gridview.new(25, 11)
+  track1View:setNumberOfSections(track1:getLength()/sequence:getTempo())
+  track1View:setNumberOfColumns(3)
+  track1View:setScrollDuration(100)
+
+  for step = 1, numSteps, 1 do
+    track1View:setNumberOfRowsInSection(step, sequence:getTempo())
     if waveform == playdate.sound.kWaveNoise then
       if (step-1) % 4 == 0 then
         local note = "C7"
@@ -54,10 +66,14 @@ function makeTrack(waveform)
   end
   track1:setInstrument(playdate.sound.synth.new(waveform))
 
-  local track1View = playdate.ui.gridview.new(25, 11)
-  track1View:setNumberOfColumns(3)
-  track1View:setNumberOfRows(track1:getLength())
-  track1View:setScrollDuration(100)
+  track1View:setSectionHeaderHeight(8)
+  track1View.drawSectionHeader = function(section, x, y, width, height)
+    if section == 1 then
+      return
+    end
+
+    -- leave empty space of (4px) to separate "bars"/seconds
+  end
 
   local active = false
   local setActive = function(a)
@@ -150,8 +166,6 @@ for _, track in ipairs(tracks) do
   sequence:addTrack(track.track)
 end
 
-local bpm = 120
-sequence:setTempo(bpm/7.5) -- FIXME: not accurate, not sure how to exact bpm with integer steps?
 sequence:setLoops(0)
 sequence:play()
 
