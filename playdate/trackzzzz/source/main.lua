@@ -18,6 +18,8 @@ end
 
 local sequence = playdate.sound.sequence.new()
 
+local fuerElise = playdate.sound.sequence.new("fuer-elise.mid")
+
 local bitmore = gfx.font.new("bitmore")
 assert(bitmore)
 bitmore:setTracking(1)
@@ -35,7 +37,7 @@ function makeTrack(waveform)
   end
   track1:setInstrument(playdate.sound.synth.new(waveform))
 
-  local track1View = playdate.ui.gridview.new(20, 11)
+  local track1View = playdate.ui.gridview.new(25, 11)
   track1View:setNumberOfColumns(2)
   track1View:setNumberOfRows(track1:getLength())
   track1View:setScrollDuration(100)
@@ -48,9 +50,9 @@ function makeTrack(waveform)
   track1View.drawCell = function(self, section, row, column, selected, x, y, width, height)
     local note = track1:getNotes(row)[1]
 
-    local noteString = "--"
+    local noteString = "---"
     local velocityString = "--"
-    if note.velocity > 0 then
+    if note ~= nil and note.velocity > 0 then
       noteString = toNoteString(note.note)
       velocityString = tostring(math.floor(note.velocity*255))
     end
@@ -59,6 +61,7 @@ function makeTrack(waveform)
 
     if column == columnNote then
       if selected then
+        -- gfx.drawRect(x, y, 25*2-2, 11)
         gfx.fillRect(x, y, width, height)
         gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
       else
@@ -93,6 +96,19 @@ local tracks = {
   -- makeTrack(playdate.sound.kWavePOVosim),
 }
 
+-- local t = 1
+-- for i=1,fuerElise:getTrackCount(),1 do
+--   if tracks[i] == nil then
+--     break
+--   end
+
+--   local track = fuerElise:getTrackAtIndex(i)
+--   if track:getLength() > 0 then
+--     tracks[t].track:setNotes(track:getNotes())
+--     t = t + 1
+--   end
+-- end
+
 local selectedTrack = 1
 
 function setActive()
@@ -105,7 +121,7 @@ for _, track in ipairs(tracks) do
   sequence:addTrack(track.track)
 end
 
-local beats = 120
+local beats = 130
 local perMinute = 60
 sequence:setTempo(beats/perMinute)
 sequence:setLoops(0)
@@ -164,6 +180,13 @@ end
 selectHandlers.AButtonDown = function()
   playdate.inputHandlers.pop()
   playdate.inputHandlers.push(editHandlers)
+end
+selectHandlers.BButtonDown = function()
+  if sequence:isPlaying() then
+    sequence:stop()
+  else
+    sequence:play()
+  end
 end
 selectHandlers.leftButtonUp = function()
   moveToPreviousColumn()
@@ -236,8 +259,17 @@ function playdate.update()
 
   local needsDisplay = playdate.getButtonState() ~= 0
 
-  -- gfx.clear()
-  playdate.drawFPS(380, 2)
+  playdate.drawFPS(382, 2)
+
+  gfx.pushContext()
+  gfx.setColor(gfx.kColorWhite)
+  gfx.fillRect(2, 2, 10, 10)
+  gfx.popContext()
+  if sequence:isPlaying() then
+    gfx.fillTriangle(2, 2, 2, 9, 10, 6)
+  else
+    gfx.fillRect(2, 2, 8, 8)
+  end
 
   local currentStep = (sequence:getCurrentStep()%sequence:getLength())
   if playhead:getSelectedRow() ~= currentStep then
@@ -256,7 +288,7 @@ function playdate.update()
     if needsDisplay or track.view.needsDisplay then
       gfx.pushContext()
       gfx.setColor(gfx.kColorWhite)
-      gfx.fillRect(10+(i-1)*width, 10, width, 240-10)
+      gfx.fillRect(20+(i-1)*width, 10, width, 240-10)
       gfx.popContext()
       track.view:drawInRect(20+(i-1)*width, 10, width, 240-10)
     end
