@@ -1,12 +1,13 @@
 -- based on https://devforum.play.date/t/splitting-a-game-into-several-functional-binaries-nics-plugin-manager/1387
 -- with some adjustments to make the linter happy
 
-PluginManager = {}
+PluginManager = {
+	plugins = {},
 
--- private member
-local _plugins = {}
+	current_plugin = "",
+}
 
-function PluginManager.load( name )
+function PluginManager.load(self, name)
 	local path = name..'/'..name
 	local filepath = path..'.pdz'
 
@@ -15,16 +16,22 @@ function PluginManager.load( name )
 		return
 	end
 
-	_plugins[ name ] = {
+	self.plugins[ name ] = {
+		name = name,
 		path = path,
 		filepath = filepath,
 		modtime = playdate.file.modtime( filepath ),
 		update_fn = playdate.file.run( path )
 	}
+	self.current_plugin = name
 end
 
-function PluginManager.update()
-	for name, plugin in pairs(_plugins) do
+function PluginManager.use(self, name)
+	self.current_plugin = name
+end
+
+function PluginManager.update(self)
+	for name, plugin in pairs(self.plugins) do
 		local modtime = playdate.file.modtime( plugin.filepath )
 
 		-- check if we need to reload
@@ -40,10 +47,12 @@ function PluginManager.update()
 			print( 'Plugin reload: '..name)
 			plugin.update_fn = playdate.file.run( plugin.path )
 		end
-
-		-- run plugin update function
-		if type(plugin.update_fn)=="function" then
-			plugin.update_fn()
-		end
 	end
+
+	local plugin = self.plugins[self.current_plugin]
+	if plugin == nil then
+		playdate.graphics.drawText("no plugin "..self.current_plugin, 0, 0)
+		return
+	end
+	plugin.update_fn()
 end
