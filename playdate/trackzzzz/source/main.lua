@@ -239,6 +239,10 @@ editHandlers.upButtonUp = function()
     end
   end
   track:addNote(row, note.note, note.length, note.velocity)
+  if not sequence:isPlaying() then
+    track:getInstrument():allNotesOff()
+    track:getInstrument():playMIDINote(note.note, note.velocity, note.length)
+  end
 end
 editHandlers.downButtonUp = function()
   local track = tracks[selectedTrack].track
@@ -255,6 +259,10 @@ editHandlers.downButtonUp = function()
     end
   end
   track:addNote(row, note.note, note.length, note.velocity)
+  if not sequence:isPlaying() then
+    track:getInstrument():allNotesOff()
+    track:getInstrument():playMIDINote(note.note, note.velocity, note.length)
+  end
 end
 
 playdate.inputHandlers.push(selectHandlers)
