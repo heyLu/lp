@@ -37,12 +37,13 @@ listview:setContentInset(24, 24, 13, 11)
 
 function listview:drawCell(section, row, column, selected, x, y, width, height)
         if selected then
-                gfx.fillRoundRect(x, y, width, 20, 4)
+                gfx.setColor(gfx.kColorBlack)
+                gfx.fillRoundRect(x, y, width, 24, 4)
                 gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
         else
                 gfx.setImageDrawMode(gfx.kDrawModeCopy)
         end
-        gfx.drawTextInRect(menuOptions[row], x, y+2, width, height, nil, "...", kTextAlignment.center)
+        gfx.drawTextInRect(menuOptions[row], x, y+4, width, 20, nil, "...", kTextAlignment.center)
 end
 
 local function update()
