@@ -4,7 +4,8 @@ import "CoreLibs/ui"
 local gfx <const> = playdate.graphics
 
 local columnNote = 1
-local columnVelocity = 2
+local columnLength = 2
+local columnVelocity = 3
 
 local notes = {
   "C", "Db", "D", "Eb", "E", "F", "Gb", "Bb", "B", "Ab", "A", "C",
@@ -55,7 +56,7 @@ function makeTrack(waveform)
   track1:setInstrument(playdate.sound.synth.new(waveform))
 
   local track1View = playdate.ui.gridview.new(25, 11)
-  track1View:setNumberOfColumns(2)
+  track1View:setNumberOfColumns(3)
   track1View:setNumberOfRows(track1:getLength())
   track1View:setScrollDuration(100)
 
@@ -68,23 +69,32 @@ function makeTrack(waveform)
     local note = track1:getNotes(row)[1]
 
     local noteString = "---"
-    local velocityString = "--"
+    local velocityString = "---"
+    local lengthString = "--"
     if note ~= nil and note.velocity > 0 then
       noteString = toNoteString(note.note)
       velocityString = tostring(math.floor(note.velocity*255))
+      lengthString = tostring(note.length)
     end
 
     selected = selected and active
 
     if column == columnNote then
       if selected then
-        -- gfx.drawRect(x, y, 25*2-2, 11)
         gfx.fillRect(x, y, width, height)
         gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
       else
         gfx.setImageDrawMode(gfx.kDrawModeCopy)
       end
       gfx.drawTextInRect(noteString, x+1, y+1, width, height, nil, nil, kTextAlignment.left)
+    elseif column == columnLength then
+      if selected then
+        gfx.fillRect(x, y, width, height)
+        gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+      else
+        gfx.setImageDrawMode(gfx.kDrawModeCopy)
+      end
+      gfx.drawTextInRect(lengthString, x+1, y+1, width, height, nil, nil, kTextAlignment.left)
     elseif column == columnVelocity then
       if selected then
         gfx.fillRect(x, y, width, height)
@@ -229,6 +239,8 @@ selectHandlers.cranked = function(change, acceleratedChange)
   globalEffect:setFrequency(filterFreq)
 end
 
+local notesChanged = false
+
 editHandlers.BButtonUp = function()
   playdate.inputHandlers.pop()
   playdate.inputHandlers.push(selectHandlers)
@@ -240,15 +252,20 @@ editHandlers.rightButtonUp = function()
   moveToNextColumn()
 end
 editHandlers.upButtonUp = function()
+  notesChanged = true
+
   local track = tracks[selectedTrack].track
   local _, row, column = tracks[selectedTrack].view:getSelection()
   local note = track:getNotes(row)[1]
   track:removeNote(row, note.note)
   if note.velocity == 0 then
-    note.velocity = 1.0
+    note.velocity = 0.5
+    note.length = 4
   else
     if column == columnNote then
-      note.note = note.note + 1 % 127
+      note.note = (note.note + 1) % 127
+    elseif column == columnLength then
+      note.length = (note.length + 1) % sequence:getTempo()
     elseif column == columnVelocity then
       note.velocity = ((note.velocity*255 + 1)%255) / 255
     end
@@ -256,19 +273,24 @@ editHandlers.upButtonUp = function()
   track:addNote(row, note.note, note.length, note.velocity)
   if not sequence:isPlaying() then
     track:getInstrument():allNotesOff()
-    track:getInstrument():playMIDINote(note.note, note.velocity, note.length)
+    track:getInstrument():playMIDINote(note.note, note.velocity, note.length/sequence:getTempo())
   end
 end
 editHandlers.downButtonUp = function()
+  notesChanged = true
+
   local track = tracks[selectedTrack].track
   local _, row, column = tracks[selectedTrack].view:getSelection()
   local note = track:getNotes(row)[1]
   track:removeNote(row, note.note)
   if note.velocity == 0 then
-    note.velocity = 1.0
+    note.velocity = 0.5
+    note.length = 4
   else
     if column == columnNote then
-      note.note = note.note - 1 % 127
+      note.note = (note.note - 1) % 127
+    elseif column == columnLength then
+      note.length = (note.length - 1) % sequence:getTempo()
     elseif column == columnVelocity then
       note.velocity = ((note.velocity*255 - 1)%255) / 255
     end
@@ -276,7 +298,7 @@ editHandlers.downButtonUp = function()
   track:addNote(row, note.note, note.length, note.velocity)
   if not sequence:isPlaying() then
     track:getInstrument():allNotesOff()
-    track:getInstrument():playMIDINote(note.note, note.velocity, note.length)
+    track:getInstrument():playMIDINote(note.note, note.velocity, note.length/sequence:getTempo())
   end
 end
 
@@ -289,7 +311,7 @@ function playdate.update()
 
   setActive()
 
-  local needsDisplay = playdate.getButtonState() ~= 0
+  local needsDisplay = notesChanged or playdate.getButtonState() ~= 0
 
   playdate.drawFPS(382, 2)
 
@@ -330,4 +352,6 @@ function playdate.update()
   end
 
   playdate.timer:updateTimers()
+
+  notesChanged = false
 end
