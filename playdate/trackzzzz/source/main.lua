@@ -48,13 +48,8 @@ function makeTrack(waveform)
         end
         track1:addNote(step, note, 1, 0.1)
       end
-    else
-      local r = math.random()
-      if r > 0.95 then
-        track1:addNote(step, 60+math.random(12), 4, math.random(127)/255)
-      else
-        track1:addNote(step, "C4", 4, 0.0)
-      end
+    elseif math.random() > 0.95 then
+      track1:addNote(step, 60+math.random(12), 4, math.random(127)/255)
     end
   end
   track1:setInstrument(playdate.sound.synth.new(waveform))
@@ -281,6 +276,9 @@ editHandlers.upButtonUp = function()
   local track = tracks[selectedTrack].track
   local _, row, column = tracks[selectedTrack].view:getSelection()
   local note = track:getNotes(row)[1]
+  if note == nil then
+    note = {note = "C4", velocity = 0, length = 4}
+  end
   track:removeNote(row, note.note)
   if note.velocity == 0 then
     note.velocity = 0.5
@@ -306,6 +304,9 @@ editHandlers.downButtonUp = function()
   local track = tracks[selectedTrack].track
   local _, row, column = tracks[selectedTrack].view:getSelection()
   local note = track:getNotes(row)[1]
+  if note == nil then
+    note = {note = "C4", velocity = 0, length = 4}
+  end
   track:removeNote(row, note.note)
   if note.velocity == 0 then
     note.velocity = 0.5
