@@ -575,28 +575,7 @@ function playdate.update()
     frame = frame + 1
   end
 
-  local transform = playdate.geometry.affineTransform.new()
   local angle = -(frame-1)*2
-  transform:rotate(angle)
-
-  local drawTransformed = function(img, pos, desc)
-    -- local x, y = transform:transformXY(pos.x, pos.y)
-    -- local sx, sy = newPos({x=x, y=y, z=0})
-    -- local sx, sy = newPos(pos)
-    -- local tx, ty = transform:transformXY(200+sx, 120+sy)
-    -- img:draw(tx, ty)
-    -- img:drawWithTransform(transform, sx, sy)
-    local rx = pos.x * math.cos(math.rad(angle)) - pos.y * math.sin(math.rad(angle))
-    local ry = pos.x * math.sin(math.rad(angle)) + pos.y * math.cos(math.rad(angle))
-    local sx, sy = newPos({x = rx, y = ry, z = 0})
-    img:draw(200+sx, 120+sy)
-    gfx.pushContext()
-    -- gfx.setImageDrawMode(gfx.kDrawModeXOR)
-    gfx.drawText(rx.."."..ry, 200+sx+8, 120+sy+8)
-    gfx.popContext()
-  end
-
-  gfx.pushContext()
   local cur = frame --1+(frame%180)
 
   local rotate = function(pos)
@@ -613,13 +592,6 @@ function playdate.update()
   }
   table.sort(positions, function(a, b)
     return a.x < b.x and a.y < b.y
-    -- if a.x > b.x then
-    --   return false
-    -- end
-    -- if a.y > b.y then
-    --   return false
-    -- end
-    -- return true
   end)
 
   for _, pos in pairs(positions) do
@@ -627,16 +599,10 @@ function playdate.update()
     rotator[cur]:draw(200+sx, 120+sy)
   end
 
-  -- drawTransformed(rotator[cur], {x=0, y=0, z=0}, "1")
-  -- drawTransformed(rotator[cur], {x=0, y=1, z=0}, "2")
-  -- drawTransformed(rotator[cur], {x=1, y=0, z=0}, "3")
-  -- drawTransformed(rotator[cur], {x=1, y=1, z=0}, "4")
-
   gfx.drawLine(200,120,200+64,120)
   gfx.drawLine(200,120,200,120+64)
 
   gfx.drawText(cur, 200, 120+80)
-  gfx.popContext()
   frame = 1 + (frame + 1)%180
 
   -- mode.update()
