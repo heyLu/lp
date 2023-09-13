@@ -470,6 +470,8 @@ function setupState()
   playdate.inputHandlers.push(mode.inputHandlers)
 end
 
+local rotator
+
 function initGame()
   map = gfx.image.new("map.png")
   assert(map)
@@ -483,6 +485,24 @@ function initGame()
   ghost = gfx.image.new("ghost.png")
   assert(ghost)
 
+  rotator = gfx.imagetable.new("renders/block")
+  assert(rotator)
+  print("rotator has "..rotator:getLength().." frames")
+
+  local w, h = rotator[1]:getSize()
+  local blend = gfx.image.new(w, h)
+  gfx.pushContext(blend)
+  gfx.setColor(gfx.kColorBlack)
+  gfx.fillRect(0, 0, w, h)
+  gfx.popContext()
+
+  for frame = 1, #rotator, 1 do
+    blend:clearMask()
+    blend:setMaskImage(rotator[frame]:getMaskImage():invertedImage())
+    local dithered = rotator[frame]:blendWithImage(blend, 0.7, gfx.image.kDitherTypeBayer4x4)
+    rotator:setImage(frame, dithered)
+  end
+
   player = make(15, 3)
   player.sprite = ghost
 
@@ -493,7 +513,7 @@ function initGame()
 
   world:load()
 
-  setupState()
+  -- setupState()
   playdate.getSystemMenu():addCheckmarkMenuItem("edit", state.editMode, function()
     state.editMode = not state.editMode
     setupState()
@@ -502,14 +522,18 @@ end
 
 function playdate.gameWillTerminate()
   print("saving")
-  playdate.datastore.write(state)
-  world:save()
+  -- playdate.datastore.write(state)
+  -- world:save()
   print("saved")
 end
 
 initGame()
 
 local fps = FPS.new(320, 2, 60, 16)
+
+local frame = 1
+local xOffset = 0
+local yOffset = 0
 
 function playdate.update()
   -- playdate.display.setInverted(true)
@@ -524,7 +548,60 @@ function playdate.update()
   player:draw()
   world:draw(math.floor(player.pos.z)+2, 10)
 
-  mode.update()
+  -- local heightOffsetY = -pos.z * (tileHeightHalf*2)
+  -- https://clintbellanger.net/articles/isometric_math/
+  local newPos = function(pos)
+    return (pos.x - pos.y) * tileWidthHalf*4,
+           (pos.x + pos.y) * tileHeightHalf*4
+  end
+
+  if playdate.buttonJustPressed(playdate.kButtonLeft) then
+    xOffset = xOffset - 1
+    print(xOffset, yOffset)
+  end
+  if playdate.buttonJustPressed(playdate.kButtonRight) then
+    xOffset = xOffset + 1
+    print(xOffset, yOffset, newPos({x=1,y=0,z=0}))
+  end
+  if playdate.buttonJustPressed(playdate.kButtonUp) then
+    yOffset = yOffset - 1
+    print(xOffset, yOffset, newPos({x=1,y=0,z=0}))
+  end
+  if playdate.buttonJustPressed(playdate.kButtonDown) then
+    yOffset = yOffset + 1
+    print(xOffset, yOffset, newPos({x=1,y=0,z=0}))
+  end
+  if playdate.buttonJustPressed(playdate.kButtonA) then
+    frame = frame + 1
+  end
+
+  local transform = playdate.geometry.affineTransform.new()
+  transform:rotate(-(frame-1)*2, 200, 120)
+
+  local drawTransformed = function(img, pos)
+    -- local x, y = transform:transformXY(pos.x, pos.y)
+    -- local sx, sy = newPos({x=x, y=y, z=0})
+    local sx, sy = newPos(pos)
+    local tx, ty = transform:transformXY(200+sx, 120+sy)
+    img:draw(tx, ty)
+  end
+
+  gfx.pushContext()
+  local cur = frame --1+(frame%180)
+
+  drawTransformed(rotator[cur], {x=0, y=0, z=0})
+  drawTransformed(rotator[cur], {x=0, y=1, z=0})
+  drawTransformed(rotator[cur], {x=1, y=0, z=0})
+  drawTransformed(rotator[cur], {x=1, y=1, z=0})
+
+  gfx.drawLine(200,120,200+64,120)
+  gfx.drawLine(200,120,200,120+64)
+
+  gfx.drawText(cur, 200, 120+80)
+  gfx.popContext()
+  frame = 1 + (frame + 1)%180
+
+  -- mode.update()
 
   playdate.timer.updateTimers()
 end
