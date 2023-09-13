@@ -548,11 +548,11 @@ function playdate.update()
   player:draw()
   world:draw(math.floor(player.pos.z)+2, 10)
 
-  -- local heightOffsetY = -pos.z * (tileHeightHalf*2)
   -- https://clintbellanger.net/articles/isometric_math/
   local newPos = function(pos)
+    local heightOffsetY = -pos.z * (tileHeightHalf*2*4)
     return (pos.x - pos.y) * tileWidthHalf*4,
-           (pos.x + pos.y) * tileHeightHalf*4
+           (pos.x + pos.y) * tileHeightHalf*4 + heightOffsetY
   end
 
   if playdate.buttonJustPressed(playdate.kButtonLeft) then
@@ -589,9 +589,11 @@ function playdate.update()
     rotate({x=0,y=1,z=0}),
     rotate({x=1,y=0,z=0}),
     rotate({x=1,y=1,z=0}),
-  }
+
+    rotate({x=0,y=0,z=1}),
+    rotate({x=0,y=1,z=1}),  }
   table.sort(positions, function(a, b)
-    return a.x < b.x and a.y < b.y
+    return a.x < b.x and a.y < b.y and a.z < b.z
   end)
 
   for _, pos in pairs(positions) do
