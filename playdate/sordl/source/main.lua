@@ -471,6 +471,7 @@ function setupState()
 end
 
 local rotator
+local monkey
 
 function initGame()
   map = gfx.image.new("map.png")
@@ -501,6 +502,16 @@ function initGame()
     blend:setMaskImage(rotator[frame]:getMaskImage():invertedImage())
     local dithered = rotator[frame]:blendWithImage(blend, 0.7, gfx.image.kDitherTypeBayer4x4)
     rotator:setImage(frame, dithered)
+  end
+
+  monkey = gfx.imagetable.new("renders/monkey")
+  assert(monkey)
+  print("monkey has "..monkey:getLength().." frames")
+  for frame = 1, #rotator, 1 do
+    blend:clearMask()
+    blend:setMaskImage(monkey[frame]:getMaskImage():invertedImage())
+    local dithered = monkey[frame]:blendWithImage(blend, 0.7, gfx.image.kDitherTypeBayer4x4)
+    monkey:setImage(frame, dithered)
   end
 
   player = make(15, 3)
@@ -581,7 +592,7 @@ function playdate.update()
   local rotate = function(pos)
     local rx = pos.x * math.cos(math.rad(angle)) - pos.y * math.sin(math.rad(angle))
     local ry = pos.x * math.sin(math.rad(angle)) + pos.y * math.cos(math.rad(angle))
-    return {x=rx, y=ry, z=pos.z}
+    return {x=rx, y=ry, z=pos.z,model=pos.model}
   end
 
   local positions = {
@@ -591,14 +602,21 @@ function playdate.update()
     rotate({x=1,y=1,z=0}),
 
     rotate({x=0,y=0,z=1}),
-    rotate({x=0,y=1,z=1}),  }
+    rotate({x=0,y=1,z=1}),
+
+    rotate({x=0,y=1,z=2,model=monkey}),
+  }
   table.sort(positions, function(a, b)
     return a.x < b.x and a.y < b.y and a.z < b.z
   end)
 
   for _, pos in pairs(positions) do
     local sx, sy = newPos(pos)
-    rotator[cur]:draw(200+sx, 120+sy)
+    local model = rotator
+    if pos.model ~= nil then
+      model = pos.model
+    end
+    model[cur]:draw(200+sx, 120+sy)
   end
 
   gfx.drawLine(200,120,200+64,120)
