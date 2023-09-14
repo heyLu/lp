@@ -561,9 +561,11 @@ function playdate.update()
 
   -- https://clintbellanger.net/articles/isometric_math/
   local newPos = function(pos)
-    local heightOffsetY = -pos.z * (tileHeightHalf*2*4)
-    return (pos.x - pos.y) * tileWidthHalf*4,
-           (pos.x + pos.y) * tileHeightHalf*4 + heightOffsetY
+    local tileWidthHalf = 64 / 2
+    local tileHeightHalf = 32 / 2
+    local heightOffsetY = -pos.z * (tileHeightHalf*2 - 3)
+    return (pos.x - pos.y) * (tileWidthHalf - 7),
+           (pos.x + pos.y) * (tileHeightHalf-3) + heightOffsetY
   end
 
   if playdate.buttonJustPressed(playdate.kButtonLeft) then
