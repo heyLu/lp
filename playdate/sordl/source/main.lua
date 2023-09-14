@@ -609,18 +609,27 @@ function playdate.update()
 
     rotate({x=0,y=1,z=2,model=monkey}),
   }
+
+  local p = #positions
+  for i = 1,10,1 do
+    for j = 1,10,1 do
+      positions[p+(i-1)*10+j] = rotate({x=1+i, y=1+j, z=0})
+    end
+  end
+
   table.sort(positions, function(a, b)
     -- https://gamedev.stackexchange.com/questions/103442/how-do-i-determine-the-draw-order-of-isometric-2d-objects-occupying-multiple-til
     return a.x + a.y + a.z < b.x + b.y + b.z
   end)
 
+  local scale = 0.5
   for _, pos in pairs(positions) do
     local sx, sy = newPos(pos)
     local model = rotator
     if pos.model ~= nil then
       model = pos.model
     end
-    model[cur]:draw(200+sx, 120+sy)
+    model[cur]:drawScaled(200+sx*scale, 120+sy*scale, scale)
   end
 
   gfx.drawLine(200,120,200+64,120)
