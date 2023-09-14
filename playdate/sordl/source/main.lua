@@ -545,6 +545,7 @@ local fps = FPS.new(320, 2, 60, 16)
 local frame = 1
 local xOffset = 0
 local yOffset = 0
+local scale = 0.5
 
 function playdate.update()
   -- playdate.display.setInverted(true)
@@ -589,7 +590,12 @@ function playdate.update()
     frame = frame + 1
   end
 
-  frame = 1+math.floor(playdate.getCrankPosition()/2)
+  if playdate.buttonIsPressed(playdate.kButtonB) then
+    scale = scale-(playdate.getCrankChange()/360)
+  else
+    frame = 1+math.floor(playdate.getCrankPosition()/2)
+  end
+
   local angle = -(frame-1)*2
   local cur = frame --1+(frame%180)
 
@@ -602,29 +608,32 @@ function playdate.update()
 
   local positions = {
     rotate({x=0,y=0,z=0}),
-    rotate({x=0,y=1,z=0}),
-    rotate({x=1,y=0,z=0}),
-    rotate({x=1,y=1,z=0}),
 
-    rotate({x=0,y=0,z=1}),
-    rotate({x=0,y=1,z=1}),
+    rotate({x=0,y=0,z=2}),
+    rotate({x=0,y=1,z=2}),
+    rotate({x=0,y=1,z=3}),
 
-    rotate({x=0,y=1,z=2,model=monkey}),
+    rotate({x=0,y=1,z=4,model=monkey}),
   }
 
   local p = #positions
-  for i = 1,10,1 do
-    for j = 1,10,1 do
-      positions[p+(i-1)*10+j] = rotate({x=1+i, y=1+j, z=0})
+  local n = 9
+  for i = 1,n,1 do
+    for j = 1,n,1 do
+      positions[p+(i-1)*n+j] = rotate({x=-5+i, y=-5+j, z=0})
     end
   end
+  p = p+(n-1)*n+n
+  positions[p+1] = rotate({x=-5+n,y=-5+n,z=1})
+  positions[p+2] = rotate({x=-5+n,y=-5+1,z=1})
+  positions[p+3] = rotate({x=-5+1,y=-5+n,z=1})
+  positions[p+4] = rotate({x=-5+1,y=-5+1,z=1})
 
   table.sort(positions, function(a, b)
     -- https://gamedev.stackexchange.com/questions/103442/how-do-i-determine-the-draw-order-of-isometric-2d-objects-occupying-multiple-til
     return a.x + a.y + a.z < b.x + b.y + b.z
   end)
 
-  local scale = 0.5
   for _, pos in pairs(positions) do
     local sx, sy = newPos(pos)
     local model = rotator
