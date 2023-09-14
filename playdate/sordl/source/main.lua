@@ -548,6 +548,7 @@ local yOffset = 0
 
 function playdate.update()
   -- playdate.display.setInverted(true)
+  playdate.resetElapsedTime()
 
   gfx.clear()
   playdate.drawFPS(385, 2)
@@ -588,6 +589,7 @@ function playdate.update()
     frame = frame + 1
   end
 
+  frame = 1+math.floor(playdate.getCrankPosition()/2)
   local angle = -(frame-1)*2
   local cur = frame --1+(frame%180)
 
@@ -632,13 +634,9 @@ function playdate.update()
     model[cur]:drawScaled(200+sx*scale, 120+sy*scale, scale)
   end
 
-  gfx.drawLine(200,120,200+64,120)
-  gfx.drawLine(200,120,200,120+64)
-
-  gfx.drawText(cur, 200, 120+80)
-  frame = 1 + (frame + 1)%180
-
   -- mode.update()
+
+  gfx.drawText(tostring(math.floor(playdate.getElapsedTime()*1000*100)/100).."ms", 330, 20)
 
   playdate.timer.updateTimers()
 end
