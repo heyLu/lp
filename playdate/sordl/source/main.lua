@@ -592,6 +592,7 @@ function playdate.update()
   local cur = frame --1+(frame%180)
 
   local rotate = function(pos)
+    -- rotation curtesy of https://gamedev.stackexchange.com/questions/186667/rotation-grid-positions
     local rx = pos.x * math.cos(math.rad(angle)) - pos.y * math.sin(math.rad(angle))
     local ry = pos.x * math.sin(math.rad(angle)) + pos.y * math.cos(math.rad(angle))
     return {x=rx, y=ry, z=pos.z,model=pos.model}
@@ -609,7 +610,8 @@ function playdate.update()
     rotate({x=0,y=1,z=2,model=monkey}),
   }
   table.sort(positions, function(a, b)
-    return a.x < b.x and a.y < b.y and a.z < b.z
+    -- https://gamedev.stackexchange.com/questions/103442/how-do-i-determine-the-draw-order-of-isometric-2d-objects-occupying-multiple-til
+    return a.x + a.y + a.z < b.x + b.y + b.z
   end)
 
   for _, pos in pairs(positions) do
