@@ -542,8 +542,20 @@ initGame()
 
 local fps = FPS.new(320, 2, 60, 16)
 
-local frame = 1
+local angle = 10
 local scale = 0.5
+
+function map(tbl, f)
+  local t = {}
+  for k,v in pairs(tbl) do
+    t[k] = f(v)
+  end
+  return t
+end
+
+function formatMs(microseconds)
+  return tostring(math.floor(microseconds*1000*100)/100).."ms"
+end
 
 -- https://clintbellanger.net/articles/isometric_math/
 local newPos = function(pos)
@@ -553,6 +565,31 @@ local newPos = function(pos)
   return (pos.x - pos.y) * (tileWidthHalf - 7),
          (pos.x + pos.y) * (tileHeightHalf-3) + heightOffsetY
 end
+
+local positions = {
+  {x=0,y=0,z=0},
+
+  {x=0,y=0,z=2},
+  {x=0,y=1,z=2},
+  {x=0,y=1,z=3},
+
+  {x=0,y=1,z=4,model=monkey},
+}
+
+local p = #positions
+local n = 9
+for i = 1,n,1 do
+  for j = 1,n,1 do
+    positions[p+(i-1)*n+j] = {x=-5+i, y=-5+j, z=0}
+  end
+end
+p = p+(n-1)*n+n
+positions[p+1] = {x=-5+n,y=-5+n,z=1}
+positions[p+2] = {x=-5+n,y=-5+1,z=1}
+positions[p+3] = {x=-5+1,y=-5+n,z=1}
+positions[p+4] = {x=-5+1,y=-5+1,z=1}
+
+local rotated = {angle=999}
 
 function playdate.update()
   -- playdate.display.setInverted(true)
@@ -571,62 +608,41 @@ function playdate.update()
   if playdate.buttonIsPressed(playdate.kButtonB) then
     scale = scale-(playdate.getCrankChange()/360)
   else
-    frame = 1+math.floor(playdate.getCrankPosition()/2)
+    angle = math.floor(playdate.getCrankPosition())
   end
 
-  local angle = -(frame-1)*2
-  local cur = frame --1+(frame%180)
-
-  local cos = math.cos(math.rad(angle))
-  local sin = math.sin(math.rad(angle))
-  local rotate = function(pos)
-    -- rotation curtesy of https://gamedev.stackexchange.com/questions/186667/rotation-grid-positions
-    local rx = pos.x * cos - pos.y * sin
-    local ry = pos.x * sin + pos.y * cos
-    return {x=rx, y=ry, z=pos.z, model=pos.model}
-  end
-
-  local positions = {
-    rotate({x=0,y=0,z=0}),
-
-    rotate({x=0,y=0,z=2}),
-    rotate({x=0,y=1,z=2}),
-    rotate({x=0,y=1,z=3}),
-
-    rotate({x=0,y=1,z=4,model=monkey}),
-  }
-
-  local p = #positions
-  local n = 9
-  for i = 1,n,1 do
-    for j = 1,n,1 do
-      positions[p+(i-1)*n+j] = rotate({x=-5+i, y=-5+j, z=0})
+  if rotated.angle ~= angle then
+    local cos = math.cos(math.rad(-angle))
+    local sin = math.sin(math.rad(-angle))
+    local rotate = function(pos)
+      -- rotation curtesy of https://gamedev.stackexchange.com/questions/186667/rotation-grid-positions
+      local rx = pos.x * cos - pos.y * sin
+      local ry = pos.x * sin + pos.y * cos
+      return {x=rx, y=ry, z=pos.z, model=pos.model}
     end
+
+    rotated = map(positions, rotate)
+    table.sort(rotated, function(a, b)
+      -- https://gamedev.stackexchange.com/questions/103442/how-do-i-determine-the-draw-order-of-isometric-2d-objects-occupying-multiple-til
+      return a.x + a.y + a.z < b.x + b.y + b.z
+    end)
+
+    rotated.angle = angle
   end
-  p = p+(n-1)*n+n
-  positions[p+1] = rotate({x=-5+n,y=-5+n,z=1})
-  positions[p+2] = rotate({x=-5+n,y=-5+1,z=1})
-  positions[p+3] = rotate({x=-5+1,y=-5+n,z=1})
-  positions[p+4] = rotate({x=-5+1,y=-5+1,z=1})
 
-  table.sort(positions, function(a, b)
-    -- https://gamedev.stackexchange.com/questions/103442/how-do-i-determine-the-draw-order-of-isometric-2d-objects-occupying-multiple-til
-    return a.x + a.y + a.z < b.x + b.y + b.z
-  end)
-
-  for _, pos in pairs(positions) do
+  for _, pos in ipairs(rotated) do
     local sx, sy = newPos(pos)
     local model = rotator
     if pos.model ~= nil then
       model = pos.model
     end
-    -- model[cur]:drawScaled(200+sx*scale, 120+sy*scale, scale)
-    model[cur]:draw(200+sx, 120+sy)
+    local frame = 1+math.floor(angle/360*#model) -- #model is supposedly expensive?
+    model[frame]:draw(200+sx, 120+sy)
   end
 
   -- mode.update()
 
-  gfx.drawText(tostring(math.floor(playdate.getElapsedTime()*1000*100)/100).."ms", 330, 20)
+  gfx.drawText(formatMs(playdate.getElapsedTime()), 330, 20)
 
   playdate.timer.updateTimers()
 end
