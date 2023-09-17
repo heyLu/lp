@@ -543,9 +543,16 @@ initGame()
 local fps = FPS.new(320, 2, 60, 16)
 
 local frame = 1
-local xOffset = 0
-local yOffset = 0
 local scale = 0.5
+
+-- https://clintbellanger.net/articles/isometric_math/
+local newPos = function(pos)
+  local tileWidthHalf = 64 / 2
+  local tileHeightHalf = 32 / 2
+  local heightOffsetY = -pos.z * (tileHeightHalf*2 - 3)
+  return (pos.x - pos.y) * (tileWidthHalf - 7),
+         (pos.x + pos.y) * (tileHeightHalf-3) + heightOffsetY
+end
 
 function playdate.update()
   -- playdate.display.setInverted(true)
@@ -561,35 +568,6 @@ function playdate.update()
   player:draw()
   world:draw(math.floor(player.pos.z)+2, 10)
 
-  -- https://clintbellanger.net/articles/isometric_math/
-  local newPos = function(pos)
-    local tileWidthHalf = 64 / 2
-    local tileHeightHalf = 32 / 2
-    local heightOffsetY = -pos.z * (tileHeightHalf*2 - 3)
-    return (pos.x - pos.y) * (tileWidthHalf - 7),
-           (pos.x + pos.y) * (tileHeightHalf-3) + heightOffsetY
-  end
-
-  if playdate.buttonJustPressed(playdate.kButtonLeft) then
-    xOffset = xOffset - 1
-    print(xOffset, yOffset)
-  end
-  if playdate.buttonJustPressed(playdate.kButtonRight) then
-    xOffset = xOffset + 1
-    print(xOffset, yOffset, newPos({x=1,y=0,z=0}))
-  end
-  if playdate.buttonJustPressed(playdate.kButtonUp) then
-    yOffset = yOffset - 1
-    print(xOffset, yOffset, newPos({x=1,y=0,z=0}))
-  end
-  if playdate.buttonJustPressed(playdate.kButtonDown) then
-    yOffset = yOffset + 1
-    print(xOffset, yOffset, newPos({x=1,y=0,z=0}))
-  end
-  if playdate.buttonJustPressed(playdate.kButtonA) then
-    frame = frame + 1
-  end
-
   if playdate.buttonIsPressed(playdate.kButtonB) then
     scale = scale-(playdate.getCrankChange()/360)
   else
@@ -599,11 +577,13 @@ function playdate.update()
   local angle = -(frame-1)*2
   local cur = frame --1+(frame%180)
 
+  local cos = math.cos(math.rad(angle))
+  local sin = math.sin(math.rad(angle))
   local rotate = function(pos)
     -- rotation curtesy of https://gamedev.stackexchange.com/questions/186667/rotation-grid-positions
-    local rx = pos.x * math.cos(math.rad(angle)) - pos.y * math.sin(math.rad(angle))
-    local ry = pos.x * math.sin(math.rad(angle)) + pos.y * math.cos(math.rad(angle))
-    return {x=rx, y=ry, z=pos.z,model=pos.model}
+    local rx = pos.x * cos - pos.y * sin
+    local ry = pos.x * sin + pos.y * cos
+    return {x=rx, y=ry, z=pos.z, model=pos.model}
   end
 
   local positions = {
@@ -640,7 +620,8 @@ function playdate.update()
     if pos.model ~= nil then
       model = pos.model
     end
-    model[cur]:drawScaled(200+sx*scale, 120+sy*scale, scale)
+    -- model[cur]:drawScaled(200+sx*scale, 120+sy*scale, scale)
+    model[cur]:draw(200+sx, 120+sy)
   end
 
   -- mode.update()
