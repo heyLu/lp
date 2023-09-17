@@ -637,7 +637,8 @@ function playdate.update()
       model = pos.model
     end
     local frame = 1+math.floor(angle/360*#model) -- #model is supposedly expensive?
-    model[frame]:draw(200+sx, 120+sy)
+    model[frame]:drawScaled(200+sx*scale, 120+sy*scale, scale)
+    -- model[frame]:draw(200+sx, 120+sy)
   end
 
   -- mode.update()
