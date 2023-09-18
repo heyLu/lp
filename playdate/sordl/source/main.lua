@@ -189,20 +189,65 @@ local state = {
 }
 
 local world = {
+  modeIsometric = 1,
+  mode3d = 2,
+
+  mode = 1, -- default to isometric
+
   layers = {},
   offset = {x = 50, y = 50, z = 0},
 
   cachedLayers = {},
   isCached = {},
+
+  positions = {},
+  rotated = {angle=999},
 }
 
+function posToNum(x, y, z)
+  return 1000000*(x+500) + 1000*(y+500) + (z+500)
+end
+
+function numToPos(n)
+  return n//1000000-500, (n%1000000//1000)-500, n%1000-500
+end
+
+-- local x = 27
+-- local y = 15
+-- local z = 10
+-- local p = posToNum(x,y,z)
+-- printTable(p, numToPos(p))
+
 function world.load(self)
+  next, tt, _ = pairs(self.positions)
+  setmetatable(self.positions, {
+    __pairs = function(_)
+      return function(t, index)
+        local k, _ = next(tt, index)
+        if k == nil then
+          return nil
+        end
+        local x, y, z = numToPos(k)
+        return k, {x=x, y=y, z=z}
+      end
+    end,
+  })
+
   for i = -10, 10, 1 do
     local name = "world-"..tostring(i)
     local img = playdate.datastore.readImage(name)
     -- print("tried to load "..name.." -> "..tostring(img))
     if img ~= nil then
       self.layers[i] = img
+
+      local w, h = img:getSize()
+      for x = 0, w, 1 do
+        for y = 0, h, 1 do
+          if img:sample(x+self.offset.x, y+self.offset.y) == gfx.kColorBlack then
+            self.positions[posToNum(x, y, i)] = true
+          end
+        end
+      end
     end
   end
 end
@@ -221,17 +266,22 @@ function world.save(self)
 end
 
 function world.getTile(self, pos)
-  -- TODO: check if table is faster than image in memory
-  local layer = self.layers[pos.z+self.offset.z]
-  if layer == nil then
+  if self.positions[posToNum(pos.x, pos.y, pos.z)] == nil then
     return false
   end
-  local color = layer:sample(pos.x+self.offset.x, pos.y+self.offset.y)
-  if color ~= gfx.kColorBlack then
-    return false
-  end
-
   return true
+
+  -- -- TODO: check if table is faster than image in memory
+  -- local layer = self.layers[pos.z+self.offset.z]
+  -- if layer == nil then
+  --   return false
+  -- end
+  -- local color = layer:sample(pos.x+self.offset.x, pos.y+self.offset.y)
+  -- if color ~= gfx.kColorBlack then
+  --   return false
+  -- end
+
+  -- return true
 end
 
 function world.setTile(self, pos, tile)
@@ -250,11 +300,33 @@ function world.setTile(self, pos, tile)
   gfx.popContext()
 
   self.isCached[pos.z+self.offset.z] = false
+
+  local p = posToNum(pos.x, pos.y, pos.z)
+  if self.positions[p] == nil then
+    self.positions[p] = true
+  else
+    self.positions[p] = nil
+  end
+
   return tile
 end
 
-function world.draw(self, from, to)
+function world.setMode(self, mode)
+  self.mode = mode
+end
+
+function world.draw(self, opts)
+  if self.mode == world.modeIsometric then
+    self.drawIsometric(self, opts)
+  else
+    self.draw3d(self, opts)
+  end
+end
+
+function world.drawIsometric(self, opts)
   playdate.resetElapsedTime()
+  local from = opts.from or -10
+  local to = opts.to or 10
   local wasNotCached = false
   for h = math.max(-10, from),math.min(to, 10),1 do
     if not self.isCached[h] then
@@ -292,6 +364,49 @@ function world.draw(self, from, to)
     local tookMs = playdate.getElapsedTime()*1000
     local availableMs = 1 / playdate.display.getRefreshRate() * 1000
     print("tile cache took "..tookMs.."ms ("..(tookMs/availableMs*100).."% of "..availableMs.."ms)")
+  end
+end
+
+
+local rotator
+local monkey
+
+local newPos
+
+function world.draw3d(self, opts)
+  local angle = opts.angle or 0
+  local scale = opts.scale or 0.5
+
+  if self.rotated.angle ~= angle then
+    local cos = math.cos(math.rad(-angle))
+    local sin = math.sin(math.rad(-angle))
+    local rotate = function(pos)
+      -- rotation curtesy of https://gamedev.stackexchange.com/questions/186667/rotation-grid-positions
+      local rx = pos.x * cos - pos.y * sin
+      local ry = pos.x * sin + pos.y * cos
+      return {x=rx, y=ry, z=pos.z, model=pos.model}
+    end
+
+    self.rotated = map(self.positions, rotate)
+    table.sort(self.rotated, function(a, b)
+      -- https://gamedev.stackexchange.com/questions/103442/how-do-i-determine-the-draw-order-of-isometric-2d-objects-occupying-multiple-til
+      return a.x + a.y + a.z < b.x + b.y + b.z
+    end)
+
+    self.rotated.angle = angle
+  end
+
+  for _, pos in pairs(self.rotated) do
+    if type(pos) == "table" then
+    local sx, sy = newPos(pos)
+    local model = rotator
+    if pos.model ~= nil then
+      model = pos.model
+    end
+    local frame = 1+math.floor(angle/360*#model) -- #model is supposedly expensive?
+    model[frame]:drawScaled(200+sx*scale, 120+sy*scale, scale)
+    -- model[frame]:draw(200+sx, 120+sy)
+    end
   end
 end
 
@@ -483,6 +598,34 @@ function initGame()
   ghost = gfx.image.new("ghost.png")
   assert(ghost)
 
+  rotator = gfx.imagetable.new("renders/block")
+  assert(rotator)
+  print("rotator has "..rotator:getLength().." frames")
+
+  local w, h = rotator[1]:getSize()
+  local blend = gfx.image.new(w, h)
+  gfx.pushContext(blend)
+  gfx.setColor(gfx.kColorBlack)
+  gfx.fillRect(0, 0, w, h)
+  gfx.popContext()
+
+  for frame = 1, #rotator, 1 do
+    blend:clearMask()
+    blend:setMaskImage(rotator[frame]:getMaskImage():invertedImage())
+    local dithered = rotator[frame]:blendWithImage(blend, 0.7, gfx.image.kDitherTypeBayer4x4)
+    rotator:setImage(frame, dithered)
+  end
+
+  monkey = gfx.imagetable.new("renders/monkey")
+  assert(monkey)
+  print("monkey has "..monkey:getLength().." frames")
+  for frame = 1, #rotator, 1 do
+    blend:clearMask()
+    blend:setMaskImage(monkey[frame]:getMaskImage():invertedImage())
+    local dithered = monkey[frame]:blendWithImage(blend, 0.7, gfx.image.kDitherTypeBayer4x4)
+    monkey:setImage(frame, dithered)
+  end
+
   player = make(15, 3)
   player.sprite = ghost
 
@@ -493,7 +636,7 @@ function initGame()
 
   world:load()
 
-  setupState()
+  -- setupState()
   playdate.getSystemMenu():addCheckmarkMenuItem("edit", state.editMode, function()
     state.editMode = not state.editMode
     setupState()
@@ -502,8 +645,8 @@ end
 
 function playdate.gameWillTerminate()
   print("saving")
-  playdate.datastore.write(state)
-  world:save()
+  -- playdate.datastore.write(state)
+  -- world:save()
   print("saved")
 end
 
@@ -511,8 +654,60 @@ initGame()
 
 local fps = FPS.new(320, 2, 60, 16)
 
+local opts = {
+  from = -10,
+  to = 10,
+  angle = 10,
+  scale = 0.5,
+}
+
+function map(tbl, f)
+  local t = {}
+  for k,v in pairs(tbl) do
+    t[k] = f(v)
+  end
+  return t
+end
+
+function formatMs(microseconds)
+  return tostring(math.floor(microseconds*1000*100)/100).."ms"
+end
+
+-- https://clintbellanger.net/articles/isometric_math/
+newPos = function(pos)
+  local tileWidthHalf = 64 / 2
+  local tileHeightHalf = 32 / 2
+  local heightOffsetY = -pos.z * (tileHeightHalf*2 - 3)
+  return (pos.x - pos.y) * (tileWidthHalf - 7),
+         (pos.x + pos.y) * (tileHeightHalf-3) + heightOffsetY
+end
+
+local positions = {
+  {x=0,y=0,z=0},
+
+  {x=0,y=0,z=2},
+  {x=0,y=1,z=2},
+  {x=0,y=1,z=3},
+
+  {x=0,y=1,z=4,model=monkey},
+}
+
+local p = #positions
+local n = 9
+for i = 1,n,1 do
+  for j = 1,n,1 do
+    positions[p+(i-1)*n+j] = {x=-5+i, y=-5+j, z=0}
+  end
+end
+p = p+(n-1)*n+n
+positions[p+1] = {x=-5+n,y=-5+n,z=1}
+positions[p+2] = {x=-5+n,y=-5+1,z=1}
+positions[p+3] = {x=-5+1,y=-5+n,z=1}
+positions[p+4] = {x=-5+1,y=-5+1,z=1}
+
 function playdate.update()
   -- playdate.display.setInverted(true)
+  playdate.resetElapsedTime()
 
   gfx.clear()
   playdate.drawFPS(385, 2)
@@ -520,11 +715,19 @@ function playdate.update()
   fps:draw()
  
   -- TODO: proper draw order would mean drawing front to back or kind of diagonally?
-  world:draw(-10, math.floor(player.pos.z)+1)
+  world:draw(opts)
   player:draw()
-  world:draw(math.floor(player.pos.z)+2, 10)
+  -- world:draw({from=math.floor(player.pos.z)+2, to=10})
+
+  if playdate.buttonIsPressed(playdate.kButtonB) then
+    opts.scale = opts.scale-(playdate.getCrankChange()/360)
+  else
+    opts.angle = math.floor(playdate.getCrankPosition())
+  end
 
   mode.update()
+
+  gfx.drawText(formatMs(playdate.getElapsedTime()), 330, 20)
 
   playdate.timer.updateTimers()
 end
