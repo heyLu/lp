@@ -5,7 +5,20 @@ import "CoreLibs/timer"
 
 import "fps"
 
+import "isometric"
+import "table3d"
+
 local gfx <const> = playdate.graphics
+
+local modeIsometric = 1
+local mode3d = 2
+
+local state = {
+  editMode = true,
+  displayMode = mode3d,
+}
+
+local renderer = Table3D
 
 local function translateMovement(button, factor)
   local offsetX = 0
@@ -49,7 +62,7 @@ local function make(x, y)
     anim = nil,
 
     draw = function(self)
-      local sx, sy = toScreenPos(self.pos)
+      local sx, sy = renderer.toScreenPos(self.pos)
       local screenPos = {x = sx, y = sy}
 
       gfx.setDitherPattern(0.3, gfx.image.kDitherTypeDiagonalLine)
@@ -85,7 +98,7 @@ local function make(x, y)
       self.collisionImage:clear(gfx.kColorClear)
       gfx.pushContext(self.collisionImage)
 
-      local sx, sy = toScreenPos(self.pos)
+      local sx, sy = renderer.toScreenPos(self.pos)
       local screenPos = {x = sx, y = sy}
       gfx.fillCircleAtPoint(screenPos.x, screenPos.y, 3)
 
@@ -164,41 +177,13 @@ local function make(x, y)
   }
 end
 
-local tileWidthHalf <const> = 16 / 2
-local tileHeightHalf <const> = 8 / 2
-
-function toTilePos(pos)
-  return math.floor((pos.x / tileWidthHalf + pos.y / tileHeightHalf) / 2),
-         math.floor((pos.y / tileHeightHalf - (pos.x / tileWidthHalf)) / 2),
-         pos.z
-end
-
-function toScreenPos(pos)
-  local heightOffsetY = -pos.z * (tileHeightHalf*2)
-  -- https://clintbellanger.net/articles/isometric_math/
-  return (pos.x - pos.y) * tileWidthHalf, (pos.x + pos.y) * tileHeightHalf + heightOffsetY
-end
-
 local player
 local map = nil
 local platform = nil
-local brick = nil
-
-local state = {
-  editMode = true,
-}
 
 local world = {
-  modeIsometric = 1,
-  mode3d = 2,
-
-  mode = 1, -- default to isometric
-
   layers = {},
   offset = {x = 50, y = 50, z = 0},
-
-  cachedLayers = {},
-  isCached = {},
 
   positions = {},
   rotated = {angle=999},
@@ -299,7 +284,7 @@ function world.setTile(self, pos, tile)
   gfx.drawPixel(pos.x+self.offset.x, pos.y+self.offset.y)
   gfx.popContext()
 
-  self.isCached[pos.z+self.offset.z] = false
+  renderer:hasChanged(pos)
 
   local p = posToNum(pos.x, pos.y, pos.z)
   if self.positions[p] == nil then
@@ -309,105 +294,6 @@ function world.setTile(self, pos, tile)
   end
 
   return tile
-end
-
-function world.setMode(self, mode)
-  self.mode = mode
-end
-
-function world.draw(self, opts)
-  if self.mode == world.modeIsometric then
-    self.drawIsometric(self, opts)
-  else
-    self.draw3d(self, opts)
-  end
-end
-
-function world.drawIsometric(self, opts)
-  playdate.resetElapsedTime()
-  local from = opts.from or -10
-  local to = opts.to or 10
-  local wasNotCached = false
-  for h = math.max(-10, from),math.min(to, 10),1 do
-    if not self.isCached[h] then
-      wasNotCached = true
-
-      if self.cachedLayers[h] == nil then
-        self.cachedLayers[h] = gfx.image.new(400, 240)
-      end
-
-      self.cachedLayers[h]:clear(gfx.kColorClear)
-
-      gfx.pushContext(self.cachedLayers[h])
-      -- gfx.drawRect(0, 0, 400, 240)
-      local fadedBrick = brick:fadedImage((10-math.abs(h))/10, gfx.image.kDitherTypeFloydSteinberg)
-      -- local fadedBrick = brick:blurredImage(3, 1, gfx.image.kDitherTypeFloydSteinberg)
-      for x = 0, 52, 1 do
-        for y = -24, 39, 1 do
-          local tile = world:getTile({x = x, y = y, z = h})
-          if tile then
-            local sx, sy = toScreenPos({x = x, y = y, z = h})
-            fadedBrick:draw(sx, sy)
-          end
-        end
-      end
-      gfx.popContext()
-
-      self.isCached[h] = true
-    end
-
-    gfx.setImageDrawMode(gfx.kDrawModeCopy)
-    self.cachedLayers[h]:draw(0, 0)
-  end
-
-  if wasNotCached then
-    local tookMs = playdate.getElapsedTime()*1000
-    local availableMs = 1 / playdate.display.getRefreshRate() * 1000
-    print("tile cache took "..tookMs.."ms ("..(tookMs/availableMs*100).."% of "..availableMs.."ms)")
-  end
-end
-
-
-local rotator
-local monkey
-
-local newPos
-
-function world.draw3d(self, opts)
-  local angle = opts.angle or 0
-  local scale = opts.scale or 0.5
-
-  if self.rotated.angle ~= angle then
-    local cos = math.cos(math.rad(-angle))
-    local sin = math.sin(math.rad(-angle))
-    local rotate = function(pos)
-      -- rotation curtesy of https://gamedev.stackexchange.com/questions/186667/rotation-grid-positions
-      local rx = pos.x * cos - pos.y * sin
-      local ry = pos.x * sin + pos.y * cos
-      return {x=rx, y=ry, z=pos.z, model=pos.model}
-    end
-
-    self.rotated = map(self.positions, rotate)
-    table.sort(self.rotated, function(a, b)
-      -- https://gamedev.stackexchange.com/questions/103442/how-do-i-determine-the-draw-order-of-isometric-2d-objects-occupying-multiple-til
-      return a.x + a.y + a.z < b.x + b.y + b.z
-    end)
-
-    self.rotated.angle = angle
-  end
-
-  for _, pos in pairs(self.rotated) do
-    if type(pos) == "table" then
-    local sx, sy = newPos(pos)
-    local model = rotator
-    if pos.model ~= nil then
-      model = pos.model
-    end
-    local frame = 1+math.floor(angle/360*#model) -- #model is supposedly expensive?
-    model[frame]:drawScaled(200+sx*scale, 120+sy*scale, scale)
-    -- model[frame]:draw(200+sx, 120+sy)
-    end
-  end
 end
 
 local cursor = {
@@ -434,7 +320,7 @@ local modeEdit = {
     gfx.drawText(tostring(pos.x).." "..tostring(pos.y).." @ "..tostring(cursor.z).." "..tostring(world:getTile(pos)), 5, 220)
 
     gfx.pushContext()
-    local sx, sy = toScreenPos(pos)
+    local sx, sy = renderer.toScreenPos(pos)
     gfx.setColor(gfx.kColorXOR)
     gfx.drawRect(sx, sy, 16, 16)
     gfx.popContext()
@@ -516,8 +402,8 @@ local modePlay = {
   update = function()
     gfx.drawText(tostring(player.pos.x).." "..tostring(player.pos.y), 0, 220)
 
-    local sx, sy = toScreenPos(player.pos)
-    local tx, ty = toTilePos({x = sx, y = sy})
+    local sx, sy = renderer.toScreenPos(player.pos)
+    local tx, ty = renderer.toTilePos({x = sx, y = sy})
     gfx.drawText(tostring(tx).." "..tostring(ty), 50, 220)
 
 
@@ -592,13 +478,14 @@ function initGame()
   platform = gfx.image.new("platform.png")
   assert(platform)
 
-  brick = gfx.image.new("brick.png")
+  local brick = gfx.image.new("brick.png")
   assert(brick)
+  Isometric:addModel("default", brick)
 
   ghost = gfx.image.new("ghost.png")
   assert(ghost)
 
-  rotator = gfx.imagetable.new("renders/block")
+  local rotator = gfx.imagetable.new("renders/block")
   assert(rotator)
   print("rotator has "..rotator:getLength().." frames")
 
@@ -616,7 +503,7 @@ function initGame()
     rotator:setImage(frame, dithered)
   end
 
-  monkey = gfx.imagetable.new("renders/monkey")
+  local monkey = gfx.imagetable.new("renders/monkey")
   assert(monkey)
   print("monkey has "..monkey:getLength().." frames")
   for frame = 1, #rotator, 1 do
@@ -625,6 +512,9 @@ function initGame()
     local dithered = monkey[frame]:blendWithImage(blend, 0.7, gfx.image.kDitherTypeBayer4x4)
     monkey:setImage(frame, dithered)
   end
+
+  Table3D:addModel("default", rotator)
+  Table3D:addModel("monkey", monkey)
 
   player = make(15, 3)
   player.sprite = ghost
@@ -645,7 +535,7 @@ end
 
 function playdate.gameWillTerminate()
   print("saving")
-  -- playdate.datastore.write(state)
+  playdate.datastore.write(state)
   -- world:save()
   print("saved")
 end
@@ -661,25 +551,8 @@ local opts = {
   scale = 0.5,
 }
 
-function map(tbl, f)
-  local t = {}
-  for k,v in pairs(tbl) do
-    t[k] = f(v)
-  end
-  return t
-end
-
 function formatMs(microseconds)
   return tostring(math.floor(microseconds*1000*100)/100).."ms"
-end
-
--- https://clintbellanger.net/articles/isometric_math/
-newPos = function(pos)
-  local tileWidthHalf = 64 / 2
-  local tileHeightHalf = 32 / 2
-  local heightOffsetY = -pos.z * (tileHeightHalf*2 - 3)
-  return (pos.x - pos.y) * (tileWidthHalf - 7),
-         (pos.x + pos.y) * (tileHeightHalf-3) + heightOffsetY
 end
 
 local positions = {
@@ -689,7 +562,7 @@ local positions = {
   {x=0,y=1,z=2},
   {x=0,y=1,z=3},
 
-  {x=0,y=1,z=4,model=monkey},
+  {x=0,y=1,z=4, model="monkey"},
 }
 
 local p = #positions
@@ -705,6 +578,16 @@ positions[p+2] = {x=-5+n,y=-5+1,z=1}
 positions[p+3] = {x=-5+1,y=-5+n,z=1}
 positions[p+4] = {x=-5+1,y=-5+1,z=1}
 
+function playdate.BButtonHeld()
+  if state.displayMode == modeIsometric then
+    state.displayMode = mode3d
+    renderer = Table3D
+  else
+    state.displayMode = modeIsometric
+    renderer = Isometric
+  end
+end
+
 function playdate.update()
   -- playdate.display.setInverted(true)
   playdate.resetElapsedTime()
@@ -714,8 +597,8 @@ function playdate.update()
 
   fps:draw()
  
-  -- TODO: proper draw order would mean drawing front to back or kind of diagonally?
-  world:draw(opts)
+  renderer:draw(world, opts)
+
   player:draw()
   -- world:draw({from=math.floor(player.pos.z)+2, to=10})
 
