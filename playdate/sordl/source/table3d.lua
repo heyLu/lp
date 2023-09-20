@@ -22,11 +22,12 @@ function Table3D.toScreenPos(pos)
            (pos.x + pos.y) * (tileHeightHalf-3) + heightOffsetY
 end
 
-function Table3D.toMapPos(_)
+function Table3D.toTilePos(_)
   return -999, -999, -999 -- FIXME: not implemented
 end
 
-function Table3D.hasChanged(_, _)
+function Table3D.hasChanged(self, _)
+  self.rotated.angle = 999 -- bust cache
 end
 
 local function map(tbl, f)
@@ -71,7 +72,7 @@ function Table3D.draw(self, world, opts)
       if pos.model ~= nil then
         model = pos.model
       end
-      local frame = 1+math.floor(angle/360*#model) -- #model is supposedly expensive?
+      local frame = 1+math.floor((angle/360*#model)%#model) -- #model is supposedly expensive?
       model[frame]:drawScaled(200+sx*scale, 120+sy*scale, scale)
       -- model[frame]:draw(200+sx, 120+sy)
     end

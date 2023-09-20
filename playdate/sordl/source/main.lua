@@ -143,7 +143,7 @@ local function make(x, y)
         self:updateCollision()
       end
 
-      local layer = world.cachedLayers[math.floor(self.pos.z+1)]
+      local layer = nil -- FIXME: collisions world.cachedLayers[math.floor(self.pos.z+1)]
       if layer ~= nil then
         if world:getTile({x = math.floor(self.pos.x+offsetX), y = math.floor(self.pos.y+offsetY), z = self.pos.z + 1}) then
         -- if gfx.checkAlphaCollision(layer, 0, 0, gfx.kImageUnflipped, self.collisionImage, 0, 0, gfx.kImageUnflipped) then
@@ -413,7 +413,7 @@ local modePlay = {
       return
     end
 
-    local layer = world.cachedLayers[math.floor(player.pos.z)]
+    local layer = nil -- FIXME: collisions?  world.cachedLayers[math.floor(player.pos.z)]
     local collide = false
     if layer ~= nil then
       collide = gfx.checkAlphaCollision(layer, 0, 0, gfx.kImageUnflipped, player.collisionImage, 0, 0, gfx.kImageUnflipped)
@@ -526,7 +526,7 @@ function initGame()
 
   world:load()
 
-  -- setupState()
+  setupState()
   playdate.getSystemMenu():addCheckmarkMenuItem("edit", state.editMode, function()
     state.editMode = not state.editMode
     setupState()
@@ -548,7 +548,7 @@ local opts = {
   from = -10,
   to = 10,
   angle = 10,
-  scale = 0.5,
+  scale = 0.3,
 }
 
 function formatMs(microseconds)
