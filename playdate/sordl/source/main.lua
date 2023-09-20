@@ -228,10 +228,9 @@ function world.save(self)
     if self.layers[i] ~= nil then
       local name = "world-"..tostring(i)
       playdate.datastore.writeImage(self.layers[i], name)
-      if playdate.isSimulator then
-        playdate.datastore.writeImage(self.layers[i], name..".gif")
-        -- print("saved "..name)
-      end
+      -- if playdate.isSimulator then
+      --   playdate.datastore.writeImage(self.layers[i], name..".gif")
+      -- end
     end
   end
 end
@@ -523,7 +522,7 @@ end
 function playdate.gameWillTerminate()
   print("saving")
   playdate.datastore.write(state)
-  -- world:save()
+  world:save()
   print("saved")
 end
 
