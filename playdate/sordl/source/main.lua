@@ -62,7 +62,7 @@ local function make(x, y)
     anim = nil,
 
     draw = function(self)
-      local sx, sy = renderer.toScreenPos(self.pos)
+      local sx, sy = renderer:toScreenPos(self.pos)
       local screenPos = {x = sx, y = sy}
 
       gfx.setDitherPattern(0.3, gfx.image.kDitherTypeDiagonalLine)
@@ -98,7 +98,7 @@ local function make(x, y)
       self.collisionImage:clear(gfx.kColorClear)
       gfx.pushContext(self.collisionImage)
 
-      local sx, sy = renderer.toScreenPos(self.pos)
+      local sx, sy = renderer:toScreenPos(self.pos)
       local screenPos = {x = sx, y = sy}
       gfx.fillCircleAtPoint(screenPos.x, screenPos.y, 3)
 
@@ -284,7 +284,8 @@ function world.setTile(self, pos, tile)
   gfx.drawPixel(pos.x+self.offset.x, pos.y+self.offset.y)
   gfx.popContext()
 
-  renderer:hasChanged(pos)
+  Isometric:hasChanged(pos)
+  Table3D:hasChanged(pos)
 
   local p = posToNum(pos.x, pos.y, pos.z)
   if self.positions[p] == nil then
@@ -320,7 +321,7 @@ local modeEdit = {
     gfx.drawText(tostring(pos.x).." "..tostring(pos.y).." @ "..tostring(cursor.z).." "..tostring(world:getTile(pos)), 5, 220)
 
     gfx.pushContext()
-    local sx, sy = renderer.toScreenPos(pos)
+    local sx, sy = renderer:toScreenPos(pos)
     gfx.setColor(gfx.kColorXOR)
     gfx.drawRect(sx, sy, 16, 16)
     gfx.popContext()
@@ -402,7 +403,7 @@ local modePlay = {
   update = function()
     gfx.drawText(tostring(player.pos.x).." "..tostring(player.pos.y), 0, 220)
 
-    local sx, sy = renderer.toScreenPos(player.pos)
+    local sx, sy = renderer:toScreenPos(player.pos)
     local tx, ty = renderer.toTilePos({x = sx, y = sy})
     gfx.drawText(tostring(tx).." "..tostring(ty), 50, 220)
 
