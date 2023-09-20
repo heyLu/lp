@@ -17,15 +17,17 @@ local tileWidthHalf <const> = 16 / 2
 local tileHeightHalf <const> = 8 / 2
 
 function Isometric.toTilePos(pos)
-  return math.floor((pos.x / tileWidthHalf + pos.y / tileHeightHalf) / 2),
-         math.floor((pos.y / tileHeightHalf - (pos.x / tileWidthHalf)) / 2),
+  local x = pos.x - 200
+  local y = pos.y - 120
+  return math.floor((x / tileWidthHalf + y / tileHeightHalf) / 2),
+         math.floor((y / tileHeightHalf - (x / tileWidthHalf)) / 2),
          pos.z
 end
 
 function Isometric.toScreenPos(pos)
   local heightOffsetY = -pos.z * (tileHeightHalf*2)
   -- https://clintbellanger.net/articles/isometric_math/
-  return (pos.x - pos.y) * tileWidthHalf, (pos.x + pos.y) * tileHeightHalf + heightOffsetY
+  return 200 + (pos.x - pos.y) * tileWidthHalf, 120 + (pos.x + pos.y) * tileHeightHalf + heightOffsetY
 end
 
 function Isometric.hasChanged(self, pos)
