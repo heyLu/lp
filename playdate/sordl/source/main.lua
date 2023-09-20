@@ -189,11 +189,11 @@ local world = {
   rotated = {angle=999},
 }
 
-function posToNum(x, y, z)
+function world.posToNum(x, y, z)
   return 1000000*(x+500) + 1000*(y+500) + (z+500)
 end
 
-function numToPos(n)
+function world.numToPos(n)
   return n//1000000-500, (n%1000000//1000)-500, n%1000-500
 end
 
@@ -204,20 +204,6 @@ end
 -- printTable(p, numToPos(p))
 
 function world.load(self)
-  next, tt, _ = pairs(self.positions)
-  setmetatable(self.positions, {
-    __pairs = function(_)
-      return function(t, index)
-        local k, _ = next(tt, index)
-        if k == nil then
-          return nil
-        end
-        local x, y, z = numToPos(k)
-        return k, {x=x, y=y, z=z}
-      end
-    end,
-  })
-
   for i = -10, 10, 1 do
     local name = "world-"..tostring(i)
     local img = playdate.datastore.readImage(name)
@@ -229,7 +215,7 @@ function world.load(self)
       for x = 0, w, 1 do
         for y = 0, h, 1 do
           if img:sample(x+self.offset.x, y+self.offset.y) == gfx.kColorBlack then
-            self.positions[posToNum(x, y, i)] = true
+            self.positions[world.posToNum(x, y, i)] = true
           end
         end
       end
@@ -251,7 +237,7 @@ function world.save(self)
 end
 
 function world.getTile(self, pos)
-  if self.positions[posToNum(pos.x, pos.y, pos.z)] == nil then
+  if self.positions[world.posToNum(pos.x, pos.y, pos.z)] == nil then
     return false
   end
   return true
@@ -287,7 +273,7 @@ function world.setTile(self, pos, tile)
   Isometric:hasChanged(pos)
   Table3D:hasChanged(pos)
 
-  local p = posToNum(pos.x, pos.y, pos.z)
+  local p = world.posToNum(pos.x, pos.y, pos.z)
   if self.positions[p] == nil then
     self.positions[p] = true
   else
@@ -555,29 +541,6 @@ local opts = {
 function formatMs(microseconds)
   return tostring(math.floor(microseconds*1000*100)/100).."ms"
 end
-
-local positions = {
-  {x=0,y=0,z=0},
-
-  {x=0,y=0,z=2},
-  {x=0,y=1,z=2},
-  {x=0,y=1,z=3},
-
-  {x=0,y=1,z=4, model="monkey"},
-}
-
-local p = #positions
-local n = 9
-for i = 1,n,1 do
-  for j = 1,n,1 do
-    positions[p+(i-1)*n+j] = {x=-5+i, y=-5+j, z=0}
-  end
-end
-p = p+(n-1)*n+n
-positions[p+1] = {x=-5+n,y=-5+n,z=1}
-positions[p+2] = {x=-5+n,y=-5+1,z=1}
-positions[p+3] = {x=-5+1,y=-5+n,z=1}
-positions[p+4] = {x=-5+1,y=-5+1,z=1}
 
 function playdate.BButtonHeld()
   if state.displayMode == modeIsometric then

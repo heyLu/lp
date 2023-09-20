@@ -67,7 +67,13 @@ function Table3D.draw(self, world, opts)
       return {x=rx, y=ry, z=pos.z, model=pos.model}
     end
 
-    self.rotated = map(world.positions, rotate)
+    self.rotated = {}
+    local i = 0
+    for k, _ in pairs(world.positions) do
+      local x, y, z = world.numToPos(k)
+      self.rotated[i] = rotate({x=x, y=y, z=z})
+      i = i + 1
+    end
     table.sort(self.rotated,
       ---@param a Pos
       ---@param b Pos
@@ -80,17 +86,15 @@ function Table3D.draw(self, world, opts)
     self.rotated.angle = angle
   end
 
-  for _, pos in pairs(self.rotated) do
-    if type(pos) == "table" then
-      local sx, sy = self:toScreenPos(pos, true)
-      local model = self.models["default"]
-      if pos.model ~= nil then
-        model = pos.model
-      end
-      local frame = 1+math.floor((angle/360*#model)%#model) -- #model is supposedly expensive?
-      model[frame]:drawScaled(sx, sy, scale)
-      -- model[frame]:draw(200+sx, 120+sy)
+  for _, pos in ipairs(self.rotated) do
+    local sx, sy = self:toScreenPos(pos, true)
+    local model = self.models["default"]
+    if pos.model ~= nil then
+      model = pos.model
     end
+    local frame = 1+math.floor((angle/360*#model)%#model) -- #model is supposedly expensive?
+    model[frame]:drawScaled(sx, sy, scale)
+    -- model[frame]:draw(200+sx, 120+sy)
   end
 end
 
