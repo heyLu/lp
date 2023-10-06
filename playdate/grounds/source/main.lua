@@ -7,8 +7,8 @@ import 'plugin_manager'
 
 PluginManager:load("grid_view")
 PluginManager:load("dithering")
-PluginManager:load("shady")
 PluginManager:load("threedee")
+PluginManager:load("shady")
 
 local pluginNames = {}
 local i = 1

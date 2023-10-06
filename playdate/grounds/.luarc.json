@@ -9,6 +9,12 @@
   "Lua.runtime.special": {
     "include": "require"
   },
+  "Lua.runtime.nonstandardSymbols": [
+    "+=",
+    "-=",
+    "*=",
+    "/="
+  ],
   "Lua.diagnostics.globals": [
     "playdate"
   ]

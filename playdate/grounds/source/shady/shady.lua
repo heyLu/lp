@@ -1,7 +1,7 @@
 local gfx <const> = playdate.graphics
 local geom <const> = playdate.geometry
 
-local lines = table.pack(
+local walls = table.pack(
   -- screen "walls"
   geom.lineSegment.new(0, 0, 400, 0), -- top
   geom.lineSegment.new(0, 240, 400, 240), -- bottom
@@ -21,72 +21,127 @@ local function lineBetween(x1, y1, x2, y2)
   return geom.lineSegment.new(x1, y1, x1+dx*1000000, y1+dy*1000000)
 end
 
+local function intersect(origin, ray, lines)
+  local minDist = math.huge
+  local hit = nil
+  local hitLine = nil
+  for _, line in ipairs(lines) do
+    local doesIntersect, point = ray:intersectsLineSegment(line)
+    if doesIntersect then
+      local isOrigin = false --(line.x1 == origin.dx and line.y1 == origin.dy) or (line.x2 == origin.dx and line.y2 == origin.dy)
+      local dist = geom.lineSegment.new(ray.x1, ray.y1, point.x, point.y):length()
+      if not isOrigin and dist < minDist then
+        hit = point
+        hitLine = line
+      end
+    end
+  end
+  return hit, hitLine
+end
+
 local function update()
   gfx.clear()
   gfx.fillRect(0, 0, 400, 240)
 
-  local rays = {}
-  for i, line in ipairs(lines) do
+  local endpoints = {}
+  local seen = {}
+  for _, line in ipairs(walls) do
     gfx.drawLine(line)
 
-    table.insert(rays, {ray=lineBetween(player.x, player.y, line.x1, line.y1), seg=line})
-    table.insert(rays, {ray=lineBetween(player.x, player.y, line.x2, line.y2), seg=line})
-  end
-
-  local zeroAngle = geom.vector2D.new(-1, 0)
-
-  local intersects = {}
-  for _, ray in ipairs(rays) do
-    local minDist = 1000000
-    local intersect = nil
-    for _, line in ipairs(lines) do
-      local doesIntersect, point = ray.ray:intersectsLineSegment(line)
-      if doesIntersect then
-        local dist = geom.lineSegment.new(player.x, player.y, point.x, point.y):length()
-        -- print(doesIntersect, point, dist, ray, line, ray:segmentVector():normalize(), line:segmentVector():normalize())
-        if ray.seg == line then -- origin is ourselves, just add it
-          table.insert(intersects, {point=point, ray=ray.ray, dist=dist})
-        elseif dist < minDist then -- closest intersection
-          minDist = dist
-          intersect = point
-        end
-      end
+    local a = geom.vector2D.new(line.x1, line.y1)
+    if not seen[tostring(a)] then
+      table.insert(endpoints, a)
+      seen[tostring(a)] = true
     end
-
-    if intersect ~= nil then
-      table.insert(intersects, {point = intersect, ray = ray.ray, dist=minDist})
+    local b = geom.vector2D.new(line.x2, line.y2)
+    if not seen[tostring(b)] then
+      table.insert(endpoints, b)
+      seen[tostring(b)] = true
     end
   end
 
-  -- sort intersections to paint shade polygon in the right order
-  table.sort(intersects, function(a, b)
-    local angleA = zeroAngle:angleBetween(a.ray:segmentVector())
-    local angleB = zeroAngle:angleBetween(b.ray:segmentVector())
-    -- if angleA == angleB then
-    --   return a.dist < b.dist
-    -- end
+  local zeroAngle = geom.vector2D.newPolar(200, 0)
+  table.sort(endpoints, function(a, b)
+    local angleA = zeroAngle:angleBetween(geom.lineSegment.new(200, 120, a.dx, a.dy):segmentVector())
+    local angleB = zeroAngle:angleBetween(geom.lineSegment.new(200, 120, b.dx, b.dy):segmentVector())
     return angleA < angleB
   end)
+  printTable(endpoints)
 
   gfx.pushContext()
-
   gfx.setColor(gfx.kColorWhite)
+
+  print("---")
+  local n = 1
   local points = {}
-  for _, pr in ipairs(intersects) do
-    if pr.point.x ~= 0 and pr.point.y ~= 0 then
-      gfx.drawRect(pr.point.x-2, pr.point.y-2, 5, 5)
-      table.insert(points, pr.point)
+  local currentWall = nil
+  for _, endpoint in ipairs(endpoints) do
+    local newPoint, newWall = intersect(endpoint, lineBetween(player.x, player.y, endpoint.dx, endpoint.dy), walls)
+    assert(newPoint)
+    assert(newWall)
+
+    if #points == 0 then
+      print("init!")
+      -- table.insert(points, {x=newWall.x1, y=newWall.y1})
+      -- table.insert(points, {x=newWall.x2, y=newWall.y2})
+      currentWall = newWall
+    end
+
+    print("endpoint intersect", endpoint, newPoint)
+    if newWall ~= currentWall then
+      print("new wall!", #points, currentWall)
+      if #points < 2 then
+        print("supplement", newPoint)
+        points[2] = newPoint
+        -- points[2] = geom.point.new(currentWall.x2, currentWall.y2)
+      end
+      print("intersect", points[1], points[2])
+      local start, _ = intersect(nil, lineBetween(player.x, player.y, points[1].x, points[1].y), {[1]=currentWall})
+      local _end, _ = intersect(nil, lineBetween(player.x, player.y, points[2].x, points[2].y), {[1]=currentWall})
+      if _end == nil then
+        print("retry intersect")
+        _end, _ = intersect(nil, lineBetween(player.x, player.y, currentWall.x1, currentWall.y1), {[1]=currentWall})
+      end
+      if start == nil or _end == nil then
+        print("no intersection")
+        break
+      end
+      print("tri", player.x, player.y, start.x, start.y, _end.x, _end.y)
+      gfx.fillTriangle(player.x, player.y, start.x, start.y, _end.x, _end.y)
+      -- TODO: remove (newest?) point
+      table.remove(points, 1)
+      if n > 5 then
+        print("break")
+        break
+      end
+      n += 1
+
+      currentWall = newWall
+    else --if #points < 2 then
+      print("add", newPoint)
+      table.insert(points, newPoint)
+      -- if #points > 2 then
+      --   table.remove(points, 1)
+      -- end
     end
   end
 
+  gfx.setImageDrawMode(gfx.kDrawModeNXOR)
   gfx.setColor(gfx.kColorXOR)
-  local shade = geom.polygon.new(table.unpack(points))
-  shade:close()
 
-  gfx.setColor(gfx.kColorWhite)
-  gfx.setPolygonFillRule(gfx.kPolygonFillNonZero)
-  gfx.fillPolygon(shade)
+  for _, point in ipairs(endpoints) do
+    gfx.drawRect(point.dx-2, point.dy-2, 5, 5)
+    -- gfx.drawText(i, point.dx+5, point.dy-5)
+  end
 
+  gfx.popContext()
+
+  gfx.pushContext()
+  gfx.setColor(gfx.kColorXOR)
+  gfx.setLineWidth(2)
+  for _, endpoint in ipairs(endpoints) do
+    gfx.drawLine(player.x, player.y, endpoint.dx, endpoint.dy)
+  end
   gfx.popContext()
 
   gfx.drawCircleAtPoint(player.x, player.y, 3)
