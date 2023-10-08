@@ -105,8 +105,18 @@ local function update()
   local light = geom.polygon.new(table.unpack(points))
   light:close()
   gfx.fillPolygon(light)
-
   gfx.popContext()
+
+  -- debug intersections
+  for _, point in ipairs(points) do
+    gfx.drawRect(point.x-3, point.y-3, 6, 6)
+    -- gfx.drawLine(player.x, player.y, point.x, point.y)
+  end
+
+  -- for _, line in ipairs(walls) do
+  --   gfx.drawLine(player.x, player.y, line.x1, line.y1)
+  --   gfx.drawLine(player.x, player.y, line.x2, line.y2)
+  -- end
 
   gfx.drawCircleAtPoint(player.x, player.y, 3)
 
