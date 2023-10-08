@@ -77,17 +77,15 @@ local function update()
   local currentWall = nil
   for _, endpoint in ipairs(endpoints) do
     local newPoint, newWall = intersect(endpoint, lineBetween(player.x, player.y, endpoint.dx, endpoint.dy), walls)
-    assert(newPoint)
-    assert(newWall)
 
     if #points == 0 then
-      print("init!")
+      print("init!", newWall)
       -- table.insert(points, {x=newWall.x1, y=newWall.y1})
       -- table.insert(points, {x=newWall.x2, y=newWall.y2})
       currentWall = newWall
     end
 
-    print("endpoint intersect", endpoint, newPoint)
+    print("endpoint intersect", endpoint, newPoint, "wall", newWall)
     if newWall ~= currentWall then
       print("new wall!", #points, currentWall)
       if #points < 2 then
@@ -96,11 +94,11 @@ local function update()
         -- points[2] = geom.point.new(currentWall.x2, currentWall.y2)
       end
       print("intersect", points[1], points[2])
-      local start, _ = intersect(nil, lineBetween(player.x, player.y, points[1].x, points[1].y), {[1]=currentWall})
-      local _end, _ = intersect(nil, lineBetween(player.x, player.y, points[2].x, points[2].y), {[1]=currentWall})
+      local start, _ = intersect(player, lineBetween(player.x, player.y, points[1].x, points[1].y), {[1]=currentWall})
+      local _end, _ = intersect(player, lineBetween(player.x, player.y, points[2].x, points[2].y), {[1]=currentWall})
       if _end == nil then
         print("retry intersect")
-        _end, _ = intersect(nil, lineBetween(player.x, player.y, currentWall.x1, currentWall.y1), {[1]=currentWall})
+        _end, _ = intersect(player, lineBetween(player.x, player.y, currentWall.x1, currentWall.y1), {[1]=currentWall})
       end
       if start == nil or _end == nil then
         print("no intersection")
