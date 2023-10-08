@@ -32,6 +32,8 @@ local function intersect(ray, lines)
       if dist < minDist then
         hit = point
         hitLine = line
+
+        minDist = dist
       end
     end
   end
