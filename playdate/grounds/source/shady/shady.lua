@@ -1,17 +1,48 @@
 local gfx <const> = playdate.graphics
 local geom <const> = playdate.geometry
 
-local walls = table.pack(
-  -- screen "walls"
-  geom.lineSegment.new(0, 0, 400, 0), -- top
-  geom.lineSegment.new(0, 240, 400, 240), -- bottom
-  geom.lineSegment.new(400, 0, 400, 240), -- left
-  geom.lineSegment.new(0, 0, 0, 240), -- right
+local wallTop = geom.lineSegment.new(0, 0, 400, 0)
+local wallBottom = geom.lineSegment.new(0, 240, 400, 240)
+local wallLeft = geom.lineSegment.new(0, 0, 0, 240)
+local wallRight = geom.lineSegment.new(400, 0, 400, 240)
 
-  geom.lineSegment.new(100, 110, 100, 130),
-  geom.lineSegment.new(300, 110, 300, 130),
-  geom.lineSegment.new(150, 50, 200, 25)
-)
+local function loadLevel(levelName)
+  local level = playdate.datastore.read(levelName)
+  if level == nil then
+    level = {
+      walls = {}
+    }
+  end
+
+  local walls = {}
+  table.insert(walls, wallTop)
+  table.insert(walls, wallBottom)
+  table.insert(walls, wallLeft)
+  table.insert(walls, wallRight)
+  for _, wall in ipairs(level.walls) do
+    table.insert(walls, geom.lineSegment.new(wall.x1, wall.y1, wall.x2, wall.y2))
+  end
+
+  return {
+    walls = walls,
+  }
+end
+
+local function saveLevel(levelName, level)
+  local walls = {}
+  for _, wall in ipairs(level.walls) do
+    if wall ~= wallTop and wall ~= wallBottom and wall ~= wallLeft and wall ~= wallRight then
+      table.insert(walls, {x1=wall.x1, y1=wall.y1, x2=wall.x2, y2=wall.y2})
+    end
+  end
+
+  playdate.datastore.write({
+    walls = walls
+  }, levelName)
+end
+
+local currentLevel = "level1"
+local level = loadLevel(currentLevel)
 
 local foodSprites = gfx.imagetable.new("images/food")
 assert(foodSprites)
@@ -88,7 +119,7 @@ local function update()
 
   local uniquePoints = {}
   local seenPoint = {}
-  for _, line in ipairs(walls) do
+  for _, line in ipairs(level.walls) do
     if not haveSeen(seenPoint, line.x1*1000000+line.y1) then
       table.insert(uniquePoints, geom.point.new(line.x1, line.y1))
     end
@@ -116,7 +147,7 @@ local function update()
     local dy = math.sin(angle)
 
     local ray = lineBetween(player.x, player.y, player.x+dx, player.y+dy)
-    local hit, _ = intersect(ray, walls) -- iterates over lines, makes this O^2
+    local hit, _ = intersect(ray, level.walls) -- iterates over lines, makes this O^2
     if hit ~= nil then
       table.insert(intersects, {point=hit, angle=angle})
     end
@@ -171,7 +202,7 @@ local function update()
   if playdate.buttonJustPressed(playdate.kButtonA) then
     if wallStart then
       local wall = geom.lineSegment.new(wallStart.x, wallStart.y, player.x, player.y)
-      table.insert(walls, wall)
+      table.insert(level.walls, wall)
       wallStart = nil
     else
       wallStart = geom.point.new(player.x, player.y)
@@ -194,4 +225,9 @@ local function update()
   playdate.timer.updateTimers()
 end
 
-return update
+return {
+  update = update,
+  gameWillTerminate = function()
+    saveLevel(currentLevel, level)
+  end,
+}
