@@ -13,6 +13,9 @@ local walls = table.pack(
   geom.lineSegment.new(150, 50, 200, 25)
 )
 
+local foodSprites = gfx.imagetable.new("images/food")
+assert(foodSprites)
+
 local player = geom.point.new(200, 120)
 
 local function lineBetween(x1, y1, x2, y2)
@@ -49,6 +52,35 @@ local function haveSeen(t, val)
 end
 
 local wallStart = nil
+
+local function newConeTimer(dur, angle, range, easing)
+  local t = playdate.timer.new(dur, angle-range/2, angle+range/2, easing)
+  t.repeats = true
+  t.reverses = true
+  return t
+end
+
+local fruitDir = 90
+local coneTimer = newConeTimer(2000, fruitDir, 60, playdate.easingFunctions.inOutSine)
+local fruitTimer = playdate.timer.new(5000, 20, 100)
+fruitTimer.repeats = true
+fruitTimer.discardOnCompletion = false
+fruitTimer.timerEndedCallback = function(timer)
+  -- reverse manually
+  local startValue = timer.startValue
+  local endValue = timer.endValue
+  timer.startValue = endValue
+  timer.endValue = startValue
+  timer:start()
+
+  if fruitDir == 90 then
+    fruitDir = 360-fruitDir
+  else
+    fruitDir = 90
+  end
+  coneTimer:remove()
+  coneTimer = newConeTimer(2000, fruitDir, 60, playdate.easingFunctions.inOutSine)
+end
 
 local function update()
   gfx.clear()
@@ -101,7 +133,6 @@ local function update()
 
   gfx.pushContext()
   gfx.setColor(gfx.kColorXOR)
-
   local light = geom.polygon.new(table.unpack(points))
   light:close()
   gfx.fillPolygon(light)
@@ -119,6 +150,16 @@ local function update()
   -- end
 
   gfx.drawCircleAtPoint(player.x, player.y, 3)
+
+  gfx.pushContext()
+  local pos = geom.point.new(fruitTimer.value, 50)
+  gfx.setImageDrawMode(gfx.kDrawModeWhiteTransparent)
+  foodSprites:getImage(1, 2):invertedImage():draw(pos.x, pos.y)
+  gfx.setStencilPattern(0.3)
+  gfx.setColor(gfx.kColorBlack)
+  local coneSize = 200
+  gfx.fillEllipseInRect(pos.x-coneSize/2+5, pos.y-coneSize/2+5, coneSize, coneSize, coneTimer.value-30, coneTimer.value+30)
+  gfx.popContext()
 
   if wallStart then
     gfx.pushContext()
@@ -149,6 +190,8 @@ local function update()
   if playdate.buttonIsPressed(playdate.kButtonRight) then
     player.x = player.x + 2
   end
+
+  playdate.timer.updateTimers()
 end
 
 return update
