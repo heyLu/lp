@@ -47,7 +47,21 @@ local level = loadLevel(currentLevel)
 local foodSprites = gfx.imagetable.new("images/food")
 assert(foodSprites)
 
+local function canSee(pos, viewRange, angle, range, player)
+  if pos:distanceToPoint(player) > viewRange then
+    return false
+  end
+
+  local playerAngle = geom.vector2D.new(0, -1):angleBetween(geom.lineSegment.new(pos.x, pos.y, player.x, player.y):segmentVector())
+  if playerAngle < 0 then
+    playerAngle += 360
+  end
+
+  return angle-range/2 < playerAngle and playerAngle < angle+range/2
+end
+
 local player = geom.point.new(200, 120)
+local caught = false
 
 local function lineBetween(x1, y1, x2, y2)
   local ls = geom.lineSegment.new(x1, y1, x2, y2)
@@ -112,6 +126,9 @@ fruitTimer.timerEndedCallback = function(timer)
   coneTimer:remove()
   coneTimer = newConeTimer(2000, fruitDir, 60, playdate.easingFunctions.inOutSine)
 end
+
+-- coneTimer:pause()
+-- fruitTimer:pause()
 
 local function update()
   gfx.clear()
@@ -182,14 +199,38 @@ local function update()
 
   gfx.drawCircleAtPoint(player.x, player.y, 3)
 
-  gfx.pushContext()
-  local pos = geom.point.new(fruitTimer.value, 50)
-  gfx.setImageDrawMode(gfx.kDrawModeWhiteTransparent)
-  foodSprites:getImage(1, 2):invertedImage():draw(pos.x, pos.y)
-  gfx.setStencilPattern(0.3)
-  gfx.setColor(gfx.kColorBlack)
   local coneSize = 200
+  local pos = geom.point.new(fruitTimer.value, 50)
+  local found = canSee(geom.point.new(pos.x+5, pos.y+5), coneSize/2, coneTimer.value, 60, player)
+
+  if not caught and found then
+    local noise = playdate.sound.synth.new(playdate.sound.kWaveNoise)
+    local crushEffect = playdate.sound.bitcrusher.new()
+    crushEffect:setMix(0.5)
+    crushEffect:setAmount(0.5)
+    playdate.sound.addEffect(crushEffect)
+    noise:playNote("C", 0.5, 0.5)
+
+    caught = true
+  end
+
+  if not found then
+    caught = false
+  end
+
+  gfx.pushContext()
+  gfx.setImageDrawMode(gfx.kDrawModeWhiteTransparent)
+  gfx.setColor(gfx.kColorBlack)
+
+  foodSprites:getImage(1, 2):invertedImage():draw(pos.x, pos.y)
+
+  if found then
+    gfx.setStencilPattern(0.7)
+  else
+    gfx.setStencilPattern(0.3)
+  end
   gfx.fillEllipseInRect(pos.x-coneSize/2+5, pos.y-coneSize/2+5, coneSize, coneSize, coneTimer.value-30, coneTimer.value+30)
+
   gfx.popContext()
 
   if wallStart then
