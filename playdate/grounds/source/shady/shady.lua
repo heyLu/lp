@@ -71,9 +71,9 @@ local function update()
     local angle = math.atan(point.y-player.y, point.x-player.x)
     if not haveSeen(seenAngle, angle) then
       -- add angle of point AND slightly offset to hit points _behind_ walls (VERY important!)
-      table.insert(uniqueAngles, angle-0.00001)
+      table.insert(uniqueAngles, angle-0.0001)
       table.insert(uniqueAngles, angle)
-      table.insert(uniqueAngles, angle+0.00001)
+      table.insert(uniqueAngles, angle+0.0001)
     end
   end
 
