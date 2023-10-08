@@ -16,13 +16,14 @@ function PluginManager.load(self, name)
 		return
 	end
 
-	self.plugins[ name ] = {
+	local plugin = {
 		name = name,
 		path = path,
 		filepath = filepath,
-		modtime = playdate.file.modtime( filepath ),
-		update_fn = playdate.file.run( path )
+		modtime = playdate.file.modtime( filepath )
 	}
+
+	self.plugins[ name ] = plugin
 	self.current_plugin = name
 end
 
@@ -36,6 +37,7 @@ function PluginManager.update(self)
 
 		-- check if we need to reload
 		if not (
+			plugin.update_fn ~= nil and
 			modtime.year==plugin.modtime.year and
 			modtime.month==plugin.modtime.month and
 			modtime.day==plugin.modtime.day and
@@ -45,7 +47,13 @@ function PluginManager.update(self)
 			) then
 			plugin.modtime = modtime
 			print( 'Plugin reload: '..name)
-			plugin.update_fn = playdate.file.run( plugin.path )
+			local info = playdate.file.run( plugin.path )
+			if type(info) == "table" then
+				plugin.update_fn = info.update
+				plugin.handlers = info
+			else
+				plugin.update_fn = info
+			end
 		end
 	end
 
@@ -54,5 +62,10 @@ function PluginManager.update(self)
 		playdate.graphics.drawText("no plugin "..self.current_plugin, 0, 0)
 		return
 	end
+
+	if plugin.handlers and plugin.handlers.gameWillTerminate then
+		playdate.gameWillTerminate = plugin.handlers.gameWillTerminate
+	end
+
 	plugin.update_fn()
 end
