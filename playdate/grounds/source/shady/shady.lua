@@ -48,6 +48,8 @@ local function haveSeen(t, val)
   return seen
 end
 
+local wallStart = nil
+
 local function update()
   gfx.clear()
   gfx.fillRect(0, 0, 400, 240)
@@ -107,6 +109,23 @@ local function update()
   gfx.popContext()
 
   gfx.drawCircleAtPoint(player.x, player.y, 3)
+
+  if wallStart then
+    gfx.pushContext()
+    gfx.setColor(gfx.kColorXOR)
+    gfx.drawLine(wallStart.x, wallStart.y, player.x, player.y)
+    gfx.popContext()
+  end
+
+  if playdate.buttonJustPressed(playdate.kButtonA) then
+    if wallStart then
+      local wall = geom.lineSegment.new(wallStart.x, wallStart.y, player.x, player.y)
+      table.insert(walls, wall)
+      wallStart = nil
+    else
+      wallStart = geom.point.new(player.x, player.y)
+    end
+  end
 
   if playdate.buttonIsPressed(playdate.kButtonUp) then
     player.y = player.y - 2
