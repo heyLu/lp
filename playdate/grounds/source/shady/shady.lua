@@ -250,18 +250,35 @@ local function update()
     end
   end
 
+  local movement = geom.vector2D.new(0, 0)
   if playdate.buttonIsPressed(playdate.kButtonUp) then
-    player.y = player.y - 2
+    movement.dy -= 2
   end
   if playdate.buttonIsPressed(playdate.kButtonDown) then
-    player.y = player.y + 2
+    movement.dy += 2
   end
   if playdate.buttonIsPressed(playdate.kButtonLeft) then
-    player.x = player.x - 2
+    movement.dx -= 2
   end
   if playdate.buttonIsPressed(playdate.kButtonRight) then
-    player.x = player.x + 2
+    movement.dx += 2
   end
+
+  if movement.dx ~= 0 then
+    local hit, _ = intersect(lineBetween(player.x, player.y, player.x+movement.dx, player.y), level.walls)
+    if hit ~= nil and player:distanceToPoint(hit) < 3 then
+      movement.dx = 0
+    end
+  end
+
+  if movement.dy ~= 0 then
+    local hit, _ = intersect(lineBetween(player.x, player.y, player.x, player.y+movement.dy), level.walls)
+    if hit ~= nil and player:distanceToPoint(hit) < 3 then
+      movement.dy = 0
+    end
+  end
+
+  player += movement
 
   playdate.timer.updateTimers()
 end
