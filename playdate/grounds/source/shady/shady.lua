@@ -98,6 +98,51 @@ local function haveSeen(t, val)
   return seen
 end
 
+-- finds points visible from `pos`.
+local function findVisibleFrom(pos, uniquePoints)
+  local uniqueAngles = {}
+  local seenAngle = {}
+  for _, point in ipairs(uniquePoints) do
+    local angle = math.atan(point.y-pos.y, point.x-pos.x)
+    if not haveSeen(seenAngle, angle) then
+      -- add angle of point AND slightly offset to hit points _behind_ walls (VERY important!)
+      table.insert(uniqueAngles, angle-0.0001)
+      table.insert(uniqueAngles, angle)
+      table.insert(uniqueAngles, angle+0.0001)
+    end
+  end
+
+  -- intersect with angles of all wall endpoints
+  local intersections = {}
+  for _, angle in ipairs(uniqueAngles) do
+    local dx = math.cos(angle)
+    local dy = math.sin(angle)
+
+    local ray = lineBetween(pos.x, pos.y, pos.x+dx, pos.y+dy)
+    local hit, _ = intersect(ray, level.walls) -- iterates over lines, makes this O^2
+    if hit ~= nil then
+      table.insert(intersections, {point=hit, angle=angle})
+    end
+  end
+
+  table.sort(intersections, function(a, b)
+    return a.angle < b.angle
+  end)
+
+  return intersections
+end
+
+local uniquePoints = {}
+local seenPoint = {}
+for _, line in ipairs(level.walls) do
+  if not haveSeen(seenPoint, line.x1*1000000+line.y1) then
+    table.insert(uniquePoints, geom.point.new(line.x1, line.y1))
+  end
+  if not haveSeen(seenPoint, line.x2*1000000+line.y2) then
+    table.insert(uniquePoints, geom.point.new(line.x2, line.y2))
+  end
+end
+
 local wallStart = nil
 
 local function newConeTimer(dur, angle, range, easing)
@@ -136,48 +181,10 @@ local function update()
   gfx.clear()
   gfx.fillRect(0, 0, 400, 240)
 
-  local uniquePoints = {}
-  local seenPoint = {}
-  for _, line in ipairs(level.walls) do
-    if not haveSeen(seenPoint, line.x1*1000000+line.y1) then
-      table.insert(uniquePoints, geom.point.new(line.x1, line.y1))
-    end
-    if not haveSeen(seenPoint, line.x2*1000000+line.y2) then
-      table.insert(uniquePoints, geom.point.new(line.x2, line.y2))
-    end
-  end
-
-  local uniqueAngles = {}
-  local seenAngle = {}
-  for _, point in ipairs(uniquePoints) do
-    local angle = math.atan(point.y-player.y, point.x-player.x)
-    if not haveSeen(seenAngle, angle) then
-      -- add angle of point AND slightly offset to hit points _behind_ walls (VERY important!)
-      table.insert(uniqueAngles, angle-0.0001)
-      table.insert(uniqueAngles, angle)
-      table.insert(uniqueAngles, angle+0.0001)
-    end
-  end
-
-  -- intersect with angles of all wall endpoints
-  local intersects = {}
-  for _, angle in ipairs(uniqueAngles) do
-    local dx = math.cos(angle)
-    local dy = math.sin(angle)
-
-    local ray = lineBetween(player.x, player.y, player.x+dx, player.y+dy)
-    local hit, _ = intersect(ray, level.walls) -- iterates over lines, makes this O^2
-    if hit ~= nil then
-      table.insert(intersects, {point=hit, angle=angle})
-    end
-  end
-
-  table.sort(intersects, function(a, b)
-    return a.angle < b.angle
-  end)
+  local intersections = findVisibleFrom(player, uniquePoints)
 
   local points = {}
-  for _, intersection in ipairs(intersects) do
+  for _, intersection in ipairs(intersections) do
     table.insert(points, intersection.point)
   end
 
