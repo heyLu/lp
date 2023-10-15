@@ -47,6 +47,7 @@ local level = loadLevel(currentLevel)
 local foodSprites = gfx.imagetable.new("images/food")
 assert(foodSprites)
 
+-- Check if entity at pos with the vision code can see player.
 local function canSee(pos, viewRange, angle, range, player)
   if pos:distanceToPoint(player) > viewRange then
     return false
@@ -69,6 +70,7 @@ local function lineBetween(x1, y1, x2, y2)
   return geom.lineSegment.new(x1, y1, x1+dx*1000000, y1+dy*1000000)
 end
 
+-- Intersect `ray` with `lines` and return the closest intersection.
 local function intersect(ray, lines)
   local minDist = math.huge
   local hit = nil
@@ -230,6 +232,8 @@ local function update()
     gfx.setStencilPattern(0.3)
   end
   gfx.fillEllipseInRect(pos.x-coneSize/2+5, pos.y-coneSize/2+5, coneSize, coneSize, coneTimer.value-30, coneTimer.value+30)
+
+  -- TODO: intersects closer than coneSize/2, within angles coneTime.value +- 30 -> elipsizes defined by that:wq
 
   gfx.popContext()
 
