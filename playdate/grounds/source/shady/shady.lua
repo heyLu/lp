@@ -206,7 +206,12 @@ local function update()
   --   gfx.drawLine(player.x, player.y, line.x2, line.y2)
   -- end
 
-  gfx.drawCircleAtPoint(player.x, player.y, 3)
+  local playerSprite = foodSprites:getImage(12, 2):invertedImage()
+  local playerWidth, playerHeight = playerSprite:getSize()
+  gfx.pushContext()
+  gfx.setImageDrawMode(gfx.kDrawModeWhiteTransparent)
+  playerSprite:draw(player.x-playerWidth/2, player.y-playerHeight/2)
+  gfx.popContext()
 
   local coneSize = 200
   local pos = geom.point.new(fruitTimer.value, 50)
@@ -277,14 +282,14 @@ local function update()
 
   if movement.dx ~= 0 then
     local hit, _ = intersect(lineBetween(player.x, player.y, player.x+movement.dx, player.y), level.walls)
-    if hit ~= nil and player:distanceToPoint(hit) < 3 then
+    if hit ~= nil and player:distanceToPoint(hit) < playerWidth/2 then
       movement.dx = 0
     end
   end
 
   if movement.dy ~= 0 then
     local hit, _ = intersect(lineBetween(player.x, player.y, player.x, player.y+movement.dy), level.walls)
-    if hit ~= nil and player:distanceToPoint(hit) < 3 then
+    if hit ~= nil and player:distanceToPoint(hit) < playerHeight/2 then
       movement.dy = 0
     end
   end
