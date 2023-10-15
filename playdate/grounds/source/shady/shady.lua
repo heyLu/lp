@@ -215,8 +215,37 @@ local function update()
 
   local coneSize = 200
   local pos = geom.point.new(fruitTimer.value, 50)
-  local found = canSee(geom.point.new(pos.x+5, pos.y+5), coneSize/2, coneTimer.value, 60, player)
+  -- local found = canSee(geom.point.new(pos.x+5, pos.y+5), coneSize/2, coneTimer.value, 60, player)
 
+  -- calculate world seen by carrot
+  local coneIntersections = findVisibleFrom(pos, uniquePoints)
+  local conePoints = {}
+  for _, coneIntersection in ipairs(coneIntersections) do
+    table.insert(conePoints, coneIntersection.point)
+  end
+
+  local coneShadowImg = gfx.image.new(400, 240)
+  gfx.pushContext(coneShadowImg)
+  gfx.setColor(gfx.kColorWhite)
+  local coneLight = geom.polygon.new(table.unpack(conePoints))
+  coneLight:close()
+  gfx.fillPolygon(coneLight)
+  gfx.popContext()
+
+  -- draw carrot
+  gfx.pushContext()
+  gfx.setImageDrawMode(gfx.kDrawModeWhiteTransparent)
+  foodSprites:getImage(1, 2):invertedImage():draw(pos.x, pos.y)
+  gfx.popContext()
+
+  local coneImg = gfx.image.new(400, 240)
+  gfx.pushContext(coneImg)
+  gfx.setStencilImage(coneShadowImg)
+  gfx.setColor(gfx.kColorBlack)
+  gfx.fillEllipseInRect(pos.x-coneSize/2+5, pos.y-coneSize/2+5, coneSize, coneSize, coneTimer.value-30, coneTimer.value+30)
+  gfx.popContext()
+
+  local found = coneImg:sample(player.x, player.y) == gfx.kColorBlack
   if not caught and found then
     local noise = playdate.sound.synth.new(playdate.sound.kWaveNoise)
     local crushEffect = playdate.sound.bitcrusher.new()
@@ -233,22 +262,17 @@ local function update()
   end
 
   gfx.pushContext()
-  gfx.setImageDrawMode(gfx.kDrawModeWhiteTransparent)
-  gfx.setColor(gfx.kColorBlack)
-
-  foodSprites:getImage(1, 2):invertedImage():draw(pos.x, pos.y)
-
   if found then
     gfx.setStencilPattern(0.7)
   else
     gfx.setStencilPattern(0.3)
   end
-  gfx.fillEllipseInRect(pos.x-coneSize/2+5, pos.y-coneSize/2+5, coneSize, coneSize, coneTimer.value-30, coneTimer.value+30)
+  coneImg:draw(0, 0)
+  gfx.popContext()
 
   -- TODO: intersects closer than coneSize/2, within angles coneTime.value +- 30 -> elipsizes defined by that:wq
 
-  gfx.popContext()
-
+  -- draw in-progress wall
   if wallStart then
     gfx.pushContext()
     gfx.setColor(gfx.kColorXOR)
