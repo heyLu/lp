@@ -6,9 +6,12 @@ import (
 	"net/http"
 	"slices"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type Task struct {
+	ID          string
 	Icon        string
 	Description string
 	State       TaskState
@@ -21,6 +24,32 @@ var (
 	TaskStarted TaskState = "started"
 	TaskDone    TaskState = "done"
 )
+
+func (s TaskState) Valid() bool {
+	switch s {
+	case TaskDone:
+		return true
+	case TaskStarted:
+		return true
+	case TaskNotDone:
+		return true
+	default:
+		return false
+	}
+}
+
+func (s TaskState) Next() TaskState {
+	switch s {
+	case TaskDone:
+		return TaskNotDone
+	case TaskStarted:
+		return TaskDone
+	case TaskNotDone:
+		return TaskStarted
+	default:
+		return s
+	}
+}
 
 type Event struct {
 	Icon          string
@@ -40,6 +69,8 @@ func (e Event) DaysLeft() int {
 
 type TasksStore interface {
 	Tasks() ([]Task, error)
+	FindTask(id string) (*Task, error)
+	ChangeTaskState(id string, state TaskState) error
 
 	Events() ([]Event, error)
 }
@@ -52,15 +83,22 @@ func main() {
 	config.Addr = "0.0.0.0:5000"
 
 	srv := &server{
-		store: &memoryStore{},
+		store: &memoryStore{
+			tasks:  exampleTasks,
+			events: exampleEvents,
+		},
 	}
 
-	http.HandleFunc("/", srv.handleHome)
+	router := chi.NewMux()
 
-	http.Handle("/js/htmx.min.js", http.StripPrefix("/js", http.FileServer(http.Dir("."))))
+	router.Get("/", srv.handleHome)
+
+	router.Post("/tasks/{task-id}/{state}", srv.changeTaskState)
+
+	router.Mount("/js/htmx.min.js", http.StripPrefix("/js", http.FileServer(http.Dir("."))))
 
 	log.Printf("Listening on http://%s", config.Addr)
-	log.Fatal(http.ListenAndServe(config.Addr, nil))
+	log.Fatal(http.ListenAndServe(config.Addr, router))
 }
 
 type server struct {
@@ -100,6 +138,10 @@ var homeTmpl = template.Must(template.New("").Parse(`<!doctype html>
 		<title>.trackl</title>
 
 		<style>
+		:root {
+			--done-color: rgba(0, 200, 0, 0.7);
+		}
+
 		body {
 			background-color: white;
 		}
@@ -121,8 +163,12 @@ var homeTmpl = template.Must(template.New("").Parse(`<!doctype html>
 			justify-content: center;
 		}
 
+		.box.started {
+			background: linear-gradient(135deg, var(--done-color), var(--done-color) 50%, white 50%, white);
+		}
+
 		.box.done {
-			background-color: rgba(0, 200, 0, 0.7);
+			background-color: var(--done-color);
 		}
 
 		.events {
@@ -143,7 +189,14 @@ var homeTmpl = template.Must(template.New("").Parse(`<!doctype html>
 <body>
 		<section id="occasionals" class="tasks">
 		{{ range $task := .Tasks }}
-			<div class="box {{ $task.State }}" title="{{ $task.Description }}">{{ $task.Icon }}</div>
+			{{ block "task" $task }}
+			<div class="box {{ .State }}"
+				 title="{{ .Description }}"
+				 hx-post="/tasks/{{ .ID }}/{{ .State.Next }}"
+				 hx-swap="outerHTML">
+			  {{ .Icon }}
+			</div>
+			{{ end }}
 		{{ end }}
 		</section>
 
@@ -161,3 +214,29 @@ var homeTmpl = template.Must(template.New("").Parse(`<!doctype html>
 		<script src="/js/htmx.min.js"></script>
 </body>
 </html>`))
+
+func (s *server) changeTaskState(w http.ResponseWriter, req *http.Request) {
+	state := TaskState(chi.URLParam(req, "state"))
+	if !state.Valid() {
+		http.Error(w, "unknown state", http.StatusBadRequest)
+		return
+	}
+
+	task, err := s.store.FindTask(chi.URLParam(req, "task-id"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = s.store.ChangeTaskState(task.ID, state)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = homeTmpl.ExecuteTemplate(w, "task", task)
+	if err != nil {
+		log.Println("Error:", err)
+		return
+	}
+}
