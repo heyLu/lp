@@ -8,7 +8,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	_ "github.com/mattn/go-sqlite3"
 )
+
+const DefaultNamespace = ""
 
 type Task struct {
 	ID          string
@@ -52,6 +55,7 @@ func (s TaskState) Next() TaskState {
 }
 
 type Event struct {
+	ID            string
 	Icon          string
 	Date          time.Time
 	ReferenceDate time.Time
@@ -68,11 +72,14 @@ func (e Event) DaysLeft() int {
 }
 
 type TasksStore interface {
+	// TODO: add namespace argument
 	Tasks() ([]Task, error)
 	FindTask(id string) (*Task, error)
 	ChangeTaskState(id string, state TaskState) error
 
 	Events() ([]Event, error)
+
+	Close() error
 }
 
 var config struct {
@@ -82,12 +89,17 @@ var config struct {
 func main() {
 	config.Addr = "0.0.0.0:5000"
 
-	srv := &server{
-		store: &memoryStore{
-			tasks:  exampleTasks,
-			events: exampleEvents,
-		},
+	dbStore, err := newDBStore("sqlite3", "file:trackl.db?foreign_keys=true&auto_vacuum=incremental")
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer dbStore.Close()
+
+	srv := &server{
+		store: dbStore,
+	}
+
+	// TODO: put (cookie-based?) namespace into context (read from cookie on /, redirect to namespaced page?)
 
 	router := chi.NewMux()
 
@@ -224,12 +236,14 @@ func (s *server) changeTaskState(w http.ResponseWriter, req *http.Request) {
 
 	task, err := s.store.FindTask(chi.URLParam(req, "task-id"))
 	if err != nil {
+		log.Println("Error:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	err = s.store.ChangeTaskState(task.ID, state)
 	if err != nil {
+		log.Println("Error:", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

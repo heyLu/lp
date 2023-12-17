@@ -53,6 +53,10 @@ func (ms *memoryStore) Events() ([]Event, error) {
 	return ms.events, nil
 }
 
+func (ms *memoryStore) Close() error {
+	return nil
+}
+
 var exampleTasks = generateIDs([]Task{
 	{Icon: "🧹", State: TaskNotDone, Description: "cleaned a bit"},
 	{Icon: "🌪️", State: TaskDone, Description: "vaccumed this week"},
@@ -80,7 +84,7 @@ var exampleEvents = []Event{
 	},
 	{Icon: "🌲", Date: timeMustParse(time.DateOnly, "2023-12-24"), ReferenceDate: timeMustParse(time.DateOnly, "2023-12-15")},
 	{Icon: "🕊️", Date: timeMustParse(time.DateOnly, "2024-01-08"), ReferenceDate: timeMustParse(time.DateOnly, "2023-12-15")},
-	{Icon: "🧬", Date: timeMustParse(time.DateOnly, fmt.Sprintf("%d-01-01", 1990+81)), ReferenceDate: timeMustParse(time.DateOnly, "1990-01-01")},
+	// {Icon: "🧬", Date: timeMustParse(time.DateOnly, fmt.Sprintf("%d-01-01", 1990+81)), ReferenceDate: timeMustParse(time.DateOnly, "1990-01-01")},
 }
 
 func timeMustParse(layout, value string) time.Time {
