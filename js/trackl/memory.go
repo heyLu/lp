@@ -12,11 +12,11 @@ type memoryStore struct {
 	events []Event
 }
 
-func (ms *memoryStore) Tasks() ([]Task, error) {
+func (ms *memoryStore) Tasks(_namespace string) ([]Task, error) {
 	return ms.tasks, nil
 }
 
-func (ms *memoryStore) FindTask(id string) (*Task, error) {
+func (ms *memoryStore) FindTask(_namespace string, id string) (*Task, error) {
 	for _, task := range ms.tasks {
 		if task.ID != id {
 			continue
@@ -29,7 +29,7 @@ func (ms *memoryStore) FindTask(id string) (*Task, error) {
 
 }
 
-func (ms *memoryStore) ChangeTaskState(id string, state TaskState) error {
+func (ms *memoryStore) ChangeTaskState(_namespace string, id string, state TaskState) error {
 	found := false
 	for i, task := range ms.tasks {
 		if task.ID != id {
@@ -49,7 +49,7 @@ func (ms *memoryStore) ChangeTaskState(id string, state TaskState) error {
 	return nil
 }
 
-func (ms *memoryStore) Events() ([]Event, error) {
+func (ms *memoryStore) Events(_namespace string) ([]Event, error) {
 	return ms.events, nil
 }
 

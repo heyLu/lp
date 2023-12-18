@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"html/template"
 	"log"
+	"math/rand"
 	"net/http"
 	"slices"
 	"time"
@@ -11,13 +15,18 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const DefaultNamespace = ""
+const NamespaceKey = "track_namespace"
 
 type Task struct {
+	Namespace   string
 	ID          string
 	Icon        string
 	Description string
 	State       TaskState
+
+	// TODO: one-time task (flag?)
+	// TODO: timed task
+	// TODO: journalling as task
 }
 
 type TaskState string
@@ -72,12 +81,11 @@ func (e Event) DaysLeft() int {
 }
 
 type TasksStore interface {
-	// TODO: add namespace argument
-	Tasks() ([]Task, error)
-	FindTask(id string) (*Task, error)
-	ChangeTaskState(id string, state TaskState) error
+	Tasks(namespace string) ([]Task, error)
+	FindTask(namespace string, id string) (*Task, error)
+	ChangeTaskState(namespace string, id string, state TaskState) error
 
-	Events() ([]Event, error)
+	Events(namespace string) ([]Event, error)
 
 	Close() error
 }
@@ -99,13 +107,18 @@ func main() {
 		store: dbStore,
 	}
 
-	// TODO: put (cookie-based?) namespace into context (read from cookie on /, redirect to namespaced page?)
-
 	router := chi.NewMux()
+	router.Use(NamespaceCtx)
 
 	router.Get("/", srv.handleHome)
-
 	router.Post("/tasks/{task-id}/{state}", srv.changeTaskState)
+
+	router.Route("/{namespace}", func(namespaceRouter chi.Router) {
+		namespaceRouter.Use(NamespaceCtx)
+
+		namespaceRouter.Get("/", srv.handleHome)
+		namespaceRouter.Post("/tasks/{task-id}/{state}", srv.changeTaskState)
+	})
 
 	router.Mount("/js/htmx.min.js", http.StripPrefix("/js", http.FileServer(http.Dir("."))))
 
@@ -113,18 +126,66 @@ func main() {
 	log.Fatal(http.ListenAndServe(config.Addr, router))
 }
 
+func NamespaceCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		namespacePath := chi.URLParam(req, "namespace")
+		if namespacePath != "" {
+			ctx := context.WithValue(req.Context(), NamespaceKey, namespacePath)
+			next.ServeHTTP(w, req.WithContext(ctx))
+			return
+		}
+
+		namespaceCookie, err := req.Cookie(NamespaceKey)
+		if err != nil && !errors.Is(err, http.ErrNoCookie) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if errors.Is(err, http.ErrNoCookie) {
+			ns := make([]byte, 8)
+			_, err := rand.Read(ns)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			namespaceCookie = &http.Cookie{
+				Name:  NamespaceKey,
+				Value: fmt.Sprintf("%x", ns),
+			}
+		}
+
+		namespaceCookie.Path = "/"
+		namespaceCookie.MaxAge = 60 * 60 * 24 * 365
+		namespaceCookie.SameSite = http.SameSiteStrictMode
+		http.SetCookie(w, namespaceCookie)
+
+		namespace := namespaceCookie.Value
+
+		ctx := context.WithValue(req.Context(), NamespaceKey, namespace)
+		next.ServeHTTP(w, req.WithContext(ctx))
+	})
+}
+
 type server struct {
 	store TasksStore
 }
 
 func (s *server) handleHome(w http.ResponseWriter, req *http.Request) {
-	tasks, err := s.store.Tasks()
+	namespace, ok := req.Context().Value(NamespaceKey).(string)
+	if !ok {
+		log.Printf("invalid value in namespace context: %#v", namespace)
+		http.Error(w, "invalid namespace", http.StatusInternalServerError)
+		return
+	}
+
+	tasks, err := s.store.Tasks(namespace)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	events, err := s.store.Events()
+	events, err := s.store.Events(namespace)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -134,8 +195,9 @@ func (s *server) handleHome(w http.ResponseWriter, req *http.Request) {
 	})
 
 	err = homeTmpl.Execute(w, map[string]any{
-		"Tasks":  tasks,
-		"Events": events,
+		"Namespace": namespace,
+		"Tasks":     tasks,
+		"Events":    events,
 	})
 	if err != nil {
 		log.Println("Error:", err)
@@ -204,7 +266,7 @@ var homeTmpl = template.Must(template.New("").Parse(`<!doctype html>
 			{{ block "task" $task }}
 			<div class="box {{ .State }}"
 				 title="{{ .Description }}"
-				 hx-post="/tasks/{{ .ID }}/{{ .State.Next }}"
+				 hx-post="/{{ .Namespace }}/tasks/{{ .ID }}/{{ .State.Next }}"
 				 hx-swap="outerHTML">
 			  {{ .Icon }}
 			</div>
@@ -221,6 +283,8 @@ var homeTmpl = template.Must(template.New("").Parse(`<!doctype html>
 		</div>
 		{{ end }}
 		</section>
+
+		<pre>{{ .Namespace }}</pre>
 	
 
 		<script src="/js/htmx.min.js"></script>
@@ -234,19 +298,28 @@ func (s *server) changeTaskState(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	task, err := s.store.FindTask(chi.URLParam(req, "task-id"))
+	namespace, ok := req.Context().Value(NamespaceKey).(string)
+	if !ok {
+		log.Printf("invalid value in namespace context: %#v", namespace)
+		http.Error(w, "invalid namespace", http.StatusInternalServerError)
+		return
+	}
+
+	task, err := s.store.FindTask(namespace, chi.URLParam(req, "task-id"))
 	if err != nil {
 		log.Println("Error:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = s.store.ChangeTaskState(task.ID, state)
+	err = s.store.ChangeTaskState(namespace, task.ID, state)
 	if err != nil {
 		log.Println("Error:", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	task.State = state
 
 	err = homeTmpl.ExecuteTemplate(w, "task", task)
 	if err != nil {

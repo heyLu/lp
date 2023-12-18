@@ -53,15 +53,14 @@ func newDBStore(driverName, dataSourceName string) (*dbStore, error) {
 	}, nil
 }
 
-func (ds *dbStore) Tasks() ([]Task, error) {
-	rows, err := ds.db.Query("SELECT id, icon, description, COALESCE(s.state, 'not-done') FROM tasks LEFT JOIN task_states AS s ON id = s.task_id AND julianday(s.date) = julianday(date())", DefaultNamespace)
+func (ds *dbStore) Tasks(namespace string) ([]Task, error) {
+	rows, err := ds.db.Query("SELECT id, icon, description, COALESCE(s.state, 'not-done') FROM tasks LEFT JOIN task_states AS s ON tasks.namespace = s.namespace AND id = s.task_id AND julianday(s.date) = julianday(date()) WHERE tasks.namespace = ?", namespace)
 	if err != nil {
 		return nil, fmt.Errorf("could not query tasks: %w", err)
 	}
 	defer rows.Close()
 
 	tasks := make([]Task, 0, 10)
-	taskIDs := make([]string, 0, 10)
 	for rows.Next() {
 		var task Task
 
@@ -70,8 +69,9 @@ func (ds *dbStore) Tasks() ([]Task, error) {
 			return nil, fmt.Errorf("could not read task: %w", err)
 		}
 
+		task.Namespace = namespace
+
 		tasks = append(tasks, task)
-		taskIDs = append(taskIDs, task.ID)
 	}
 
 	if rows.Err() != nil {
@@ -81,8 +81,8 @@ func (ds *dbStore) Tasks() ([]Task, error) {
 	return tasks, nil
 }
 
-func (ds *dbStore) FindTask(id string) (*Task, error) {
-	row := ds.db.QueryRow("SELECT id, icon, description, COALESCE(s.state, 'not-done') FROM tasks LEFT JOIN task_states AS s ON tasks.namespace = s.namespace AND id = s.task_id WHERE tasks.namespace = ? AND id = ?", DefaultNamespace, id)
+func (ds *dbStore) FindTask(namespace string, id string) (*Task, error) {
+	row := ds.db.QueryRow("SELECT id, icon, description, COALESCE(s.state, 'not-done') FROM tasks LEFT JOIN task_states AS s ON tasks.namespace = s.namespace AND id = s.task_id WHERE tasks.namespace = ? AND id = ?", namespace, id)
 
 	var task Task
 	err := row.Scan(&task.ID, &task.Icon, &task.Description, &task.State)
@@ -90,11 +90,13 @@ func (ds *dbStore) FindTask(id string) (*Task, error) {
 		return nil, fmt.Errorf("could not read task: %w", err)
 	}
 
+	task.Namespace = namespace
+
 	return &task, nil
 }
 
-func (ds *dbStore) ChangeTaskState(id string, state TaskState) error {
-	res, err := ds.db.Exec("INSERT OR REPLACE INTO task_states VALUES (?, ?, ?, ?, DATETIME())", DefaultNamespace, time.Now().Format(time.DateOnly), id, string(state))
+func (ds *dbStore) ChangeTaskState(namespace string, id string, state TaskState) error {
+	res, err := ds.db.Exec("INSERT OR REPLACE INTO task_states VALUES (?, ?, ?, ?, DATETIME())", namespace, time.Now().Format(time.DateOnly), id, string(state))
 	if err != nil {
 		return fmt.Errorf("could not update task: %w", err)
 	}
@@ -111,8 +113,8 @@ func (ds *dbStore) ChangeTaskState(id string, state TaskState) error {
 	return nil
 }
 
-func (ds *dbStore) Events() ([]Event, error) {
-	rows, err := ds.db.Query("SELECT id, icon, date, reference_date FROM events WHERE namespace = ?", DefaultNamespace)
+func (ds *dbStore) Events(namespace string) ([]Event, error) {
+	rows, err := ds.db.Query("SELECT id, icon, date, reference_date FROM events WHERE namespace = ?", namespace)
 	if err != nil {
 		return nil, fmt.Errorf("could not list events: %w", err)
 	}
