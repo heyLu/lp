@@ -1,3 +1,6 @@
+// see also: https://en.wikipedia.org/wiki/WAV
+// see also: http://www.tactilemedia.com/info/MCI_Control_Info.html
+
 const std = @import("std");
 
 const audio_format_pcm = 1;
@@ -63,8 +66,16 @@ pub fn main() !void {
     , .{ block_size, audio_format, num_channels, sample_rate, bytes_per_sec, bytes_per_block, bits_per_sample });
 
     var chunk_header: [8]u8 = undefined;
+    var chunk_data: [1024]u8 = undefined;
+    var data_total: u64 = 0;
     while (bytes_read > 0) {
         bytes_read = try file.readAll(&chunk_header);
+
+        if (bytes_read != 8 or !std.mem.eql(u8, chunk_header[0..4], "data")) {
+            std.debug.print("unknown chunk header {c}\n", .{chunk_header});
+            continue;
+        }
+
         std.debug.assert(bytes_read == 8);
 
         // FIXME: this fails on second read because we don't actually read the chunk
@@ -72,7 +83,25 @@ pub fn main() !void {
 
         const data_size = std.mem.readVarInt(u32, chunk_header[4..8], .little);
         std.debug.print("chunkSize     = {d: >10}\n", .{data_size});
+        data_total += data_size;
 
-        // FIXME: read the chunk!  (in bytes_per_sec increments? 🤔)
+        const sample_size = bytes_per_block / num_channels;
+        const max_sample = 16777216; // 2 << bits_per_sample - 1
+        for (0..data_size / chunk_data.len) |_| {
+            bytes_read = try file.readAll(&chunk_data);
+            std.debug.assert(bytes_read == chunk_data.len);
+
+            for (0..chunk_data.len / bytes_per_block) |block_idx| {
+                const sample_left = std.mem.readVarInt(u32, chunk_data[block_idx * bytes_per_block .. block_idx * bytes_per_block + sample_size], .little);
+                const sample_right = std.mem.readVarInt(u32, chunk_data[block_idx * bytes_per_block + sample_size .. block_idx * bytes_per_block + bytes_per_block], .little);
+                std.debug.assert(sample_left < max_sample);
+                std.debug.assert(sample_right < max_sample);
+                // if (block_idx % 1000 == 0) {
+                //     std.debug.print("{d} {d}\n", .{ sample_left, sample_right });
+                // }
+            }
+        }
     }
+
+    std.debug.print("done?  {d}sec of delicious audio\n", .{data_total / bytes_per_sec});
 }
