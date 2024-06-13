@@ -7,10 +7,10 @@ const audio_format_pcm = 1;
 const audio_format_float = 3;
 
 pub fn main() !void {
-    // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    // defer arena.deinit();
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
 
-    // const allocator = arena.allocator();
+    const allocator = arena.allocator();
 
     std.debug.print("hi.\n", .{});
 
@@ -66,14 +66,19 @@ pub fn main() !void {
     , .{ block_size, audio_format, num_channels, sample_rate, bytes_per_sec, bytes_per_block, bits_per_sample });
 
     var chunk_header: [8]u8 = undefined;
-    var chunk_data: [1024]u8 = undefined;
+    // var chunk_data: [1024]u8 = undefined;
+    var chunk_data = try allocator.alloc(u8, bytes_per_sec);
     var data_total: u64 = 0;
+    var samples_total: u64 = 0;
     while (bytes_read > 0) {
         bytes_read = try file.readAll(&chunk_header);
+        if (bytes_read == 0) {
+            break;
+        }
 
         if (bytes_read != 8 or !std.mem.eql(u8, chunk_header[0..4], "data")) {
-            std.debug.print("unknown chunk header {c}\n", .{chunk_header});
-            continue;
+            std.debug.print("unknown chunk header {c} {d} bytes\n", .{ chunk_header, bytes_read });
+            break;
         }
 
         std.debug.assert(bytes_read == 8);
@@ -85,13 +90,16 @@ pub fn main() !void {
         std.debug.print("chunkSize     = {d: >10}\n", .{data_size});
         data_total += data_size;
 
+        // std.debug.print("{}\n", .{@as(f32, @floatFromInt(data_size)) / @as(f32, @floatFromInt(chunk_data.len))});
         const sample_size = bytes_per_block / num_channels;
         const max_sample = 16777216; // 2 << bits_per_sample - 1
-        for (0..data_size / chunk_data.len) |_| {
-            bytes_read = try file.readAll(&chunk_data);
-            std.debug.assert(bytes_read == chunk_data.len);
+        for (0..@divFloor(data_size, chunk_data.len) + 1) |_| {
+            bytes_read = try file.readAll(chunk_data);
+            // std.debug.assert(bytes_read == chunk_data.len);
 
-            for (0..chunk_data.len / bytes_per_block) |block_idx| {
+            // std.debug.print("read {d}\n", .{bytes_read});
+
+            for (0..chunk_data[0..bytes_read].len / bytes_per_block) |block_idx| {
                 const sample_left = std.mem.readVarInt(u32, chunk_data[block_idx * bytes_per_block .. block_idx * bytes_per_block + sample_size], .little);
                 const sample_right = std.mem.readVarInt(u32, chunk_data[block_idx * bytes_per_block + sample_size .. block_idx * bytes_per_block + bytes_per_block], .little);
                 std.debug.assert(sample_left < max_sample);
@@ -99,9 +107,11 @@ pub fn main() !void {
                 // if (block_idx % 1000 == 0) {
                 //     std.debug.print("{d} {d}\n", .{ sample_left, sample_right });
                 // }
+
+                samples_total += 1;
             }
         }
     }
 
-    std.debug.print("done?  {d}sec of delicious audio\n", .{data_total / bytes_per_sec});
+    std.debug.print("done?  {d}sec of delicious audio, {d} samples\n", .{ data_total / bytes_per_sec, samples_total });
 }
