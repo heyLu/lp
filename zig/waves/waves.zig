@@ -35,6 +35,10 @@ pub fn main() !void {
         \\
     , .{ info.block_size, info.audio_format, info.num_channels, info.sample_rate, info.bytes_per_sec, info.bytes_per_block, info.bits_per_sample });
 
+    const dataStart = try file.getPos();
+
+    const stdout = std.io.getStdOut().writer();
+
     var chunk_header: [8]u8 = undefined;
     // var chunk_data: [1024]u8 = undefined;
     var chunk_data = try allocator.alloc(u8, info.bytes_per_sec);
@@ -69,6 +73,7 @@ pub fn main() !void {
 
             // std.debug.print("read {d}\n", .{bytes_read});
 
+            var local_max: u32 = 0;
             for (0..chunk_data[0..bytes_read].len / info.bytes_per_block) |block_idx| {
                 const sample_left = std.mem.readVarInt(u32, chunk_data[block_idx * info.bytes_per_block .. block_idx * info.bytes_per_block + sample_size], .little);
                 const sample_right = std.mem.readVarInt(u32, chunk_data[block_idx * info.bytes_per_block + sample_size .. block_idx * info.bytes_per_block + info.bytes_per_block], .little);
@@ -78,10 +83,18 @@ pub fn main() !void {
                 //     std.debug.print("{d} {d}\n", .{ sample_left, sample_right });
                 // }
 
+                local_max = @max(local_max, sample_left);
+                if (block_idx % (info.size / 80) == 0) {
+                    try stdout.print("{d} ", .{local_max});
+                }
+
                 samples_total += 1;
             }
         }
     }
+    try stdout.print("\n", .{});
 
     std.debug.print("done?  {d}sec of delicious audio, {d} samples\n", .{ data_total / info.bytes_per_sec, samples_total });
+
+    try file.seekTo(dataStart);
 }
