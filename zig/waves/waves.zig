@@ -3,16 +3,13 @@
 
 const std = @import("std");
 
-const audio_format_pcm = 1;
-const audio_format_float = 3;
+const wav = @import("wav.zig");
 
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
 
     const allocator = arena.allocator();
-
-    std.debug.print("hi.\n", .{});
 
     const file = try std.fs.cwd().openFileZ(std.os.argv[1], .{});
     defer file.close();
@@ -22,7 +19,7 @@ pub fn main() !void {
     var header_buffer: [36]u8 = undefined;
     var bytes_read = try file.readAll(&header_buffer);
 
-    const info = try parse_header(&header_buffer);
+    const info = try wav.parse_header(&header_buffer);
 
     std.debug.assert(info.size == stat.size);
 
@@ -87,64 +84,4 @@ pub fn main() !void {
     }
 
     std.debug.print("done?  {d}sec of delicious audio, {d} samples\n", .{ data_total / info.bytes_per_sec, samples_total });
-}
-
-const FormatInfo = struct {
-    size: u64,
-    block_size: u32,
-    audio_format: u16,
-    num_channels: u16,
-    sample_rate: u32,
-    bytes_per_sec: u32,
-    bytes_per_block: u16,
-    bits_per_sample: u16,
-};
-
-const WavError = error{
-    NotAWAV,
-    InvalidHeader,
-    UnknownFormat,
-};
-
-fn parse_header(header_bytes: []u8) WavError!FormatInfo {
-    if (header_bytes.len < 36) {
-        return WavError.InvalidHeader;
-    }
-
-    if (!std.mem.eql(u8, header_bytes[0..4], "RIFF")) {
-        return WavError.NotAWAV;
-    }
-
-    const size = std.mem.readVarInt(u32, header_bytes[4..8], .little) + 8;
-
-    if (!std.mem.eql(u8, header_bytes[8..12], "WAVE")) {
-        return WavError.NotAWAV;
-    }
-
-    if (!std.mem.eql(u8, header_bytes[12..16], "fmt ")) {
-        return WavError.NotAWAV;
-    }
-
-    const block_size = std.mem.readVarInt(u32, header_bytes[16..20], .little);
-    const audio_format = std.mem.readVarInt(u16, header_bytes[20..22], .little);
-    if (!(audio_format == audio_format_pcm or audio_format == audio_format_float)) {
-        return WavError.UnknownFormat;
-    }
-
-    const num_channels = std.mem.readVarInt(u16, header_bytes[22..24], .little);
-    const sample_rate = std.mem.readVarInt(u32, header_bytes[24..28], .little);
-    const bytes_per_sec = std.mem.readVarInt(u32, header_bytes[28..32], .little);
-    const bytes_per_block = std.mem.readVarInt(u16, header_bytes[32..34], .little);
-    const bits_per_sample = std.mem.readVarInt(u16, header_bytes[34..36], .little);
-
-    return FormatInfo{
-        .size = size,
-        .block_size = block_size,
-        .audio_format = audio_format,
-        .num_channels = num_channels,
-        .sample_rate = sample_rate,
-        .bytes_per_sec = bytes_per_sec,
-        .bytes_per_block = bytes_per_block,
-        .bits_per_sample = bits_per_sample,
-    };
 }
