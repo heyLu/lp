@@ -62,3 +62,9 @@ pub fn parse_header(header_bytes: []const u8) Error!FormatInfo {
         .bits_per_sample = bits_per_sample,
     };
 }
+
+pub export fn parse_header_c(header_bytes: [*]const u8, header_size: usize, info: *FormatInfo) u32 {
+    const i = parse_header(header_bytes[0..header_size]) catch |err| return @intFromError(err);
+    info.* = i;
+    return i.sample_rate;
+}

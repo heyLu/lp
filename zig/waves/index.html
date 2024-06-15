@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>~~waves</title>
+</head>
+
+<body>
+  <label for="wav">.wav to look at:</label>
+  <input id="wav" name="wav" type="file" />
+
+  <script type="module">
+const wavInput = document.getElementById("wav");
+
+try {
+  //const response = await fetch("wav.wasm");
+  //const bytes = await response.arrayBuffer();
+  //const result = await WebAssembly.instantiate(bytes, {});
+  const memory = new WebAssembly.Memory({
+      initial: 1,
+      maximum: 2,
+  });
+  const wasmMemory = new Uint8Array(memory.buffer, 0, 100);
+  const result = await WebAssembly.instantiateStreaming(fetch("wav.wasm"), {env: {print: console.log, memory: memory}});
+  window.wavy = result;
+
+  const parse_header = result.instance.exports.parse_header_c;
+  console.log(parse_header);
+
+  wavInput.addEventListener("change", async () => {
+    for (const file of wavInput.files) {
+      console.log(file.name);
+      try {
+        const reader = new FileReader();
+        const promise = new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = (err) => reject(err);
+
+          reader.readAsArrayBuffer(file);
+        });
+
+        const fileBuffer = await promise;
+        console.log(fileBuffer, fileBuffer.byteOffset, fileBuffer.byteLength);
+
+        const fileContent = new Uint8Array(fileBuffer, 0, 100);
+        wasmMemory.set(fileContent, 0);
+        //wasmMemory.set([82, 73, 70, 70], 0);
+        console.log(wasmMemory, wasmMemory.byteOffset, wasmMemory.length);
+        let format_info = {};
+        const sample_rate = parse_header(wasmMemory.byteOffset, wasmMemory.length, format_info);
+        console.log(sample_rate, format_info);
+      } catch(err) {
+        console.error(err);
+      }
+    }
+  });
+} catch (err) {
+  console.log(err);
+}
+  </script>
+</body>
+</html>
