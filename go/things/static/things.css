@@ -1,0 +1,43 @@
+body {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+}
+
+main {
+  display: flex;
+
+  flex-direction: column;
+
+  max-width: 70em;
+}
+
+@media (min-width: 50em) {
+  main {
+    width: 50em;
+  }
+}
+
+main * {
+  font-size: 1.2rem;
+  font-family: monospace;
+}
+
+#tell-me {
+  border: 0 !important;
+  border-bottom: 1px solid black;
+
+  font-size: 2rem;
+}
+
+#waiting {
+  width: 1em;
+}
+
+@media (prefers-color-scheme: light) {
+  #waiting {
+    filter: invert(100%);
+  }
+}
