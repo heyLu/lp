@@ -29,6 +29,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer dbStorage.Close()
 
 	things := &Things{
 		handlers: []Handler{
@@ -158,7 +159,7 @@ func HandleReminders(ctx context.Context, storage storage.Storage, namespace str
 
 	parts := strings.SplitN(input, " ", 3)
 	if len(parts) == 1 {
-		rows, err := storage.Query(ctx, namespace, "reminder", "description", "date")
+		rows, err := storage.Query(ctx, namespace, "reminder", 2)
 		if err != nil {
 			return err
 		}
@@ -214,20 +215,20 @@ func HandleReminders(ctx context.Context, storage storage.Storage, namespace str
 			Description: parts[2][:len(parts[2])-len("!save")],
 		}
 
-		rows, err := storage.Query(ctx, namespace, "reminder", reminder.Description)
+		rows, err := storage.Query(ctx, namespace, "reminder", 0, reminder.Description)
 		if err != nil {
 			return err
 		}
 		defer rows.Close()
 
 		if !rows.Next() {
-			_, err = storage.Insert(ctx, namespace, "reminder", reminder.Description, reminder.Date)
+			_, err = storage.Insert(ctx, namespace, "reminder", reminder.Description, reminder.Date.Format(time.RFC3339))
 			if err != nil {
 				return err
 			}
-		}
 
-		fmt.Fprintln(w, "saved!")
+			fmt.Fprintln(w, "saved!")
+		}
 	}
 
 	return nil

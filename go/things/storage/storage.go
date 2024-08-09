@@ -11,8 +11,9 @@ import (
 )
 
 type Storage interface {
-	Query(ctx context.Context, namespace string, kind string, args ...any) (Rows, error)
-	Insert(ctx context.Context, namespace string, kind string, args ...any) (int, error)
+	Query(ctx context.Context, namespace string, kind string, numFields int, args ...any) (Rows, error)
+	Insert(ctx context.Context, namespace string, kind string, args ...any) (*Metadata, error)
+	Close() error
 }
 
 type Rows interface {
@@ -27,7 +28,7 @@ type Metadata struct {
 	Tags         []string
 	DateCreated  time.Time
 	DateModified time.Time
-	ID           int
+	ID           int64
 }
 
 func NewDBStorage(ctx context.Context, dsn string) (Storage, error) {
@@ -87,7 +88,7 @@ func (dbr *dbRows) Close() error {
 	return dbr.rows.Close()
 }
 
-func (dbs *dbStorage) Query(ctx context.Context, namespace string, kind string, args ...any) (Rows, error) {
+func (dbs *dbStorage) Query(ctx context.Context, namespace string, kind string, numFields int, args ...any) (Rows, error) {
 	queryArgs := []any{
 		namespace,
 		kind,
@@ -95,12 +96,16 @@ func (dbs *dbStorage) Query(ctx context.Context, namespace string, kind string, 
 	queryArgs = append(queryArgs, args...)
 
 	fields := ""
-	for i := range args {
+	for i := 0; i < numFields; i++ {
 		fields += fmt.Sprintf(", value%d", i+1)
 	}
 
-	query := "SELECT namespace, kind, tags, date_created, date_modified, id" + fields + " FROM things WHERE namespace = ? AND kind = ?"
-	fmt.Println(query)
+	conditions := ""
+	for i := range args {
+		conditions += fmt.Sprintf(" AND value%d = ?", i+1)
+	}
+
+	query := "SELECT namespace, kind, tags, date_created, date_modified, id" + fields + " FROM things WHERE namespace = ? AND kind = ?" + conditions
 	rows, err := dbs.db.QueryContext(ctx, query, queryArgs...)
 	if err != nil {
 		return nil, err
@@ -109,6 +114,54 @@ func (dbs *dbStorage) Query(ctx context.Context, namespace string, kind string, 
 	return &dbRows{rows: rows}, nil
 }
 
-func (dbs *dbStorage) Insert(ctx context.Context, namespace string, kind string, args ...interface{}) (int, error) {
-	return -1, fmt.Errorf("not implemented")
+func (dbs *dbStorage) Insert(ctx context.Context, namespace string, kind string, args ...interface{}) (*Metadata, error) {
+	if len(args) == 0 {
+		return nil, fmt.Errorf("no values to insert")
+	}
+
+	metadata := Metadata{
+		Namespace:    namespace,
+		Kind:         kind,
+		Tags:         nil,
+		DateCreated:  time.Now().UTC().Truncate(time.Second),
+		DateModified: time.Unix(0, 0),
+		ID:           time.Now().UTC().Unix(),
+	}
+	queryArgs := []any{
+		metadata.Namespace,
+		metadata.Kind,
+		strings.Join(metadata.Tags, ","),
+		metadata.DateCreated.Unix(),
+		metadata.DateModified.Unix(),
+		metadata.ID,
+	}
+	queryArgs = append(queryArgs, args...)
+
+	fields := ""
+	values := "?, ?, ?, ?, ?, ?"
+	for i := range args {
+		fields += fmt.Sprintf(", value%d", i+1)
+		values += ", ?"
+	}
+
+	query := "INSERT INTO things (namespace, kind, tags, date_created, date_modified, id" + fields + ") VALUES (" + values + ")"
+	res, err := dbs.db.ExecContext(ctx, query, queryArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	n, err := res.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+
+	if n != 1 {
+		return nil, fmt.Errorf("expected %d changes, but %d changes happened", 1, n)
+	}
+
+	return &Metadata{}, nil
+}
+
+func (dbs *dbStorage) Close() error {
+	return dbs.db.Close()
 }
