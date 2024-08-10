@@ -14,18 +14,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/heyLu/lp/go/things/handler"
 	"github.com/heyLu/lp/go/things/storage"
 )
 
 var settings struct {
-	Addr string
+	Addr   string
+	DBPath string
 }
 
 func main() {
 	flag.StringVar(&settings.Addr, "addr", "localhost:5000", "Address to listen on")
+	flag.StringVar(&settings.DBPath, "db-path", "things.db", "Path to db file")
 	flag.Parse()
 
-	dbStorage, err := storage.NewDBStorage(context.Background(), "file:things.db")
+	dbStorage, err := storage.NewDBStorage(context.Background(), "file:"+settings.DBPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -33,8 +36,12 @@ func main() {
 
 	things := &Things{
 		handlers: []Handler{
+			// TODO: note ...
+			// TODO: bookmark <url> note
 			HandleReminders,
+			HandleTrack,
 			HandleMath,
+			// TODO: HandleSummary
 			HandleHelp,
 		},
 		storage: dbStorage,
@@ -55,7 +62,7 @@ type Things struct {
 	storage storage.Storage
 }
 
-type Handler func(ctx context.Context, storage storage.Storage, namespace string, w http.ResponseWriter, input string) error
+type Handler func(ctx context.Context, storage storage.Storage, namespace string, w http.ResponseWriter, input string, save bool) error
 
 var ErrNotHandled = errors.New("not handled")
 
@@ -71,14 +78,16 @@ func (t *Things) HandleIndex(w http.ResponseWriter, req *http.Request) {
 
 <body>
 	<main>
-		<div>
-			<input id="tell-me" name="tell-me" type="text" autofocus placeholder="tell me things"
-				hx-post="/thing"
+		<form hx-post="/thing" hx-target="#answer" hx-indicator="#waiting">
+			<input id="tell-me" name="tell-me" type="text" autofocus autocomplete="off" placeholder="tell me things"
+				hx-get="/thing"
 				hx-trigger="load, input changed delay:250ms"
 				hx-target="#answer"
 				hx-indicator="#waiting" />
+			<input name="save" value="yes" hidden />
+			<input type="submit" value="💾" />
 		    <img id="waiting" class="htmx-indicator" src="/static/three-dots.svg" />
-	    </div>
+	    </form>
 
 		<section id="answer">
 		</section>
@@ -108,8 +117,10 @@ func (t *Things) HandleThing(w http.ResponseWriter, req *http.Request) {
 	ctx, cancel := context.WithTimeout(req.Context(), 1*time.Second)
 	defer cancel()
 
+	save := req.Method == http.MethodPost
+
 	for _, handler := range t.handlers {
-		err := handler(ctx, t.storage, namespace, w, tellMe)
+		err := handler(ctx, t.storage, namespace, w, tellMe, save)
 		if err == ErrNotHandled {
 			continue
 		}
@@ -124,7 +135,7 @@ func (t *Things) HandleThing(w http.ResponseWriter, req *http.Request) {
 
 var mathRe = regexp.MustCompile(`([0-9]|eur|usd)`)
 
-func HandleMath(ctx context.Context, _ storage.Storage, _ string, w http.ResponseWriter, input string) error {
+func HandleMath(ctx context.Context, _ storage.Storage, _ string, w http.ResponseWriter, input string, _ bool) error {
 	if !mathRe.MatchString(input) {
 		return ErrNotHandled
 	}
@@ -152,7 +163,7 @@ type Reminder struct {
 
 var reminders = []Reminder{}
 
-func HandleReminders(ctx context.Context, storage storage.Storage, namespace string, w http.ResponseWriter, input string) error {
+func HandleReminders(ctx context.Context, storage storage.Storage, namespace string, w http.ResponseWriter, input string, save bool) error {
 	if !strings.HasPrefix(input, "remind") {
 		return ErrNotHandled
 	}
@@ -198,7 +209,7 @@ func HandleReminders(ctx context.Context, storage storage.Storage, namespace str
 		}
 	}
 
-	if strings.HasSuffix(input, "!save") {
+	if strings.HasSuffix(input, "!save") { // TODO: make this a manual thing (button or ctrl+s?)
 		if len(parts) != 3 {
 			fmt.Fprintln(w, "usage: remind <time> <description>")
 			return nil
@@ -234,7 +245,37 @@ func HandleReminders(ctx context.Context, storage storage.Storage, namespace str
 	return nil
 }
 
-func HandleHelp(ctx context.Context, _ storage.Storage, _ string, w http.ResponseWriter, input string) error {
+func HandleTrack(ctx context.Context, storage storage.Storage, namespace string, w http.ResponseWriter, input string, save bool) error {
+	track := &handler.Track{}
+
+	if _, ok := track.CanHandle(input); !ok {
+		return ErrNotHandled
+	}
+
+	if save {
+		err := track.Parse(input)
+		if err != nil {
+			return err
+		}
+
+		args := track.Args(make([]any, 0, 10))
+		_, err = storage.Insert(ctx, namespace, "track", args...)
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintln(w, "saved!")
+	}
+
+	renderer, err := track.Render(ctx, storage, namespace, input)
+	if err != nil {
+		return err
+	}
+
+	return renderer.Render(ctx, w)
+}
+
+func HandleHelp(ctx context.Context, _ storage.Storage, _ string, w http.ResponseWriter, input string, _ bool) error {
 	if input != "help" {
 		fmt.Fprint(w, "don't know that thing, sorry.  ")
 	}

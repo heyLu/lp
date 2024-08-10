@@ -105,7 +105,7 @@ func (dbs *dbStorage) Query(ctx context.Context, namespace string, kind string, 
 		conditions += fmt.Sprintf(" AND value%d = ?", i+1)
 	}
 
-	query := "SELECT namespace, kind, tags, date_created, date_modified, id" + fields + " FROM things WHERE namespace = ? AND kind = ?" + conditions
+	query := "SELECT namespace, kind, tags, date_created, date_modified, id" + fields + " FROM things WHERE namespace = ? AND kind = ?" + conditions + "ORDER BY date_created DESC"
 	rows, err := dbs.db.QueryContext(ctx, query, queryArgs...)
 	if err != nil {
 		return nil, err
@@ -127,6 +127,26 @@ func (dbs *dbStorage) Insert(ctx context.Context, namespace string, kind string,
 		DateModified: time.Unix(0, 0),
 		ID:           time.Now().UTC().Unix(),
 	}
+
+	fields := ""
+	values := "?, ?, ?, ?, ?, ?"
+	for i, arg := range args {
+		fields += fmt.Sprintf(", value%d", i+1)
+		values += ", ?"
+
+		if s, ok := arg.(string); ok {
+			parts := strings.Split(s, " ")
+			for _, part := range parts {
+				if len(part) > 0 && part[0] == '#' {
+					if metadata.Tags == nil {
+						metadata.Tags = make([]string, 0, 5)
+					}
+					metadata.Tags = append(metadata.Tags, part)
+				}
+			}
+		}
+	}
+
 	queryArgs := []any{
 		metadata.Namespace,
 		metadata.Kind,
@@ -136,13 +156,6 @@ func (dbs *dbStorage) Insert(ctx context.Context, namespace string, kind string,
 		metadata.ID,
 	}
 	queryArgs = append(queryArgs, args...)
-
-	fields := ""
-	values := "?, ?, ?, ?, ?, ?"
-	for i := range args {
-		fields += fmt.Sprintf(", value%d", i+1)
-		values += ", ?"
-	}
 
 	query := "INSERT INTO things (namespace, kind, tags, date_created, date_modified, id" + fields + ") VALUES (" + values + ")"
 	res, err := dbs.db.ExecContext(ctx, query, queryArgs...)
