@@ -26,10 +26,18 @@ main * {
 }
 
 #tell-me {
-  border: 0 !important;
-  border-bottom: 1px solid black;
+  width: 90%;
+
+  outline: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0);
 
   font-size: 2rem;
+}
+
+#tell-me:focus-visible {
+  border-bottom: 1px solid black;
+  
 }
 
 #waiting {

@@ -102,17 +102,24 @@ func (t *Things) HandleThing(w http.ResponseWriter, req *http.Request) {
 
 	save := req.Method == http.MethodPost
 
+	handled := false
 	for _, handler := range t.handlers {
 		err := handle(ctx, handler, t.storage, namespace, w, tellMe, save)
 		if err == ErrNotHandled {
 			continue
 		}
 
+		handled = true
+
 		if err != nil {
 			fmt.Fprintln(w, err)
 		}
 
 		break
+	}
+
+	if !handled {
+		fmt.Fprintln(w, "don't know what to do with that (yet)")
 	}
 }
 
@@ -121,6 +128,8 @@ func handle(ctx context.Context, handler handler.Handler, storage storage.Storag
 	if !ok {
 		return ErrNotHandled
 	}
+
+	fmt.Fprintln(w, kind)
 
 	thing, err := handler.Parse(input)
 	if err != nil {

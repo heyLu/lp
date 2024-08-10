@@ -11,7 +11,7 @@ import (
 type OverviewHandler struct{}
 
 func (mh OverviewHandler) CanHandle(input string) (string, bool) {
-	return "help", input == "" || strings.HasPrefix(input, "overview")
+	return "overview", input == "" || strings.HasPrefix(input, "overview")
 }
 
 func (mh OverviewHandler) Parse(input string) (Thing, error) {
@@ -58,12 +58,12 @@ func (m Overview) Render(ctx context.Context, storage storage.Storage, namespace
 				continue
 			}
 
-			thing, err := handler.Parse(input)
+			thing, err := handler.Parse(view)
 			if err != nil {
 				return nil, err
 			}
 
-			r, err := thing.Render(ctx, storage, namespace, input)
+			r, err := thing.Render(ctx, storage, namespace, view)
 			if err != nil {
 				return nil, err
 			}

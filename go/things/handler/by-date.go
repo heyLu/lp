@@ -13,7 +13,7 @@ import (
 type ByDateHandler struct{}
 
 var (
-	byDateRe      = regexp.MustCompile(`[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?`)
+	byDateRe      = regexp.MustCompile(`^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$`)
 	byDateFormats = []string{
 		"2006-01-02",
 		"2006-01",
