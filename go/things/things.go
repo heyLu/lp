@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/heyLu/lp/go/things/handler"
 	"github.com/heyLu/lp/go/things/storage"
 )
@@ -34,17 +36,24 @@ func main() {
 		storage:  dbStorage,
 	}
 
-	http.HandleFunc("/", things.HandleIndex)
-	http.HandleFunc("/thing", things.HandleThing)
+	router := chi.NewRouter()
 
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	router.Get("/*", things.HandleIndex)
+	router.Get("/thing", things.HandleThing)
+	router.Post("/thing", things.HandleThing)
+
+	router.Get("/{kind}", things.HandleList)
+	router.Get("/{kind}/{category}", things.HandleList)
+	router.Get("/{kind}/{category}/{id}", things.HandleFind)
+
+	router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
 	log.Printf("Listening on http://%s", settings.Addr)
-	log.Fatal(http.ListenAndServe(settings.Addr, nil))
+	log.Fatal(http.ListenAndServe(settings.Addr, router))
 }
 
 type Things struct {
-	handlers []handler.Handler
+	handlers handler.Handlers
 
 	storage storage.Storage
 }
@@ -54,7 +63,12 @@ type Handler func(ctx context.Context, storage storage.Storage, namespace string
 var ErrNotHandled = errors.New("not handled")
 
 func (t *Things) HandleIndex(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintln(w, `<!doctype html>
+	pageWithContent(w, req, "", nil)
+}
+
+func pageWithContent(w http.ResponseWriter, req *http.Request, input string, content handler.Renderer) {
+
+	fmt.Fprintf(w, `<!doctype html>
 <html>
 <head>
 	<meta charset="utf-8" />
@@ -67,6 +81,7 @@ func (t *Things) HandleIndex(w http.ResponseWriter, req *http.Request) {
 	<main>
 		<form hx-post="/thing" hx-target="#answer" hx-indicator="#waiting">
 			<input id="tell-me" name="tell-me" type="text" autofocus autocomplete="off" placeholder="tell me things"
+				value=%q
 				hx-get="/thing"
 				hx-trigger="load, input changed delay:250ms"
 				hx-target="#answer"
@@ -76,7 +91,13 @@ func (t *Things) HandleIndex(w http.ResponseWriter, req *http.Request) {
 		    <img id="waiting" class="htmx-indicator" src="/static/three-dots.svg" />
 	    </form>
 
-		<section id="answer">
+		<section id="answer">`, input)
+
+	if content != nil {
+		content.Render(req.Context(), w)
+	}
+
+	fmt.Fprintln(w, `
 		</section>
 	</main>
 
@@ -154,12 +175,43 @@ func handle(ctx context.Context, handler handler.Handler, storage storage.Storag
 	return renderer.Render(ctx, w)
 }
 
-func HandleHelp(ctx context.Context, _ storage.Storage, _ string, w http.ResponseWriter, input string, _ bool) error {
-	if input != "help" {
-		fmt.Fprint(w, "don't know that thing, sorry.  ")
+func (t *Things) HandleList(w http.ResponseWriter, req *http.Request) {
+	kindParam := chi.URLParam(req, "kind")
+	kind, hndl := t.handlers.For(kindParam)
+	if hndl == nil {
+		http.Error(w, "unknown kind "+kindParam, http.StatusNotFound)
+		return
 	}
 
-	fmt.Fprintln(w, "try math, echo, ...")
+	// args := n.QueryArgs(make([]any, 0, 1)) // TODO: filter by category/first param
 
-	return nil
+	input := kind
+
+	scanner := hndl.(handler.Scanner)
+
+	namespace := "test"
+
+	rows, err := t.storage.Query(context.Background(), namespace, kind, scanner.NumParams())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	res := []handler.Renderer{}
+	for rows.Next() {
+		noteRenderer, err := scanner.ScanRow(rows)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		res = append(res, noteRenderer)
+	}
+
+	pageWithContent(w, req, input, handler.ListRenderer(res))
+}
+
+func (t *Things) HandleFind(w http.ResponseWriter, req *http.Request) {
+	http.Error(w, "not implemented", http.StatusInternalServerError)
 }

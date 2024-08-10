@@ -10,8 +10,7 @@ import (
 	"github.com/heyLu/lp/go/things/storage"
 )
 
-var All = []Handler{
-	// TODO: note ...
+var All = Handlers([]Handler{
 	// TODO: bookmark <url> note
 	ReminderHandler{},
 	TrackHandler{},
@@ -21,6 +20,27 @@ var All = []Handler{
 	// TODO: HandleSummary
 	HelpHandler{},
 	OverviewHandler{},
+})
+
+type Handlers []Handler
+
+func (hs Handlers) For(kind string) (string, Handler) {
+	for _, h := range hs {
+		k, _ := h.CanHandle("")
+		if k == kind {
+			return kind, h
+		}
+	}
+
+	// try if someone can handle it, e.g. if kind is 2024-08
+	for _, h := range hs {
+		_, ok := h.CanHandle(kind)
+		if ok {
+			return kind, h
+		}
+	}
+
+	return "", nil
 }
 
 type Handler interface {
