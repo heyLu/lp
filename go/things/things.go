@@ -1,17 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"flag"
 	"fmt"
-	"html"
 	"log"
 	"net/http"
-	"os/exec"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/heyLu/lp/go/things/handler"
@@ -38,9 +33,9 @@ func main() {
 		handlers: []handler.Handler{
 			// TODO: note ...
 			// TODO: bookmark <url> note
-			// HandleReminders,
+			handler.ReminderHandler{},
 			handler.TrackHandler{},
-			// HandleMath,
+			handler.MathHandler{},
 			// TODO: HandleSummary
 			// HandleHelp,
 		},
@@ -160,118 +155,6 @@ func handle(ctx context.Context, handler handler.Handler, storage storage.Storag
 	}
 
 	return renderer.Render(ctx, w)
-}
-
-var mathRe = regexp.MustCompile(`([0-9]|eur|usd)`)
-
-func HandleMath(ctx context.Context, _ storage.Storage, _ string, w http.ResponseWriter, input string, _ bool) error {
-	if !mathRe.MatchString(input) {
-		return ErrNotHandled
-	}
-
-	cmd := exec.CommandContext(ctx, "qalc", "--terse", "--color=0", input)
-	// cmd.Stdin = strings.NewReader(input + "\n")
-
-	buf := new(bytes.Buffer)
-	cmd.Stderr = buf
-	cmd.Stdout = buf
-
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf(buf.String())
-	}
-
-	fmt.Fprintf(w, "<pre>%s</pre>", html.EscapeString(buf.String()))
-	return nil
-}
-
-type Reminder struct {
-	Date        time.Time `json:"date"`
-	Description string    `json:"description"`
-}
-
-var reminders = []Reminder{}
-
-func HandleReminders(ctx context.Context, storage storage.Storage, namespace string, w http.ResponseWriter, input string, save bool) error {
-	if !strings.HasPrefix(input, "remind") {
-		return ErrNotHandled
-	}
-
-	parts := strings.SplitN(input, " ", 3)
-	if len(parts) == 1 {
-		rows, err := storage.Query(ctx, namespace, "reminder", 2)
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-
-		fmt.Fprintln(w, "<ul>")
-		for rows.Next() {
-			var reminder Reminder
-			var date string
-
-			_, err := rows.Scan(&reminder.Description, &date)
-			if err != nil {
-				return err
-			}
-
-			reminder.Date, err = time.Parse(time.RFC3339, date)
-			if err != nil {
-				return err
-			}
-
-			fmt.Fprintf(w, "<li><time time=%q>in %s</time> %s</li>\n",
-				reminder.Date,
-				reminder.Date.Sub(time.Now()).Truncate(time.Minute),
-				reminder.Description)
-		}
-		fmt.Fprintln(w, "</ul>")
-		return nil
-	}
-
-	var dur time.Duration
-	var err error
-	if len(parts) > 1 {
-		dur, err = time.ParseDuration(parts[1])
-		if err != nil {
-			fmt.Fprintln(w, err)
-		}
-	}
-
-	if strings.HasSuffix(input, "!save") { // TODO: make this a manual thing (button or ctrl+s?)
-		if len(parts) != 3 {
-			fmt.Fprintln(w, "usage: remind <time> <description>")
-			return nil
-		}
-
-		if dur == 0 {
-			return nil
-		}
-
-		date := time.Now().Add(dur)
-
-		reminder := Reminder{
-			Date:        date.Truncate(time.Minute).UTC(),
-			Description: parts[2][:len(parts[2])-len("!save")],
-		}
-
-		rows, err := storage.Query(ctx, namespace, "reminder", 0, reminder.Description)
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-
-		if !rows.Next() {
-			_, err = storage.Insert(ctx, namespace, "reminder", reminder.Description, reminder.Date.Format(time.RFC3339))
-			if err != nil {
-				return err
-			}
-
-			fmt.Fprintln(w, "saved!")
-		}
-	}
-
-	return nil
 }
 
 func HandleHelp(ctx context.Context, _ storage.Storage, _ string, w http.ResponseWriter, input string, _ bool) error {
