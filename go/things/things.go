@@ -30,16 +30,8 @@ func main() {
 	defer dbStorage.Close()
 
 	things := &Things{
-		handlers: []handler.Handler{
-			// TODO: note ...
-			// TODO: bookmark <url> note
-			handler.ReminderHandler{},
-			handler.TrackHandler{},
-			handler.MathHandler{},
-			// TODO: HandleSummary
-			handler.HelpHandler{},
-		},
-		storage: dbStorage,
+		handlers: handler.All,
+		storage:  dbStorage,
 	}
 
 	http.HandleFunc("/", things.HandleIndex)
@@ -102,10 +94,6 @@ func (t *Things) HandleThing(w http.ResponseWriter, req *http.Request) {
 	}
 
 	tellMe := req.Form.Get("tell-me")
-	if tellMe == "" {
-		fmt.Fprintln(w)
-		return
-	}
 
 	namespace := "test" // FIXME: get from path/cookie/stuff (like trackl does)
 

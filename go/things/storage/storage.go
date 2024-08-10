@@ -88,24 +88,40 @@ func (dbr *dbRows) Close() error {
 	return dbr.rows.Close()
 }
 
+type Option struct {
+	Field string
+	Op    string
+	Value any
+}
+
 func (dbs *dbStorage) Query(ctx context.Context, namespace string, kind string, numFields int, args ...any) (Rows, error) {
 	queryArgs := []any{
 		namespace,
-		kind,
 	}
-	queryArgs = append(queryArgs, args...)
+
+	conditions := ""
+	if kind != "" {
+		conditions += " AND kind = ?"
+		queryArgs = append(queryArgs, kind)
+	}
 
 	fields := ""
 	for i := 0; i < numFields; i++ {
 		fields += fmt.Sprintf(", value%d", i+1)
 	}
 
-	conditions := ""
-	for i := range args {
+	for i, arg := range args {
+		if option, ok := arg.(Option); ok {
+			conditions += fmt.Sprintf(" AND %s %s ?", option.Field, option.Op)
+			queryArgs = append(queryArgs, option.Value)
+			continue
+		}
+
 		conditions += fmt.Sprintf(" AND value%d = ?", i+1)
+		queryArgs = append(queryArgs, arg)
 	}
 
-	query := "SELECT namespace, kind, tags, date_created, date_modified, id" + fields + " FROM things WHERE namespace = ? AND kind = ?" + conditions + "ORDER BY date_created DESC"
+	query := "SELECT namespace, kind, tags, date_created, date_modified, id" + fields + " FROM things WHERE namespace = ?" + conditions + " ORDER BY date_created DESC"
 	rows, err := dbs.db.QueryContext(ctx, query, queryArgs...)
 	if err != nil {
 		return nil, err

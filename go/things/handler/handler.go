@@ -10,6 +10,18 @@ import (
 	"github.com/heyLu/lp/go/things/storage"
 )
 
+var All = []Handler{
+	// TODO: note ...
+	// TODO: bookmark <url> note
+	ReminderHandler{},
+	TrackHandler{},
+	ByDateHandler{},
+	MathHandler{},
+	// TODO: HandleSummary
+	HelpHandler{},
+	OverviewHandler{},
+}
+
 type Handler interface {
 	CanHandle(input string) (string, bool)
 	Parse(input string) (Thing, error)
