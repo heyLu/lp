@@ -46,7 +46,8 @@ func (lr ListRenderer) Render(ctx context.Context, w http.ResponseWriter) error 
 type TemplateRenderer struct {
 	*template.Template
 
-	Data any
+	Metadata *storage.Metadata
+	Data     any
 }
 
 func (tr TemplateRenderer) Render(ctx context.Context, w http.ResponseWriter) error {

@@ -15,6 +15,8 @@ type Track struct {
 	Category string   `json:"category"`
 	Num      *float64 `json:"num"`
 	Notes    *string  `json:"notes"`
+
+	Unsaved bool `json:"-"`
 }
 
 func (t *Track) CanHandle(input string) (string, bool) {
@@ -61,6 +63,10 @@ func (t *Track) Render(ctx context.Context, storage storage.Storage, namespace s
 		return nil, err
 	}
 
+	res := []Renderer{
+		TemplateRenderer{Template: trackTemplate, Metadata: nil, Data: t},
+	}
+
 	args := t.QueryArgs(make([]any, 0, 1))
 
 	rows, err := storage.Query(ctx, namespace, "track", 3, args...)
@@ -69,15 +75,14 @@ func (t *Track) Render(ctx context.Context, storage storage.Storage, namespace s
 	}
 	defer rows.Close()
 
-	res := []Renderer{}
 	for rows.Next() {
 		var track Track
-		_, err := rows.Scan(&track.Category, &track.Num, &track.Notes)
+		meta, err := rows.Scan(&track.Category, &track.Num, &track.Notes)
 		if err != nil {
 			return nil, err
 		}
 
-		res = append(res, TemplateRenderer{Template: trackTemplate, Data: track})
+		res = append(res, TemplateRenderer{Template: trackTemplate, Metadata: meta, Data: track})
 	}
 
 	return ListRenderer(res), nil

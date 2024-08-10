@@ -114,7 +114,7 @@ func (dbs *dbStorage) Query(ctx context.Context, namespace string, kind string, 
 	return &dbRows{rows: rows}, nil
 }
 
-func (dbs *dbStorage) Insert(ctx context.Context, namespace string, kind string, args ...interface{}) (*Metadata, error) {
+func (dbs *dbStorage) Insert(ctx context.Context, namespace string, kind string, args ...any) (*Metadata, error) {
 	if len(args) == 0 {
 		return nil, fmt.Errorf("no values to insert")
 	}
@@ -135,19 +135,14 @@ func (dbs *dbStorage) Insert(ctx context.Context, namespace string, kind string,
 		values += ", ?"
 
 		if s, ok := arg.(string); ok {
-			parts := strings.Split(s, " ")
-			for _, part := range parts {
-				if len(part) > 0 && part[0] == '#' {
-					if metadata.Tags == nil {
-						metadata.Tags = make([]string, 0, 5)
-					}
-					metadata.Tags = append(metadata.Tags, part)
-				}
-			}
+			metadata.Tags = tagsFromString(s)
+		}
+		if s, ok := arg.(*string); ok && s != nil {
+			metadata.Tags = tagsFromString(*s)
 		}
 	}
 
-	queryArgs := []any{
+	execArgs := []any{
 		metadata.Namespace,
 		metadata.Kind,
 		strings.Join(metadata.Tags, ","),
@@ -155,10 +150,10 @@ func (dbs *dbStorage) Insert(ctx context.Context, namespace string, kind string,
 		metadata.DateModified.Unix(),
 		metadata.ID,
 	}
-	queryArgs = append(queryArgs, args...)
+	execArgs = append(execArgs, args...)
 
-	query := "INSERT INTO things (namespace, kind, tags, date_created, date_modified, id" + fields + ") VALUES (" + values + ")"
-	res, err := dbs.db.ExecContext(ctx, query, queryArgs...)
+	stmt := "INSERT INTO things (namespace, kind, tags, date_created, date_modified, id" + fields + ") VALUES (" + values + ")"
+	res, err := dbs.db.ExecContext(ctx, stmt, execArgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -173,6 +168,20 @@ func (dbs *dbStorage) Insert(ctx context.Context, namespace string, kind string,
 	}
 
 	return &Metadata{}, nil
+}
+
+func tagsFromString(s string) []string {
+	var tags []string
+	parts := strings.Split(s, " ")
+	for _, part := range parts {
+		if len(part) > 0 && part[0] == '#' {
+			if tags == nil {
+				tags = make([]string, 0, 5)
+			}
+			tags = append(tags, part)
+		}
+	}
+	return tags
 }
 
 func (dbs *dbStorage) Close() error {
