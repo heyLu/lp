@@ -27,7 +27,7 @@ type Renderer interface {
 type StringRenderer string
 
 func (sr StringRenderer) Render(ctx context.Context, w http.ResponseWriter) error {
-	fmt.Fprintln(w, "<pre>", html.EscapeString(string(sr)), "</pre")
+	fmt.Fprintln(w, "<pre>"+html.EscapeString(string(sr))+"</pre")
 	return nil
 }
 

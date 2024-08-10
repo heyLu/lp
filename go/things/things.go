@@ -37,7 +37,7 @@ func main() {
 			handler.TrackHandler{},
 			handler.MathHandler{},
 			// TODO: HandleSummary
-			// HandleHelp,
+			handler.HelpHandler{},
 		},
 		storage: dbStorage,
 	}
