@@ -41,3 +41,19 @@ main * {
     filter: invert(100%);
   }
 }
+
+section.thing {
+  position: relative;
+}
+
+.meta.date-created {
+  position: absolute;
+  left: -15em;
+  top: 1ex;
+  font-size: small;
+  opacity: 0;
+}
+
+section.thing:hover .meta {
+  opacity: 0.5;
+}
