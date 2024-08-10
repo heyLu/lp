@@ -15,6 +15,7 @@ var All = []Handler{
 	// TODO: bookmark <url> note
 	ReminderHandler{},
 	TrackHandler{},
+	NoteHandler{},
 	ByDateHandler{},
 	MathHandler{},
 	// TODO: HandleSummary
