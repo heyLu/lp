@@ -46,6 +46,10 @@ section.thing {
   position: relative;
 }
 
+section.thing > p {
+  margin-bottom: 0;
+}
+
 .meta.date-created {
   position: absolute;
   left: -15em;
