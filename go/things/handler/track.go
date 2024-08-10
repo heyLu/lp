@@ -63,8 +63,12 @@ func (t *Track) Render(ctx context.Context, storage storage.Storage, namespace s
 		return nil, err
 	}
 
-	res := []Renderer{
-		TemplateRenderer{Template: trackTemplate, Metadata: nil, Data: t},
+	seq := []Renderer{}
+	if t.Category != "" && strings.Index(input, t.Category)+len(t.Category) != len(input) {
+		seq = append(seq,
+			TemplateRenderer{Template: trackTemplate, Metadata: nil, Data: t}, // in-progress thing
+			HTMLRenderer("<hr />"),
+		)
 	}
 
 	args := t.QueryArgs(make([]any, 0, 1))
@@ -75,6 +79,7 @@ func (t *Track) Render(ctx context.Context, storage storage.Storage, namespace s
 	}
 	defer rows.Close()
 
+	res := []Renderer{}
 	for rows.Next() {
 		var track Track
 		meta, err := rows.Scan(&track.Category, &track.Num, &track.Notes)
@@ -85,7 +90,9 @@ func (t *Track) Render(ctx context.Context, storage storage.Storage, namespace s
 		res = append(res, TemplateRenderer{Template: trackTemplate, Metadata: meta, Data: track})
 	}
 
-	return ListRenderer(res), nil
+	seq = append(seq, ListRenderer(res))
+
+	return SequenceRenderer(seq), nil
 }
 
 var trackTemplate = template.Must(template.New("").Parse(`

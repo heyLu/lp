@@ -27,6 +27,13 @@ func (sr StringRenderer) Render(ctx context.Context, w http.ResponseWriter) erro
 	return nil
 }
 
+type HTMLRenderer string
+
+func (hr HTMLRenderer) Render(ctx context.Context, w http.ResponseWriter) error {
+	fmt.Fprintln(w, hr)
+	return nil
+}
+
 type ListRenderer []Renderer
 
 func (lr ListRenderer) Render(ctx context.Context, w http.ResponseWriter) error {
@@ -40,6 +47,18 @@ func (lr ListRenderer) Render(ctx context.Context, w http.ResponseWriter) error 
 		fmt.Fprintln(w, "</li>")
 	}
 	fmt.Fprintln(w, "</ul>")
+	return nil
+}
+
+type SequenceRenderer []Renderer
+
+func (sr SequenceRenderer) Render(ctx context.Context, w http.ResponseWriter) error {
+	for _, r := range sr {
+		err := r.Render(ctx, w)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
