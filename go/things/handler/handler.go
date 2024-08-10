@@ -12,7 +12,11 @@ import (
 
 type Handler interface {
 	CanHandle(input string) (string, bool)
-	Kind() string
+	Parse(input string) (Thing, error)
+}
+
+type Thing interface {
+	Args([]any) []any
 	Render(ctx context.Context, storage storage.Storage, namespace string, input string) (Renderer, error)
 }
 

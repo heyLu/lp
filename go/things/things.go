@@ -35,14 +35,14 @@ func main() {
 	defer dbStorage.Close()
 
 	things := &Things{
-		handlers: []Handler{
+		handlers: []handler.Handler{
 			// TODO: note ...
 			// TODO: bookmark <url> note
-			HandleReminders,
-			HandleTrack,
-			HandleMath,
+			// HandleReminders,
+			handler.TrackHandler{},
+			// HandleMath,
 			// TODO: HandleSummary
-			HandleHelp,
+			// HandleHelp,
 		},
 		storage: dbStorage,
 	}
@@ -57,7 +57,7 @@ func main() {
 }
 
 type Things struct {
-	handlers []Handler
+	handlers []handler.Handler
 
 	storage storage.Storage
 }
@@ -120,7 +120,7 @@ func (t *Things) HandleThing(w http.ResponseWriter, req *http.Request) {
 	save := req.Method == http.MethodPost
 
 	for _, handler := range t.handlers {
-		err := handler(ctx, t.storage, namespace, w, tellMe, save)
+		err := handle(ctx, handler, t.storage, namespace, w, tellMe, save)
 		if err == ErrNotHandled {
 			continue
 		}
@@ -131,6 +131,35 @@ func (t *Things) HandleThing(w http.ResponseWriter, req *http.Request) {
 
 		break
 	}
+}
+
+func handle(ctx context.Context, handler handler.Handler, storage storage.Storage, namespace string, w http.ResponseWriter, input string, save bool) error {
+	kind, ok := handler.CanHandle(input)
+	if !ok {
+		return ErrNotHandled
+	}
+
+	thing, err := handler.Parse(input)
+	if err != nil {
+		return err
+	}
+
+	if save {
+		args := thing.Args(make([]any, 0, 10))
+		_, err = storage.Insert(ctx, namespace, kind, args...)
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintln(w, "saved!")
+	}
+
+	renderer, err := thing.Render(ctx, storage, namespace, input)
+	if err != nil {
+		return err
+	}
+
+	return renderer.Render(ctx, w)
 }
 
 var mathRe = regexp.MustCompile(`([0-9]|eur|usd)`)
@@ -243,36 +272,6 @@ func HandleReminders(ctx context.Context, storage storage.Storage, namespace str
 	}
 
 	return nil
-}
-
-func HandleTrack(ctx context.Context, storage storage.Storage, namespace string, w http.ResponseWriter, input string, save bool) error {
-	track := &handler.Track{}
-
-	if _, ok := track.CanHandle(input); !ok {
-		return ErrNotHandled
-	}
-
-	if save {
-		err := track.Parse(input)
-		if err != nil {
-			return err
-		}
-
-		args := track.Args(make([]any, 0, 10))
-		_, err = storage.Insert(ctx, namespace, "track", args...)
-		if err != nil {
-			return err
-		}
-
-		fmt.Fprintln(w, "saved!")
-	}
-
-	renderer, err := track.Render(ctx, storage, namespace, input)
-	if err != nil {
-		return err
-	}
-
-	return renderer.Render(ctx, w)
 }
 
 func HandleHelp(ctx context.Context, _ storage.Storage, _ string, w http.ResponseWriter, input string, _ bool) error {

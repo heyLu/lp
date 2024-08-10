@@ -9,24 +9,16 @@ import (
 	"github.com/heyLu/lp/go/things/storage"
 )
 
-var _ Handler = &Track{}
+var _ Handler = TrackHandler{}
 
-type Track struct {
-	*storage.Metadata
+type TrackHandler struct{}
 
-	Category string   `json:"category"`
-	Num      *float64 `json:"num"`
-	Notes    *string  `json:"notes"`
-
-	Unsaved bool `json:"-"`
-}
-
-func (t *Track) CanHandle(input string) (string, bool) {
+func (th TrackHandler) CanHandle(input string) (string, bool) {
 	return "track", strings.HasPrefix(input, "track")
 }
-func (t *Track) Kind() string { return "track" }
+func (th TrackHandler) Parse(input string) (Thing, error) {
+	var t Track
 
-func (t *Track) Parse(input string) error {
 	parts := strings.SplitN(input, " ", 4)
 	if len(parts) > 1 {
 		t.Category = parts[1]
@@ -35,7 +27,7 @@ func (t *Track) Parse(input string) error {
 	if len(parts) > 2 {
 		num, err := strconv.ParseFloat(parts[2], 64)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		t.Num = &num
 
@@ -45,7 +37,17 @@ func (t *Track) Parse(input string) error {
 		t.Notes = &parts[3]
 	}
 
-	return nil
+	return &t, nil
+}
+
+var _ Thing = &Track{}
+
+type Track struct {
+	*storage.Metadata
+
+	Category string   `json:"category"`
+	Num      *float64 `json:"num"`
+	Notes    *string  `json:"notes"`
 }
 
 func (t *Track) Args(args []any) []any {
@@ -60,11 +62,6 @@ func (t *Track) QueryArgs(args []any) []any {
 }
 
 func (t *Track) Render(ctx context.Context, storage storage.Storage, namespace string, input string) (Renderer, error) {
-	err := t.Parse(input)
-	if err != nil {
-		return nil, err
-	}
-
 	seq := []Renderer{}
 	if t.Category != "" && strings.Index(input, t.Category)+len(t.Category) != len(input) {
 		seq = append(seq,
