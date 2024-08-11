@@ -207,13 +207,7 @@ func (t *Things) HandleList(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		thing, err := handlerV2.FromRow(&row)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		renderer, err := thing.(handler.ThingV2).RenderV2(req.Context())
+		renderer, err := handlerV2.Render(req.Context(), &row)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

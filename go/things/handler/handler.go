@@ -49,17 +49,13 @@ type Handler interface {
 }
 
 type HandlerV2 interface {
-	FromRow(row *storage.Row) (Thing, error)
 	Query(ctx context.Context, db storage.Storage, namespace string, input string) (storage.Rows, error)
+	Render(ctx context.Context, row *storage.Row) (Renderer, error)
 }
 
 type Thing interface {
 	Args([]any) []any
 	Render(ctx context.Context, storage storage.Storage, namespace string, input string) (Renderer, error)
-}
-
-type ThingV2 interface {
-	RenderV2(ctx context.Context) (Renderer, error)
 }
 
 type Renderer interface {

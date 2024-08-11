@@ -44,10 +44,6 @@ func (th TrackHandler) Parse(input string) (Thing, error) {
 	return &t, nil
 }
 
-func (th TrackHandler) FromRow(row *storage.Row) (Thing, error) {
-	return &Track{Row: row}, nil
-}
-
 func (th TrackHandler) Query(ctx context.Context, db storage.Storage, namespace string, input string) (storage.Rows, error) {
 	thing, err := th.Parse(input)
 	if err != nil {
@@ -61,6 +57,10 @@ func (th TrackHandler) Query(ctx context.Context, db storage.Storage, namespace 
 	}
 
 	return db.QueryV2(ctx, namespace, storage.Kind(track.Kind), storage.Summary(track.Summary))
+}
+
+func (th TrackHandler) Render(ctx context.Context, row *storage.Row) (Renderer, error) {
+	return TemplateRenderer{Template: trackTemplate, Data: &Track{Row: row}}, nil
 }
 
 var _ Thing = &Track{}
@@ -86,10 +86,6 @@ func (t *Track) QueryArgs(args []any) []any {
 		return append(args, t.Summary)
 	}
 	return args
-}
-
-func (t *Track) RenderV2(ctx context.Context) (Renderer, error) {
-	return TemplateRenderer{Template: trackTemplate, Data: t}, nil
 }
 
 func (t *Track) Render(ctx context.Context, st storage.Storage, namespace string, input string) (Renderer, error) {
