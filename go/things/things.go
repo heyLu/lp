@@ -83,7 +83,7 @@ func pageWithContent(w http.ResponseWriter, req *http.Request, input string, con
 			<input id="tell-me" name="tell-me" type="text" autofocus autocomplete="off" placeholder="tell me things"
 				value=%q
 				hx-get="/thing"
-				hx-trigger="load, input changed delay:250ms"
+				hx-trigger="input changed delay:250ms"
 				hx-target="#answer"
 				hx-indicator="#waiting" />
 			<input name="save" value="yes" hidden />
@@ -125,7 +125,7 @@ func (t *Things) HandleThing(w http.ResponseWriter, req *http.Request) {
 
 	handled := false
 	for _, handler := range t.handlers {
-		err := handle(ctx, handler, t.storage, namespace, w, tellMe, save)
+		err := t.handle(ctx, handler, t.storage, namespace, w, tellMe, save)
 		if err == ErrNotHandled {
 			continue
 		}
@@ -144,22 +144,24 @@ func (t *Things) HandleThing(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func handle(ctx context.Context, handler handler.Handler, storage storage.Storage, namespace string, w http.ResponseWriter, input string, save bool) error {
-	kind, ok := handler.CanHandle(input)
+func (t *Things) handle(ctx context.Context, hndl handler.Handler, storage storage.Storage, namespace string, w http.ResponseWriter, input string, save bool) error {
+	kind, ok := hndl.CanHandle(input)
 	if !ok {
 		return ErrNotHandled
 	}
 
 	fmt.Fprintln(w, kind)
 
-	thing, err := handler.Parse(input)
+	thing, err := hndl.Parse(input)
 	if err != nil {
 		return err
 	}
 
+	row := thing.(handler.Thing).ToRow()
+	row.Namespace = namespace // TODO: from context in Insert probably?  or get it from context and pass it in 🤔
+
 	if save {
-		args := thing.Args(make([]any, 0, 10))
-		_, err = storage.Insert(ctx, namespace, kind, args...)
+		err := storage.Insert(ctx, row)
 		if err != nil {
 			return err
 		}
@@ -167,11 +169,28 @@ func handle(ctx context.Context, handler handler.Handler, storage storage.Storag
 		fmt.Fprintln(w, "saved!")
 	}
 
-	renderer, err := thing.Render(ctx, storage, namespace, input)
+	seq := []handler.Renderer{}
+
+	if row.Summary != "" {
+		// TODO: thing.CanSave and only then preview?
+		previewRenderer, err := hndl.(handler.Handler).Render(ctx, row)
+		if err != nil {
+			return err
+		}
+
+		seq = append(seq,
+			previewRenderer,
+			handler.HTMLRenderer("<hr />"),
+		)
+	}
+
+	listRenderer, err := t.renderList(ctx, hndl.(handler.Handler), namespace, input)
 	if err != nil {
 		return err
 	}
+	seq = append(seq, listRenderer)
 
+	renderer := handler.SequenceRenderer(seq)
 	return renderer.Render(ctx, w)
 }
 
@@ -189,34 +208,39 @@ func (t *Things) HandleList(w http.ResponseWriter, req *http.Request) {
 
 	namespace := "test"
 
-	handlerV2 := hndl.(handler.HandlerV2)
-
-	rows, err := handlerV2.Query(req.Context(), t.storage, namespace, input)
+	renderer, err := t.renderList(req.Context(), hndl.(handler.Handler), namespace, input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	pageWithContent(w, req, input, renderer)
+}
+
+func (t *Things) renderList(ctx context.Context, hndl handler.Handler, namespace string, input string) (handler.Renderer, error) {
+	rows, err := hndl.Query(ctx, t.storage, namespace, input)
+	if err != nil {
+		return nil, err
 	}
 	defer rows.Close()
 
 	res := []handler.Renderer{}
 	for rows.Next() {
 		var row storage.Row
-		err := rows.ScanV2(&row)
+		err := rows.Scan(&row)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return nil, err
 		}
 
-		renderer, err := handlerV2.Render(req.Context(), &row)
+		renderer, err := hndl.Render(ctx, &row)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return nil, err
 		}
 
 		res = append(res, renderer)
 	}
 
-	pageWithContent(w, req, input, handler.ListRenderer(res))
+	return handler.ListRenderer(res), nil
 }
 
 func (t *Things) HandleFind(w http.ResponseWriter, req *http.Request) {

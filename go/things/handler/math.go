@@ -10,6 +10,8 @@ import (
 	"github.com/heyLu/lp/go/things/storage"
 )
 
+var _ Handler = MathHandler{}
+
 var mathRe = regexp.MustCompile(`([0-9]|eur|usd)`)
 
 type MathHandler struct{}
@@ -22,14 +24,12 @@ func (mh MathHandler) Parse(input string) (Thing, error) {
 	return Math(input), nil
 }
 
-type Math string
-
-func (m Math) Args(args []any) []any {
-	return append(args, string(m))
+func (mh MathHandler) Query(ctx context.Context, db storage.Storage, namespace string, input string) (storage.Rows, error) {
+	return db.Query(ctx, namespace, storage.Kind("help"))
 }
 
-func (m Math) Render(ctx context.Context, _ storage.Storage, _ string, input string) (Renderer, error) {
-	cmd := exec.CommandContext(ctx, "qalc", "--terse", "--color=0", input)
+func (mh MathHandler) Render(ctx context.Context, row *storage.Row) (Renderer, error) {
+	cmd := exec.CommandContext(ctx, "qalc", "--terse", "--color=0", row.Summary)
 
 	buf := new(bytes.Buffer)
 	cmd.Stderr = buf
@@ -41,4 +41,15 @@ func (m Math) Render(ctx context.Context, _ storage.Storage, _ string, input str
 	}
 
 	return StringRenderer(buf.String()), nil
+}
+
+type Math string
+
+func (m Math) ToRow() *storage.Row {
+	return &storage.Row{
+		Metadata: storage.Metadata{
+			Kind: "math",
+		},
+		Summary: string(m),
+	}
 }

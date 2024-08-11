@@ -17,7 +17,6 @@ var All = Handlers([]Handler{
 	NoteHandler{},
 	ByDateHandler{},
 	MathHandler{},
-	// TODO: HandleSummary
 	HelpHandler{},
 	OverviewHandler{},
 })
@@ -46,16 +45,13 @@ func (hs Handlers) For(kind string) (string, Handler) {
 type Handler interface {
 	CanHandle(input string) (string, bool)
 	Parse(input string) (Thing, error)
-}
 
-type HandlerV2 interface {
 	Query(ctx context.Context, db storage.Storage, namespace string, input string) (storage.Rows, error)
 	Render(ctx context.Context, row *storage.Row) (Renderer, error)
 }
 
 type Thing interface {
-	Args([]any) []any
-	Render(ctx context.Context, storage storage.Storage, namespace string, input string) (Renderer, error)
+	ToRow() *storage.Row
 }
 
 type Renderer interface {

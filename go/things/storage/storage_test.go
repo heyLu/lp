@@ -11,7 +11,7 @@ import (
 
 var ourEpoch = time.Date(2024, 1, 1, 1, 1, 1, 0, time.UTC)
 
-func TestQueryV2(t *testing.T) {
+func TestQuery(t *testing.T) {
 	st, err := NewDBStorage(context.Background(), ":memory:")
 	require.NoError(t, err)
 
@@ -25,7 +25,7 @@ func TestQueryV2(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(1), n)
 
-	rows, err := st.QueryV2(context.Background(), "test")
+	rows, err := st.Query(context.Background(), "test")
 	require.NoError(t, err)
 
 	numResults := 0
@@ -33,7 +33,7 @@ func TestQueryV2(t *testing.T) {
 		numResults += 1
 
 		var row Row
-		err := rows.ScanV2(&row)
+		err := rows.Scan(&row)
 		assert.NoError(t, err)
 		if err != nil {
 			continue
@@ -57,7 +57,7 @@ func TestQueryV2(t *testing.T) {
 	assert.Equal(t, 1, numResults)
 }
 
-func TestInsertV2(t *testing.T) {
+func TestInsert(t *testing.T) {
 	st, err := NewDBStorage(context.Background(), ":memory:")
 	require.NoError(t, err)
 
@@ -73,16 +73,16 @@ func TestInsertV2(t *testing.T) {
 		Summary: "this is a summary",
 	}
 
-	err = st.InsertV2(context.Background(), &expectedRow)
+	err = st.Insert(context.Background(), &expectedRow)
 	require.NoError(t, err)
 
-	rows, err := st.QueryV2(context.Background(), "test")
+	rows, err := st.Query(context.Background(), "test")
 	require.NoError(t, err)
 
 	require.True(t, rows.Next())
 	var actualRow Row
 
-	err = rows.ScanV2(&actualRow)
+	err = rows.Scan(&actualRow)
 	require.NoError(t, err)
 	require.Equal(t, expectedRow, actualRow)
 

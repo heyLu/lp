@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"regexp"
 	"time"
@@ -10,7 +9,7 @@ import (
 	"github.com/heyLu/lp/go/things/storage"
 )
 
-var _ HandlerV2 = ByDateHandler{}
+var _ Handler = ByDateHandler{}
 
 type ByDateHandler struct{}
 
@@ -66,19 +65,14 @@ func (bdh ByDateHandler) Query(ctx context.Context, db storage.Storage, namespac
 
 	byDate := thing.(*ByDate)
 
-	return db.QueryV2(ctx, namespace,
+	return db.Query(ctx, namespace,
 		storage.Gt("date_created", byDate.from.UTC().Unix()),
 		storage.Lt("date_created", byDate.to.UTC().Unix()),
 	)
 }
 
-// Render implements HandlerV2.
 func (_ ByDateHandler) Render(ctx context.Context, row *storage.Row) (Renderer, error) {
-	_, handler := All.For(row.Kind)
-	if handler == nil {
-		return nil, fmt.Errorf("no handler for %q", row.Kind)
-	}
-	return handler.(HandlerV2).Render(ctx, row)
+	return StringRenderer(row.Summary), nil
 }
 
 type ByDate struct {
@@ -87,33 +81,15 @@ type ByDate struct {
 	to    time.Time
 }
 
-func (bd ByDate) Args(args []any) []any {
-	return append(args, bd.input)
-}
-
-func (bd ByDate) Render(ctx context.Context, db storage.Storage, namespace string, input string) (Renderer, error) {
-	rows, err := db.Query(ctx, namespace, "", 3,
-		storage.Option{Field: "datetime(date_created, 'unixepoch')", Op: ">", Value: bd.from},
-		storage.Option{Field: "datetime(date_created, 'unixepoch')", Op: "<", Value: bd.to})
-	if err != nil {
-		return nil, err
+func (bd ByDate) ToRow() *storage.Row {
+	return &storage.Row{
+		Metadata: storage.Metadata{
+			Kind: "by-date",
+		},
+		Summary: bd.input,
+		Fields: map[string]any{
+			"from": bd.from,
+			"to":   bd.to,
+		},
 	}
-	defer rows.Close()
-
-	renderers := make([]Renderer, 0, 10)
-	for rows.Next() {
-		var val1, val2, val3 sql.NullString
-		meta, err := rows.Scan(&val1, &val2, &val3)
-		if err != nil {
-			return nil, err
-		}
-
-		// TODO: support rendering a single Thing from Rows (also needed for /<thing>/<id> and more)
-		renderers = append(renderers, StringRenderer(fmt.Sprintf("%s %s %s %s", meta.Kind, val1.String, val2.String, val3.String)))
-	}
-
-	return SequenceRenderer([]Renderer{
-		StringRenderer("things from " + input),
-		ListRenderer(renderers),
-	}), nil
 }

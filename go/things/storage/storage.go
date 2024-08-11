@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -12,17 +13,14 @@ import (
 )
 
 type Storage interface {
-	Query(ctx context.Context, namespace string, kind string, numFields int, args ...any) (Rows, error)
-	QueryV2(ctx context.Context, namespace string, conditions ...Condition) (Rows, error)
-	Insert(ctx context.Context, namespace string, kind string, args ...any) (*Metadata, error)
-	InsertV2(ctx context.Context, row *Row) error
+	Query(ctx context.Context, namespace string, conditions ...Condition) (Rows, error)
+	Insert(ctx context.Context, row *Row) error
 	Close() error
 }
 
 type Rows interface {
 	Next() bool
-	Scan(args ...any) (*Metadata, error)
-	ScanV2(row *Row) error
+	Scan(row *Row) error
 	Close() error
 }
 
@@ -66,147 +64,8 @@ func (dbr *dbRows) Next() bool {
 	return dbr.rows.Next()
 }
 
-func (dbr *dbRows) Scan(args ...any) (*Metadata, error) {
-	var metadata Metadata
-	var tags string
-	var dateCreated int64
-	var dateModified int64
-	scanArgs := []any{
-		&metadata.Namespace,
-		&metadata.Kind,
-		&tags,
-		&dateCreated,
-		&dateModified,
-		&metadata.ID,
-	}
-	scanArgs = append(scanArgs, args...)
-
-	err := dbr.rows.Scan(scanArgs...)
-	if err != nil {
-		return nil, err
-	}
-
-	metadata.Tags = strings.Split(tags, ",")
-	metadata.DateCreated = time.Unix(dateCreated, 0)
-	metadata.DateModified = time.Unix(dateModified, 0)
-
-	return &metadata, nil
-}
-
 func (dbr *dbRows) Close() error {
 	return dbr.rows.Close()
-}
-
-type Option struct {
-	Field string
-	Op    string
-	Value any
-}
-
-func (dbs *dbStorage) Query(ctx context.Context, namespace string, kind string, numFields int, args ...any) (Rows, error) {
-	queryArgs := []any{
-		namespace,
-	}
-
-	conditions := ""
-	if kind != "" {
-		conditions += " AND kind = ?"
-		queryArgs = append(queryArgs, kind)
-	}
-
-	fields := ""
-	for i := 0; i < numFields; i++ {
-		fields += fmt.Sprintf(", value%d", i+1)
-	}
-
-	for i, arg := range args {
-		if option, ok := arg.(Option); ok {
-			conditions += fmt.Sprintf(" AND %s %s ?", option.Field, option.Op)
-			queryArgs = append(queryArgs, option.Value)
-			continue
-		}
-
-		conditions += fmt.Sprintf(" AND value%d = ?", i+1)
-		queryArgs = append(queryArgs, arg)
-	}
-
-	query := "SELECT namespace, kind, tags, date_created, date_modified, id" + fields + " FROM things WHERE namespace = ?" + conditions + " ORDER BY date_created DESC"
-	rows, err := dbs.db.QueryContext(ctx, query, queryArgs...)
-	if err != nil {
-		return nil, err
-	}
-
-	return &dbRows{rows: rows}, nil
-}
-
-func (dbs *dbStorage) Insert(ctx context.Context, namespace string, kind string, args ...any) (*Metadata, error) {
-	if len(args) == 0 {
-		return nil, fmt.Errorf("no values to insert")
-	}
-
-	metadata := Metadata{
-		Namespace:    namespace,
-		Kind:         kind,
-		Tags:         nil,
-		DateCreated:  time.Now().UTC().Truncate(time.Second),
-		DateModified: time.Unix(0, 0),
-		ID:           time.Now().UTC().Unix(),
-	}
-
-	fields := ""
-	values := "?, ?, ?, ?, ?, ?"
-	for i, arg := range args {
-		fields += fmt.Sprintf(", value%d", i+1)
-		values += ", ?"
-
-		if s, ok := arg.(string); ok {
-			metadata.Tags = tagsFromString(s)
-		}
-		if s, ok := arg.(*string); ok && s != nil {
-			metadata.Tags = tagsFromString(*s)
-		}
-	}
-
-	execArgs := []any{
-		metadata.Namespace,
-		metadata.Kind,
-		strings.Join(metadata.Tags, ","),
-		metadata.DateCreated.Unix(),
-		metadata.DateModified.Unix(),
-		metadata.ID,
-	}
-	execArgs = append(execArgs, args...)
-
-	stmt := "INSERT INTO things (namespace, kind, tags, date_created, date_modified, id" + fields + ") VALUES (" + values + ")"
-	res, err := dbs.db.ExecContext(ctx, stmt, execArgs...)
-	if err != nil {
-		return nil, err
-	}
-
-	n, err := res.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-
-	if n != 1 {
-		return nil, fmt.Errorf("expected %d changes, but %d changes happened", 1, n)
-	}
-
-	return &Metadata{}, nil
-}
-
-func tagsFromString(s string) []string {
-	var tags []string
-	parts := strings.Split(s, " ")
-	for _, part := range parts {
-		if len(part) > 0 && part[0] == '#' {
-			if tags == nil {
-				tags = make([]string, 0, 5)
-			}
-			tags = append(tags, part)
-		}
-	}
-	return tags
 }
 
 func (dbs *dbStorage) Close() error {
@@ -228,8 +87,11 @@ func Summary(summary string) Condition { return Condition{expr: "summary = ?", a
 
 func Gt(field string, val any) Condition { return Condition{expr: field + " > ?", args: []any{val}} }
 func Lt(field string, val any) Condition { return Condition{expr: field + " < ?", args: []any{val}} }
+func Match(field string, val string) Condition {
+	return Condition{expr: field + " LIKE concat('%', ?, '%')", args: []any{val}}
+}
 
-func (dbs *dbStorage) QueryV2(ctx context.Context, namespace string, conditions ...Condition) (Rows, error) {
+func (dbs *dbStorage) Query(ctx context.Context, namespace string, conditions ...Condition) (Rows, error) {
 	query := "SELECT namespace, kind, id, summary, content, ref, number, float, bool, time, jsonb(fields_json), tags, date_created, date_modified FROM things_v2 WHERE namespace = ?"
 	queryArgs := []any{namespace}
 
@@ -249,7 +111,7 @@ func (dbs *dbStorage) QueryV2(ctx context.Context, namespace string, conditions 
 	return &dbRows{rows: rows}, nil
 }
 
-func (dbs *dbStorage) InsertV2(ctx context.Context, row *Row) error {
+func (dbs *dbStorage) Insert(ctx context.Context, row *Row) error {
 	if row.Namespace == "" {
 		return fmt.Errorf("namespace cannot be empty")
 	}
@@ -263,6 +125,14 @@ func (dbs *dbStorage) InsertV2(ctx context.Context, row *Row) error {
 	row.ID = time.Now().Unix()
 	row.DateModified = time.Now().UTC().Truncate(time.Second)
 
+	tags := row.Tags
+	tags = append(tags, tagsFromString(row.Summary)...)
+	if row.Content.Valid {
+		tags = append(tags, tagsFromString(row.Content.String)...)
+	}
+	slices.Sort(tags)
+	tags = slices.Compact(tags)
+
 	var fieldsJSON []byte
 	if row.Fields != nil {
 		var err error
@@ -275,7 +145,7 @@ func (dbs *dbStorage) InsertV2(ctx context.Context, row *Row) error {
 	res, err := dbs.db.ExecContext(ctx, `INSERT INTO things_v2 (namespace, kind, id, summary, content, ref, number, float, bool, time, fields_json, tags, date_created, date_modified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		row.Namespace, row.Kind, row.ID, row.Summary,
 		row.Content, row.Ref, row.Number, row.Float, row.Bool, row.Time, fieldsJSON,
-		strings.Join(row.Tags, ","), row.DateCreated.Unix(), row.DateModified.Unix(),
+		strings.Join(tags, ","), row.DateCreated.Unix(), row.DateModified.Unix(),
 	)
 	if err != nil {
 		return err
@@ -293,6 +163,20 @@ func (dbs *dbStorage) InsertV2(ctx context.Context, row *Row) error {
 	return nil
 }
 
+func tagsFromString(s string) []string {
+	var tags []string
+	parts := strings.Split(s, " ")
+	for _, part := range parts {
+		if len(part) > 0 && part[0] == '#' {
+			if tags == nil {
+				tags = make([]string, 0, 5)
+			}
+			tags = append(tags, part)
+		}
+	}
+	return tags
+}
+
 type Row struct {
 	Metadata
 
@@ -307,7 +191,7 @@ type Row struct {
 	Fields map[string]any
 }
 
-func (dbr *dbRows) ScanV2(row *Row) error {
+func (dbr *dbRows) Scan(row *Row) error {
 	var fieldsRaw interface{}
 	var tags string
 	var dateCreated int64

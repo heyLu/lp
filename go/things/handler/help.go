@@ -7,23 +7,23 @@ import (
 	"github.com/heyLu/lp/go/things/storage"
 )
 
+var _ Handler = HelpHandler{}
+
 type HelpHandler struct{}
 
-func (mh HelpHandler) CanHandle(input string) (string, bool) {
+func (h HelpHandler) CanHandle(input string) (string, bool) {
 	return "help", strings.HasPrefix(input, "help")
 }
 
-func (mh HelpHandler) Parse(input string) (Thing, error) {
+func (h HelpHandler) Parse(input string) (Thing, error) {
 	return Help(input), nil
 }
 
-type Help string
-
-func (m Help) Args(args []any) []any {
-	return append(args, string(m))
+func (h HelpHandler) Query(ctx context.Context, db storage.Storage, namespace string, input string) (storage.Rows, error) {
+	return db.Query(ctx, namespace, storage.Kind("help"))
 }
 
-func (m Help) Render(ctx context.Context, _ storage.Storage, _ string, input string) (Renderer, error) {
+func (h HelpHandler) Render(ctx context.Context, row *storage.Row) (Renderer, error) {
 	return StringRenderer(`help, what is this thing?!
 
 some examples:
@@ -34,4 +34,15 @@ some examples:
 - 2**10
 - 30usd to eur
 `), nil
+}
+
+type Help string
+
+func (h Help) ToRow() *storage.Row {
+	return &storage.Row{
+		Metadata: storage.Metadata{
+			Kind: "help",
+		},
+		Summary: string(h),
+	}
 }

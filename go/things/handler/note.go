@@ -7,9 +7,12 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/heyLu/lp/go/things/storage"
 	"github.com/yuin/goldmark"
+
+	"github.com/heyLu/lp/go/things/storage"
 )
+
+var _ Handler = NoteHandler{}
 
 type NoteHandler struct{}
 
@@ -25,74 +28,40 @@ func (nh NoteHandler) Parse(input string) (Thing, error) {
 		idx = len(input)
 	}
 	content := input[idx:]
-	return &Note{
-		Content: content,
-		About:   urlRe.FindString(content),
+
+	note := Note{
+		Row: &storage.Row{
+			Metadata: storage.Metadata{
+				Kind: "note",
+			},
+			Summary: content,
+		},
+	}
+
+	about := urlRe.FindString(content)
+	if about != "" {
+		note.Ref.String = about
+	}
+
+	return note, nil
+}
+
+func (nh NoteHandler) Query(ctx context.Context, db storage.Storage, namespace string, input string) (storage.Rows, error) {
+	return db.Query(ctx, namespace, storage.Kind("note"), storage.Match("summary", input))
+}
+
+func (nh NoteHandler) Render(ctx context.Context, row *storage.Row) (Renderer, error) {
+	return TemplateRenderer{
+		Template: noteTemplate,
+		Data:     Note{Row: row},
 	}, nil
 }
 
-type Scanner interface {
-	ScanRow(storage.Rows) (Renderer, error)
-	NumParams() int
-}
-
-func (nh NoteHandler) ScanRow(rows storage.Rows) (Renderer, error) {
-	var note Note
-	meta, err := rows.Scan(&note.About, &note.Content)
-	if err != nil {
-		return nil, err
-	}
-	note.Metadata = meta
-
-	return TemplateRenderer{Template: noteTemplate, Data: note}, nil
-}
-
-func (nh NoteHandler) NumParams() int {
-	return 2
-}
-
 type Note struct {
-	*storage.Metadata
-
-	Content string `json:"content"`
-	About   string `json:"about"`
+	*storage.Row
 }
 
-func (n *Note) Args(args []any) []any {
-	return append(args, n.About, n.Content)
-}
-
-func (n *Note) Render(ctx context.Context, storage storage.Storage, namespace string, input string) (Renderer, error) {
-	seq := []Renderer{}
-	if n.Content != "" {
-		seq = append(seq,
-			TemplateRenderer{Template: noteTemplate, Data: n}, // in-progress thing
-			HTMLRenderer("<hr />"),
-		)
-	}
-
-	// args := n.QueryArgs(make([]any, 0, 1)) // TODO: filter by url
-
-	rows, err := storage.Query(ctx, namespace, "note", 2)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	res := []Renderer{}
-	for rows.Next() {
-		noteRenderer, err := NoteHandler{}.ScanRow(rows)
-		if err != nil {
-			return nil, err
-		}
-
-		res = append(res, noteRenderer)
-	}
-
-	seq = append(seq, ListRenderer(res))
-
-	return SequenceRenderer(seq), nil
-}
+func (n Note) ToRow() *storage.Row { return n.Row }
 
 var noteFuncs = template.FuncMap{
 	"markdown": func(md string) (template.HTML, error) {

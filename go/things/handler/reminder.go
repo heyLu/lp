@@ -19,7 +19,16 @@ func (rh ReminderHandler) CanHandle(input string) (string, bool) {
 }
 
 func (rh ReminderHandler) Parse(input string) (Thing, error) {
-	var reminder Reminder
+	reminder := Reminder{
+		Row: &storage.Row{
+			Metadata: storage.Metadata{
+				Kind: "reminder",
+			},
+		},
+	}
+
+	reminder.Bool.Bool = false
+
 	parts := strings.SplitN(input, " ", 3)
 
 	var dur time.Duration
@@ -30,84 +39,46 @@ func (rh ReminderHandler) Parse(input string) (Thing, error) {
 			return nil, err
 		}
 
-		reminder.Date = time.Now().UTC().Add(dur).Truncate(time.Minute)
+		reminder.Time.Time = time.Now().UTC().Add(dur).Truncate(time.Minute)
 	}
 
 	if len(parts) > 2 {
-		reminder.Description = parts[2]
+		reminder.Summary = parts[2]
 	}
 
 	return &reminder, nil
 }
 
-type Reminder struct {
-	*storage.Metadata
+func (rh ReminderHandler) Query(ctx context.Context, db storage.Storage, namespace string, input string) (storage.Rows, error) {
+	if !strings.Contains(input, " ") {
+		return db.Query(ctx, namespace, storage.Kind("reminder"))
+	}
+	return db.Query(ctx, namespace, storage.Kind("reminder"), storage.Match("summary", input))
+}
 
-	Description string    `json:"description"`
-	Date        time.Time `json:"date"`
+func (rh ReminderHandler) Render(ctx context.Context, row *storage.Row) (Renderer, error) {
+	return TemplateRenderer{Template: reminderTemplate, Data: Reminder{Row: row}}, nil
+}
+
+type Reminder struct{ *storage.Row }
+
+func (r *Reminder) ToRow() *storage.Row {
+	return r.Row
 }
 
 func (r Reminder) Until() time.Duration {
-	return r.Date.Sub(time.Now()).Truncate(time.Minute)
+	return r.Time.Time.Sub(time.Now()).Truncate(time.Minute)
 }
 
-func (r *Reminder) Args(args []any) []any {
-	return append(args, r.Description, r.Date)
-
-}
-
-func (r *Reminder) Render(ctx context.Context, storage storage.Storage, namespace string, input string) (Renderer, error) {
-	seq := []Renderer{}
-	if r.Description != "" {
-		seq = append(seq,
-			TemplateRenderer{Template: reminderTemplate, Data: r},
-			HTMLRenderer("<hr />"))
-	}
-
-	rows, err := storage.Query(ctx, namespace, "reminder", 2)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	res := []Renderer{}
-	for rows.Next() {
-		var reminder Reminder
-		var date string
-		meta, err := rows.Scan(&reminder.Description, &date)
-		if err != nil {
-			return nil, err
-		}
-
-		reminder.Date, err = time.Parse("2006-01-02 15:04:05Z07:00", date)
-		if err != nil {
-			return nil, err
-		}
-
-		reminder.Metadata = meta
-
-		res = append(res, TemplateRenderer{Template: reminderTemplate, Data: reminder})
-	}
-
-	seq = append(seq, ListRenderer(res))
-
-	return SequenceRenderer(seq), nil
-}
-
-var templateHelpers = template.FuncMap{
-	"now":      func() time.Time { return time.Now() },
-	"truncate": func(t time.Time) time.Time { return t.Truncate(time.Minute) },
-}
-
-var reminderTemplate = template.Must(template.New("").Funcs(templateHelpers).Parse(`
+var reminderTemplate = template.Must(template.New("").Parse(`
 <section class="thing reminder">
 {{ if .Metadata }}
 	<time class="meta date-created" time="{{ .DateCreated }}" title="{{ .DateCreated }}">{{ .DateCreated.Format "2006-01-02 15:04:05" }}</time>
 {{ end }}
 
 	<span>
-		<time time="{{ .Date }}" title="{{ .Date }}">in {{ .Until }}</time>
-		{{ .Description }}
+		<time time="{{ .Time }}" title="{{ .Time }}">in {{ .Until }}</time>
+		{{ .Summary }}
 	</span>
 </section>
 `))

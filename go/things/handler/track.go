@@ -53,10 +53,10 @@ func (th TrackHandler) Query(ctx context.Context, db storage.Storage, namespace 
 	track := thing.(*Track)
 
 	if track.Summary == "" {
-		return db.QueryV2(ctx, namespace, storage.Kind(track.Kind))
+		return db.Query(ctx, namespace, storage.Kind(track.Kind))
 	}
 
-	return db.QueryV2(ctx, namespace, storage.Kind(track.Kind), storage.Summary(track.Summary))
+	return db.Query(ctx, namespace, storage.Kind(track.Kind), storage.Summary(track.Summary))
 }
 
 func (th TrackHandler) Render(ctx context.Context, row *storage.Row) (Renderer, error) {
@@ -77,51 +77,7 @@ func (t *Track) Num() *float64 {
 }
 func (t *Track) Notes() string { return t.Content.String }
 
-func (t *Track) Args(args []any) []any {
-	return append(args, t.Summary, t.Float, t.Content)
-}
-
-func (t *Track) QueryArgs(args []any) []any {
-	if t.Summary != "" {
-		return append(args, t.Summary)
-	}
-	return args
-}
-
-func (t *Track) Render(ctx context.Context, st storage.Storage, namespace string, input string) (Renderer, error) {
-	seq := []Renderer{}
-	if t.Summary != "" && strings.Index(input, t.Summary)+len(t.Summary) != len(input) {
-		seq = append(seq,
-			TemplateRenderer{Template: trackTemplate, Metadata: nil, Data: t}, // in-progress thing
-			HTMLRenderer("<hr />"),
-		)
-	}
-
-	args := t.QueryArgs(make([]any, 0, 1))
-
-	rows, err := st.Query(ctx, namespace, "track", 3, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	res := []Renderer{}
-	for rows.Next() {
-		var track Track
-		track.Row = &storage.Row{}
-		meta, err := rows.Scan(&track.Summary, &track.Float, &track.Content)
-		if err != nil {
-			return nil, err
-		}
-		track.Metadata = *meta
-
-		res = append(res, TemplateRenderer{Template: trackTemplate, Metadata: meta, Data: &track})
-	}
-
-	seq = append(seq, ListRenderer(res))
-
-	return SequenceRenderer(seq), nil
-}
+func (t *Track) ToRow() *storage.Row { return t.Row }
 
 var trackTemplate = template.Must(template.New("").Parse(`
 <section class="thing track">

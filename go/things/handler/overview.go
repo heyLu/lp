@@ -8,6 +8,8 @@ import (
 	"github.com/heyLu/lp/go/things/storage"
 )
 
+var _ Handler = OverviewHandler{}
+
 type OverviewHandler struct{}
 
 func (mh OverviewHandler) CanHandle(input string) (string, bool) {
@@ -18,61 +20,70 @@ func (mh OverviewHandler) Parse(input string) (Thing, error) {
 	return Overview(input), nil
 }
 
-type Overview string
+func (mh OverviewHandler) Query(ctx context.Context, db storage.Storage, namespace string, input string) (storage.Rows, error) {
+	views := []string{
+		time.Now().Format(time.DateOnly),
+		"reminders",
+		"help",
+	}
 
-func (m Overview) Args(args []any) []any {
-	return append(args, string(m))
+	// TODO: need to do .Query for each of the views here and pass the into rows... (and then render the results in Render)
+
+	return &overviewRows{summary: strings.Join(views, ",")}, nil
 }
 
-func (m Overview) Render(ctx context.Context, storage storage.Storage, namespace string, input string) (Renderer, error) {
-	rows, err := storage.Query(ctx, namespace, "settings", 2, "overview.value")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+type overviewRows struct {
+	idx     int
+	summary string
+}
 
-	views := make([]string, 0, 5)
-	for rows.Next() {
-		var key, view string
-		_, err := rows.Scan(&key, &view)
+func (o *overviewRows) Close() error { return nil }
+func (o *overviewRows) Next() bool   { return o.idx < 1 }
+
+func (o *overviewRows) Scan(row *storage.Row) error {
+	o.idx += 1
+
+	*row = storage.Row{
+		Metadata: storage.Metadata{
+			Kind: "overview",
+		},
+		Summary: o.summary,
+	}
+
+	return nil
+}
+
+func (mh OverviewHandler) Render(ctx context.Context, row *storage.Row) (Renderer, error) {
+	views := strings.Split(row.Summary, ",")
+
+	renderers := make([]Renderer, 0, len(views))
+	for _, view := range views {
+		_, handler := All.For(view)
+		thing, err := handler.Parse(view)
 		if err != nil {
 			return nil, err
 		}
 
-		views = append(views, view)
-	}
+		// TODO: query here to do a full render?
 
-	if len(views) == 0 {
-		views = []string{
-			time.Now().Format(time.DateOnly),
-			"reminders",
-			"help",
+		renderer, err := handler.Render(ctx, thing.ToRow())
+		if err != nil {
+			return nil, err
 		}
-	}
 
-	renderers := make([]Renderer, 0, len(views))
-	for _, view := range views {
-		for _, handler := range All {
-			_, ok := handler.CanHandle(view)
-			if !ok {
-				continue
-			}
-
-			thing, err := handler.Parse(view)
-			if err != nil {
-				return nil, err
-			}
-
-			r, err := thing.Render(ctx, storage, namespace, view)
-			if err != nil {
-				return nil, err
-			}
-
-			renderers = append(renderers, r)
-
-			break
-		}
+		renderers = append(renderers, renderer)
 	}
 
 	return ListRenderer(renderers), nil
+}
+
+type Overview string
+
+func (o Overview) ToRow() *storage.Row {
+	return &storage.Row{
+		Metadata: storage.Metadata{
+			Kind: "overview",
+		},
+		// Summary: "today,reminders,help",
+	}
 }
