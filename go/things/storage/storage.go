@@ -224,6 +224,9 @@ func (c Condition) Args() []any  { return c.args }
 func Kind(kind string) Condition       { return Condition{expr: "kind = ?", args: []any{kind}} }
 func Summary(summary string) Condition { return Condition{expr: "summary = ?", args: []any{summary}} }
 
+func Gt(field string, val any) Condition { return Condition{expr: field + " > ?", args: []any{val}} }
+func Lt(field string, val any) Condition { return Condition{expr: field + " < ?", args: []any{val}} }
+
 func (dbs *dbStorage) QueryV2(ctx context.Context, namespace string, conditions ...Condition) (Rows, error) {
 	query := "SELECT namespace, kind, id, summary, content, ref, number, float, bool, time, jsonb(fields_json), tags, date_created, date_modified FROM things_v2 WHERE namespace = ?"
 	queryArgs := []any{namespace}

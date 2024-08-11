@@ -10,6 +10,8 @@ import (
 	"github.com/heyLu/lp/go/things/storage"
 )
 
+var _ HandlerV2 = ByDateHandler{}
+
 type ByDateHandler struct{}
 
 var (
@@ -54,6 +56,29 @@ func (_ ByDateHandler) Parse(input string) (Thing, error) {
 	}
 
 	return nil, fmt.Errorf("can't parse %q", input)
+}
+
+func (bdh ByDateHandler) Query(ctx context.Context, db storage.Storage, namespace string, input string) (storage.Rows, error) {
+	thing, err := bdh.Parse(input)
+	if err != nil {
+		return nil, err
+	}
+
+	byDate := thing.(*ByDate)
+
+	return db.QueryV2(ctx, namespace,
+		storage.Gt("date_created", byDate.from.UTC().Unix()),
+		storage.Lt("date_created", byDate.to.UTC().Unix()),
+	)
+}
+
+// Render implements HandlerV2.
+func (_ ByDateHandler) Render(ctx context.Context, row *storage.Row) (Renderer, error) {
+	_, handler := All.For(row.Kind)
+	if handler == nil {
+		return nil, fmt.Errorf("no handler for %q", row.Kind)
+	}
+	return handler.(HandlerV2).Render(ctx, row)
 }
 
 type ByDate struct {
