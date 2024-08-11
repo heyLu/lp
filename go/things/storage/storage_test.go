@@ -56,3 +56,35 @@ func TestQueryV2(t *testing.T) {
 
 	assert.Equal(t, 1, numResults)
 }
+
+func TestInsertV2(t *testing.T) {
+	st, err := NewDBStorage(context.Background(), ":memory:")
+	require.NoError(t, err)
+
+	expectedRow := Row{
+		Metadata: Metadata{
+			Namespace:    "test",
+			Kind:         "test_thing",
+			ID:           1,
+			DateCreated:  ourEpoch,
+			DateModified: time.Now().Round(time.Second).UTC(),
+			Tags:         []string{"#test", "#hello-world"},
+		},
+		Summary: "this is a summary",
+	}
+
+	err = st.InsertV2(context.Background(), &expectedRow)
+	require.NoError(t, err)
+
+	rows, err := st.QueryV2(context.Background(), "test")
+	require.NoError(t, err)
+
+	require.True(t, rows.Next())
+	var actualRow Row
+
+	err = rows.ScanV2(&actualRow)
+	require.NoError(t, err)
+	require.Equal(t, expectedRow, actualRow)
+
+	require.False(t, rows.Next())
+}

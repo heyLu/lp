@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ type Storage interface {
 	Query(ctx context.Context, namespace string, kind string, numFields int, args ...any) (Rows, error)
 	QueryV2(ctx context.Context, namespace string, conditions ...Condition) (Rows, error)
 	Insert(ctx context.Context, namespace string, kind string, args ...any) (*Metadata, error)
+	InsertV2(ctx context.Context, row *Row) error
 	Close() error
 }
 
@@ -245,6 +247,50 @@ func (dbs *dbStorage) QueryV2(ctx context.Context, namespace string, conditions 
 	}
 
 	return &dbRows{rows: rows}, nil
+}
+
+func (dbs *dbStorage) InsertV2(ctx context.Context, row *Row) error {
+	if row.Namespace == "" {
+		return fmt.Errorf("namespace cannot be empty")
+	}
+	if row.Kind == "" {
+		return fmt.Errorf("kind cannot be empty")
+	}
+	if row.Summary == "" {
+		return fmt.Errorf("summary cannot be empty")
+	}
+
+	row.ID = time.Now().Unix()
+	row.DateModified = time.Now().UTC().Truncate(time.Second)
+
+	var fieldsJSON []byte
+	if row.Fields != nil {
+		var err error
+		fieldsJSON, err = json.Marshal(row.Fields)
+		if err != nil {
+			return err
+		}
+	}
+
+	res, err := dbs.db.ExecContext(ctx, `INSERT INTO things_v2 (namespace, kind, id, summary, content, ref, number, float, bool, time, fields_json, tags, date_created, date_modified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		row.Namespace, row.Kind, row.ID, row.Summary,
+		row.Content, row.Ref, row.Number, row.Float, row.Bool, row.Time, fieldsJSON,
+		strings.Join(row.Tags, ","), row.DateCreated.Unix(), row.DateModified.Unix(),
+	)
+	if err != nil {
+		return err
+	}
+
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if n != 1 {
+		return fmt.Errorf("expected %d changes, but %d changes happened", 1, n)
+	}
+
+	return nil
 }
 
 type Row struct {
