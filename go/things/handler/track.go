@@ -21,7 +21,7 @@ func (th TrackHandler) Parse(input string) (Thing, error) {
 
 	parts := strings.SplitN(input, " ", 4)
 	if len(parts) > 1 {
-		t.Category = parts[1]
+		t.Summary = parts[1]
 	}
 
 	if len(parts) > 2 {
@@ -29,12 +29,14 @@ func (th TrackHandler) Parse(input string) (Thing, error) {
 		if err != nil {
 			return nil, err
 		}
-		t.Num = &num
+		t.Float.Float64 = num
+		t.Float.Valid = true
 
 	}
 
 	if len(parts) > 3 {
-		t.Notes = &parts[3]
+		t.Content.String = parts[3]
+		t.Content.Valid = true
 	}
 
 	return &t, nil
@@ -42,28 +44,32 @@ func (th TrackHandler) Parse(input string) (Thing, error) {
 
 var _ Thing = &Track{}
 
-type Track struct {
-	*storage.Metadata
+type Track storage.Row
 
-	Category string   `json:"category"`
-	Num      *float64 `json:"num"`
-	Notes    *string  `json:"notes"`
+func (t *Track) Category() string { return t.Summary }
+func (t *Track) Num() *float64 {
+	if t.Float.Valid {
+		return &t.Float.Float64
+	} else {
+		return nil
+	}
 }
+func (t *Track) Notes() string { return t.Content.String }
 
 func (t *Track) Args(args []any) []any {
-	return append(args, t.Category, t.Num, t.Notes)
+	return append(args, t.Summary, t.Float, t.Content)
 }
 
 func (t *Track) QueryArgs(args []any) []any {
-	if t.Category != "" {
-		return append(args, t.Category)
+	if t.Summary != "" {
+		return append(args, t.Summary)
 	}
 	return args
 }
 
 func (t *Track) Render(ctx context.Context, storage storage.Storage, namespace string, input string) (Renderer, error) {
 	seq := []Renderer{}
-	if t.Category != "" && strings.Index(input, t.Category)+len(t.Category) != len(input) {
+	if t.Summary != "" && strings.Index(input, t.Summary)+len(t.Summary) != len(input) {
 		seq = append(seq,
 			TemplateRenderer{Template: trackTemplate, Metadata: nil, Data: t}, // in-progress thing
 			HTMLRenderer("<hr />"),
@@ -81,13 +87,13 @@ func (t *Track) Render(ctx context.Context, storage storage.Storage, namespace s
 	res := []Renderer{}
 	for rows.Next() {
 		var track Track
-		meta, err := rows.Scan(&track.Category, &track.Num, &track.Notes)
+		meta, err := rows.Scan(&track.Summary, &track.Float, &track.Content)
 		if err != nil {
 			return nil, err
 		}
-		track.Metadata = meta
+		track.Metadata = *meta
 
-		res = append(res, TemplateRenderer{Template: trackTemplate, Metadata: meta, Data: track})
+		res = append(res, TemplateRenderer{Template: trackTemplate, Metadata: meta, Data: &track})
 	}
 
 	seq = append(seq, ListRenderer(res))
