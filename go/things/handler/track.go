@@ -19,7 +19,7 @@ func (th TrackHandler) CanHandle(input string) (string, bool) {
 
 func (th TrackHandler) Parse(input string) (Thing, error) {
 	var t Track
-	t.Row = &storage.Row{}
+	t.Row = &storage.Row{Metadata: storage.Metadata{Kind: "track"}}
 
 	parts := strings.SplitN(input, " ", 4)
 	if len(parts) > 1 {
