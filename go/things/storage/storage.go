@@ -236,7 +236,7 @@ func (dbs *dbStorage) QueryV2(ctx context.Context, namespace string, conditions 
 		}
 	}
 
-	rows, err := dbs.db.QueryContext(ctx, query, queryArgs...)
+	rows, err := dbs.db.QueryContext(ctx, query+" ORDER BY date_created DESC", queryArgs...)
 	if err != nil {
 		return nil, err
 	}
