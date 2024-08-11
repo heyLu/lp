@@ -221,14 +221,15 @@ type Condition struct {
 func (c Condition) Expr() string { return c.expr }
 func (c Condition) Args() []any  { return c.args }
 
-func Kind(kind string) Condition { return Condition{expr: "kind = ?", args: []any{kind}} }
+func Kind(kind string) Condition       { return Condition{expr: "kind = ?", args: []any{kind}} }
+func Summary(summary string) Condition { return Condition{expr: "summary = ?", args: []any{summary}} }
 
 func (dbs *dbStorage) QueryV2(ctx context.Context, namespace string, conditions ...Condition) (Rows, error) {
 	query := "SELECT namespace, kind, id, summary, content, ref, number, float, bool, time, jsonb(fields_json), tags, date_created, date_modified FROM things_v2 WHERE namespace = ?"
 	queryArgs := []any{namespace}
 
 	for _, condition := range conditions {
-		query += " " + condition.expr
+		query += " AND " + condition.expr
 		args := condition.args
 		if len(args) > 0 {
 			queryArgs = append(queryArgs, args...)

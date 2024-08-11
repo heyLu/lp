@@ -187,11 +187,11 @@ func (t *Things) HandleList(w http.ResponseWriter, req *http.Request) {
 
 	input := kind
 
-	scanner := hndl.(handler.Scanner)
-
 	namespace := "test"
 
-	rows, err := t.storage.Query(context.Background(), namespace, kind, scanner.NumParams())
+	handlerV2 := hndl.(handler.HandlerV2)
+
+	rows, err := handlerV2.Query(req.Context(), t.storage, namespace, input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -200,13 +200,26 @@ func (t *Things) HandleList(w http.ResponseWriter, req *http.Request) {
 
 	res := []handler.Renderer{}
 	for rows.Next() {
-		noteRenderer, err := scanner.ScanRow(rows)
+		var row storage.Row
+		err := rows.ScanV2(&row)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		res = append(res, noteRenderer)
+		thing, err := handlerV2.FromRow(&row)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		renderer, err := thing.(handler.ThingV2).RenderV2(req.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		res = append(res, renderer)
 	}
 
 	pageWithContent(w, req, input, handler.ListRenderer(res))

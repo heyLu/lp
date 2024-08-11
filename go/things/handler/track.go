@@ -16,8 +16,10 @@ type TrackHandler struct{}
 func (th TrackHandler) CanHandle(input string) (string, bool) {
 	return "track", strings.HasPrefix(input, "track")
 }
+
 func (th TrackHandler) Parse(input string) (Thing, error) {
 	var t Track
+	t.Row = &storage.Row{}
 
 	parts := strings.SplitN(input, " ", 4)
 	if len(parts) > 1 {
@@ -42,9 +44,28 @@ func (th TrackHandler) Parse(input string) (Thing, error) {
 	return &t, nil
 }
 
+func (th TrackHandler) FromRow(row *storage.Row) (Thing, error) {
+	return &Track{Row: row}, nil
+}
+
+func (th TrackHandler) Query(ctx context.Context, db storage.Storage, namespace string, input string) (storage.Rows, error) {
+	thing, err := th.Parse(input)
+	if err != nil {
+		return nil, err
+	}
+
+	track := thing.(*Track)
+
+	if track.Summary == "" {
+		return db.QueryV2(ctx, namespace, storage.Kind(track.Kind))
+	}
+
+	return db.QueryV2(ctx, namespace, storage.Kind(track.Kind), storage.Summary(track.Summary))
+}
+
 var _ Thing = &Track{}
 
-type Track storage.Row
+type Track struct{ *storage.Row }
 
 func (t *Track) Category() string { return t.Summary }
 func (t *Track) Num() *float64 {
@@ -67,7 +88,11 @@ func (t *Track) QueryArgs(args []any) []any {
 	return args
 }
 
-func (t *Track) Render(ctx context.Context, storage storage.Storage, namespace string, input string) (Renderer, error) {
+func (t *Track) RenderV2(ctx context.Context) (Renderer, error) {
+	return TemplateRenderer{Template: trackTemplate, Data: t}, nil
+}
+
+func (t *Track) Render(ctx context.Context, st storage.Storage, namespace string, input string) (Renderer, error) {
 	seq := []Renderer{}
 	if t.Summary != "" && strings.Index(input, t.Summary)+len(t.Summary) != len(input) {
 		seq = append(seq,
@@ -78,7 +103,7 @@ func (t *Track) Render(ctx context.Context, storage storage.Storage, namespace s
 
 	args := t.QueryArgs(make([]any, 0, 1))
 
-	rows, err := storage.Query(ctx, namespace, "track", 3, args...)
+	rows, err := st.Query(ctx, namespace, "track", 3, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -87,6 +112,7 @@ func (t *Track) Render(ctx context.Context, storage storage.Storage, namespace s
 	res := []Renderer{}
 	for rows.Next() {
 		var track Track
+		track.Row = &storage.Row{}
 		meta, err := rows.Scan(&track.Summary, &track.Float, &track.Content)
 		if err != nil {
 			return nil, err
