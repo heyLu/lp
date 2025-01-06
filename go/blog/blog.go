@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -199,7 +198,7 @@ func main() {
 		}
 	}
 
-	data, err := ioutil.ReadAll(f)
+	data, err := io.ReadAll(f)
 	if err != nil {
 		exit(err)
 	}
@@ -543,7 +542,7 @@ func writePosts(posts []Post, out io.WriteCloser, opts Options) {
 		if err != nil {
 			exit(err)
 		}
-		ioutil.WriteFile(dataPath, dataOut, 0664)
+		os.WriteFile(dataPath, dataOut, 0664)
 	}
 }
 
