@@ -22,7 +22,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/russross/blackfriday"
+	"github.com/russross/blackfriday/v2"
 	"gopkg.in/yaml.v2"
 )
 
@@ -556,7 +556,11 @@ var funcs = template.FuncMap{
 		return path.Join(flags.PostsDir, post.ID+".html")
 	},
 	"markdown": func(markdown string) template.HTML {
-		return template.HTML(blackfriday.MarkdownCommon([]byte(markdown)))
+		return template.HTML(
+			blackfriday.Run([]byte(markdown),
+				blackfriday.WithExtensions(blackfriday.CommonExtensions|blackfriday.Footnotes),
+				blackfriday.WithRenderer(blackfriday.NewHTMLRenderer(blackfriday.HTMLRendererParameters{Flags: blackfriday.CommonHTMLFlags | blackfriday.FootnoteReturnLinks})),
+			))
 	},
 	"safe_url": func(s string) template.URL {
 		return template.URL(s)
