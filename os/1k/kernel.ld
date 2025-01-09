@@ -25,4 +25,9 @@ SECTIONS {
   . = ALIGN(4);
   . += 128 * 1024; /* 128KiB */
   __stack_top = .;
+
+  . = ALIGN(4096); /* page size? */
+  __free_ram = .;
+  . += 64 * 1024 * 1024; /* 64MiB ought to be enough */
+  __free_ram_end = .;
 }
