@@ -60,3 +60,14 @@ struct sbiret {
   long error;
   long value;
 };
+
+#define PROCS_MAX 8     // max number of processes
+#define PROC_UNUSED 0   // unused process control structure
+#define PROC_RUNNABLE 1 // runnable process
+
+struct process {
+  int pid;
+  int state;
+  vaddr_t sp;
+  uint8_t stack[8192];
+};
