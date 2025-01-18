@@ -15,8 +15,8 @@ function logErr(msg, err) {
 
 console.log(await peer.shares());
 
-// const authorKeypair = await peer.createIdentity("test");
-const authorKeypair = { tag: "@test.bslpgo6hu2epr3xusywnrhvb7yczr2hfka6tqbo3i5qtnpehbyhua", secretKey: "bnwewxf3oekevgvei7fze6gvgknkr6r56ivbzpjgvdjk77x5bwasq" };
+const authorKeypair = await peer.createIdentity("test");
+// const authorKeypair = { tag: "@test.bslpgo6hu2epr3xusywnrhvb7yczr2hfka6tqbo3i5qtnpehbyhua", secretKey: "bnwewxf3oekevgvei7fze6gvgknkr6r56ivbzpjgvdjk77x5bwasq" };
 logErr("create identity", authorKeypair);
 // const shareKeypair = await peer.createShare("chatting");
 const shareKeypair = { tag: "-chatting.bfptozwv5fte7tngdywldklbkgflsctrogh7mhdie57m2gyedj3tq", secretKey: "bpssslrdwy4ns5izkgyyhd5g7erlxcassqkjkxtxrbwa6rzacaemq" };
@@ -73,6 +73,7 @@ async function renderMessages() {
 
   for await (const doc of store.queryDocs({
     pathPrefix: Path.fromStrings("chat"),
+    order: "timestamp",
     // timestampGte: lastWeek,
     // limit: 10
   })) {
@@ -81,10 +82,6 @@ async function renderMessages() {
     messages.append(message);
   }
 }
-
-// cache.onCacheUpdated(() => {
-// 	renderMessages();
-// });
 
 renderMessages();
 
