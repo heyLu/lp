@@ -1,9 +1,10 @@
-import { Path, Peer, RuntimeDriverUniversal, StorageDriverMemory, isErr, notErr } from "@earthstar/earthstar";
+import { Path, Peer, RuntimeDriverUniversal, isErr, notErr } from "@earthstar/earthstar";
+import { StorageDriverIndexedDB } from "@earthstar/earthstar/browser";
 
 const peer = new Peer({
   password: "password1234",
   runtime: new RuntimeDriverUniversal(),
-  storage: new StorageDriverMemory(),
+  storage: new StorageDriverIndexedDB(),
 });
 
 console.log(peer.shares());
