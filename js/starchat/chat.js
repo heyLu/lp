@@ -7,12 +7,23 @@ const peer = new Peer({
   storage: new StorageDriverIndexedDB(),
 });
 
-console.log(peer.shares());
+function logErr(msg, err) {
+  if (isErr(err)) {
+    console.log(msg, err);
+  }
+}
 
-const authorKeypair = await peer.createIdentity("test");
-// const authorKeypair = { tag: "@test.bslpgo6hu2epr3xusywnrhvb7yczr2hfka6tqbo3i5qtnpehbyhua", secretKey: "bnwewxf3oekevgvei7fze6gvgknkr6r56ivbzpjgvdjk77x5bwasq" };
-const shareKeypair = await peer.createShare("chatting");
-// const shareKeypair = { tag: "-chatting.bfptozwv5fte7tngdywldklbkgflsctrogh7mhdie57m2gyedj3tq", secretKey: "bpssslrdwy4ns5izkgyyhd5g7erlxcassqkjkxtxrbwa6rzacaemq" };
+console.log(await peer.shares());
+
+// const authorKeypair = await peer.createIdentity("test");
+const authorKeypair = { tag: "@test.bslpgo6hu2epr3xusywnrhvb7yczr2hfka6tqbo3i5qtnpehbyhua", secretKey: "bnwewxf3oekevgvei7fze6gvgknkr6r56ivbzpjgvdjk77x5bwasq" };
+logErr("create identity", authorKeypair);
+// const shareKeypair = await peer.createShare("chatting");
+const shareKeypair = { tag: "-chatting.bfptozwv5fte7tngdywldklbkgflsctrogh7mhdie57m2gyedj3tq", secretKey: "bpssslrdwy4ns5izkgyyhd5g7erlxcassqkjkxtxrbwa6rzacaemq" };
+logErr("create share", shareKeypair);
+
+logErr("add identity", await peer.addExistingIdentity(authorKeypair));
+logErr("add share", await peer.addExistingShare(shareKeypair));
 
 if (notErr(shareKeypair) && notErr(authorKeypair)) {
 	console.group("Share keypair");
@@ -22,20 +33,12 @@ if (notErr(shareKeypair) && notErr(authorKeypair)) {
 	console.group("Author keypair");
 	console.log(authorKeypair);
 	console.groupEnd();
-} else if (isErr(shareKeypair)) {
-	console.error(shareKeypair);
-} else if (isErr(authorKeypair)) {
-	console.error(authorKeypair);
 }
 
 const readCap = await peer.mintCap(shareKeypair.tag, authorKeypair.tag, "read");
-if (isErr(readCap)) {
-  console.error("mint read", readCap);
-}
+logErr("mint read");
 const writeCap = await peer.mintCap(shareKeypair.tag, authorKeypair.tag, "write");
-if (isErr(writeCap)) {
-  console.error("mint write", writeCap);
-}
+logErr("mint write", writeCap);
 
 const store = await peer.getStore(shareKeypair.tag);
 if (isErr(store)) {
@@ -54,9 +57,7 @@ form.addEventListener("submit", async (event) => {
     identity: authorKeypair.tag,
     payload: new TextEncoder().encode(input.value),
   });
-  if (isErr(res)) {
-    console.error("set", res);
-  }
+  logErr("set", res);
 
   input.value = "";
 
@@ -88,6 +89,4 @@ async function renderMessages() {
 renderMessages();
 
 const res = await peer.syncHttp("http://localhost:8080");
-if (isErr(res)) {
-  console.error(res);
-}
+logErr("sync", res);
