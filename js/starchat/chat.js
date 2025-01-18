@@ -88,5 +88,5 @@ async function renderMessages() {
 
 renderMessages();
 
-const res = await peer.syncHttp("http://localhost:8080");
-logErr("sync", res);
+const syncer = await peer.syncHttp("http://localhost:8080/sync", [{share: shareKeypair.tag}]);
+logErr("sync", syncer);

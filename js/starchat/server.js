@@ -1,4 +1,5 @@
-import { ExtensionSyncWebsocket, Server } from "@earthstar/earthstar/deno";
+import { Peer } from "@earthstar/earthstar";
+import { ExtensionSyncWebsocket, RuntimeDriverDeno, Server, getStorageDriverFilesystem } from "@earthstar/earthstar/deno";
 
 const extensions = [
   new ExtensionSyncWebsocket("sync"),
@@ -7,9 +8,11 @@ const extensions = [
 const server = new Server(
   extensions,
   {
-    peer: {
-      password: "myextremelygoodlongpassword"
-    },
+    peer: new Peer({
+      password: "myextremelygoodlongpassword",
+      runtime: new RuntimeDriverDeno(),
+      storage: await getStorageDriverFilesystem("star-storage"),
+    }),
     port: "8080",
   }
 );
