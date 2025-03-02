@@ -10,6 +10,24 @@ const c = @cImport({
     @cInclude("SDL3/SDL_main.h");
 });
 
+const Swrd = struct {
+    x: f32,
+    y: f32,
+    size: f32,
+    dir: f32,
+
+    fn draw(self: Swrd, renderer: *c.SDL_Renderer) !void {
+        try errify(c.SDL_RenderPoint(renderer, self.x, self.y));
+        try errify(c.SDL_RenderRect(renderer, &c.SDL_FRect{ .x = self.x - self.size / 2, .y = self.y - self.size / 2, .w = self.size, .h = self.size }));
+        // c.SDL_RenderLine(renderer) // TODO :)
+    }
+
+    fn move(self: *Swrd, x: f32, y: f32) void {
+        self.x += x;
+        self.y += y;
+    }
+};
+
 pub fn main() !void {
     errdefer |err| if (err == error.SdlError) std.log.err("SDL error: {s}", .{c.SDL_GetError()});
 
@@ -55,9 +73,19 @@ pub fn main() !void {
     var rrnd = std.Random.DefaultPrng.init(0);
     const rnd = std.Random.DefaultPrng.random(&rrnd);
 
+    var swrd = Swrd{ .x = @as(f32, @floatFromInt(window_w)) / 2, .y = @as(f32, @floatFromInt(window_h)) / 2, .size = 10, .dir = 0 };
+
     try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255));
 
+    const render_budget = std.time.us_per_s / 120;
+    var last_render = std.time.microTimestamp();
+
+    var move_x: f32 = 0;
+    var move_y: f32 = 0;
     while (!quit) {
+        try errify(c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255));
+        try errify(c.SDL_RenderClear(renderer));
+
         var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event)) {
             switch (event.type) {
@@ -85,6 +113,17 @@ pub fn main() !void {
                     switch (event.key.key) {
                         c.SDLK_SPACE => freq = 400,
                         c.SDLK_ESCAPE => paused = !paused,
+                        c.SDLK_UP, c.SDLK_W => move_y = -1,
+                        c.SDLK_DOWN, c.SDLK_S => move_y = 1,
+                        c.SDLK_LEFT, c.SDLK_A => move_x = -1,
+                        c.SDLK_RIGHT, c.SDLK_D => move_x = 1,
+                        else => {},
+                    }
+                },
+                c.SDL_EVENT_KEY_UP => {
+                    switch (event.key.key) {
+                        c.SDLK_UP, c.SDLK_DOWN, c.SDLK_W, c.SDLK_S => move_y = 0,
+                        c.SDLK_LEFT, c.SDLK_RIGHT, c.SDLK_A, c.SDLK_D => move_x = 0,
                         else => {},
                     }
                 },
@@ -105,18 +144,23 @@ pub fn main() !void {
 
         try errify(c.SDL_RenderPoint(renderer, std.Random.float(rnd, f32) * @as(f32, @floatFromInt(window_w)), std.Random.float(rnd, f32) * @as(f32, @floatFromInt(window_h))));
 
-        try errify(c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255));
-        try errify(c.SDL_RenderClear(renderer));
         try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255));
         const wave_height = 20;
         for (0..audio_data.len) |i| {
             try errify(c.SDL_RenderPoint(renderer, @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(audio_data.len)) * @as(f32, @floatFromInt(window_w)), @as(f32, @floatFromInt(window_h - 1)) - (wave_height / 2 + audio_data[i] * wave_height)));
         }
 
+        swrd.move(move_x, move_y);
+        try swrd.draw(renderer);
+
         // make the window appear
         try errify(c.SDL_RenderPresent(renderer));
 
-        std.time.sleep(1 * 1000 * 1000);
+        const now = std.time.microTimestamp();
+        const render_time = now - last_render;
+        last_render = now;
+        // std.log.debug("render_time: {}, sleep_time: {}", .{ std.fmt.fmtDurationSigned(render_time * 1000), std.fmt.fmtDurationSigned((render_budget - render_time) * 1000) });
+        std.time.sleep(@intCast(@max(0, (render_budget - render_time) * 1000)));
     }
 }
 
