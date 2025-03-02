@@ -40,7 +40,8 @@ pub fn main() !void {
     std.log.debug("hello?", .{});
 
     var freq: f32 = 440;
-    const audio_thread = try std.Thread.spawn(.{}, doAudio, .{ allocator, &freq });
+    var volume: f32 = 0.5;
+    const audio_thread = try std.Thread.spawn(.{}, doAudio, .{ allocator, &freq, &volume });
     audio_thread.detach();
 
     var rrnd = std.Random.DefaultPrng.init(0);
@@ -60,6 +61,10 @@ pub fn main() !void {
                     freq = @min(freq, max_freq);
                     // rrnd = std.Random.DefaultPrng.init(@intFromFloat(event.motion.x));
                     std.log.debug("freq: {}", .{freq});
+
+                    const max_volume = 1.0;
+                    volume = event.motion.y / @as(f32, @floatFromInt(window_h)) * max_volume;
+                    volume = max_volume - @min(volume, max_volume);
 
                     try errify(c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255));
                     try errify(c.SDL_RenderClear(renderer));
@@ -89,7 +94,7 @@ pub fn main() !void {
     }
 }
 
-fn doAudio(allocator: std.mem.Allocator, freq: *f32) !void {
+fn doAudio(allocator: std.mem.Allocator, freq: *f32, volume: *f32) !void {
     errdefer |err| if (err == error.SdlError) {
         std.log.err("SDL error: {s}", .{c.SDL_GetError()});
         std.process.exit(1);
@@ -138,7 +143,7 @@ fn doAudio(allocator: std.mem.Allocator, freq: *f32) !void {
             // std.log.debug("audio {} {} {} {}", .{ queued, minimum_audio, current_sine_sample, (audio_data.len * @sizeOf(f32)) });
             for (start..audio_data.len) |i| {
                 const phase = @as(f32, @floatFromInt(current_sine_sample)) * current_freq / sample_rate;
-                audio_data[i] = c.SDL_sinf(phase * 2 * c.SDL_PI_F);
+                audio_data[i] = c.SDL_sinf(phase * 2 * c.SDL_PI_F) * volume.*;
                 current_sine_sample += 1;
             }
             current_sine_sample = @mod(current_sine_sample, sample_rate);
@@ -153,7 +158,7 @@ fn doAudio(allocator: std.mem.Allocator, freq: *f32) !void {
             //     try errify(c.SDL_RenderPoint(renderer, @floatFromInt(i), audio_data[i] * 100));
             // }
         }
-        std.time.sleep(100 * 1000);
+        std.time.sleep(1 * 1000 * 1000);
     }
 }
 
