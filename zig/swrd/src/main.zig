@@ -121,7 +121,7 @@ fn doAudio(allocator: std.mem.Allocator, freq: *f32, volume: *f32) !void {
             var start: usize = 0;
             if (@abs(last_freq - current_freq) > 0.01) {
                 audio_data[0] = audio_data[audio_data.len - 1];
-                const numSteps = 50;
+                const numSteps = 300;
                 const step = audio_data[0] / numSteps;
                 for (1..numSteps) |i| {
                     start = i;
@@ -131,7 +131,8 @@ fn doAudio(allocator: std.mem.Allocator, freq: *f32, volume: *f32) !void {
                         break;
                     }
 
-                    audio_data[i] = audio_data[i - 1] - step;
+                    // audio_data[i] = audio_data[i - 1] - step;
+                    audio_data[i] = audio_data[0] * (1 - @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(numSteps)));
                 }
                 std.log.debug("different! {d:.5} -> {d:.5}; {}*{d:.5}, -1={d:.5}, 0={d:.5}, {}={d:.5}", .{ last_freq, current_freq, numSteps, step, audio_data[0], audio_data[1], start, audio_data[start] });
                 // start += 1;
