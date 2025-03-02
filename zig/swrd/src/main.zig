@@ -37,11 +37,19 @@ pub fn main() !void {
     defer c.SDL_DestroyRenderer(renderer);
     defer c.SDL_DestroyWindow(window);
 
-    std.log.debug("hello?", .{});
+    var quit = false;
+    var paused = false;
 
+    const sample_rate = 44100;
+    const sounds_spec = c.SDL_AudioSpec{ .format = c.SDL_AUDIO_F32, .channels = 1, .freq = sample_rate };
+    const audio_stream = try errify(c.SDL_OpenAudioDeviceStream(c.SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &sounds_spec, null, null));
+    defer c.SDL_DestroyAudioStream(audio_stream);
+    try errify(c.SDL_ResumeAudioStreamDevice(audio_stream));
+
+    const audio_data = try allocator.alloc(f32, 1024);
     var freq: f32 = 440;
     var volume: f32 = 0.5;
-    const audio_thread = try std.Thread.spawn(.{}, doAudio, .{ allocator, &freq, &volume });
+    const audio_thread = try std.Thread.spawn(.{}, doAudio, .{ &quit, sounds_spec, audio_stream, audio_data, &freq, &volume });
     audio_thread.detach();
 
     var rrnd = std.Random.DefaultPrng.init(0);
@@ -49,7 +57,6 @@ pub fn main() !void {
 
     try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255));
 
-    var quit = false;
     while (!quit) {
         var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event)) {
@@ -71,10 +78,14 @@ pub fn main() !void {
                     try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255));
                     try errify(c.SDL_RenderLine(renderer, event.motion.x, 0, event.motion.x, @floatFromInt(window_h)));
                 },
+                c.SDL_EVENT_WINDOW_FOCUS_GAINED => paused = false,
+                c.SDL_EVENT_WINDOW_FOCUS_LOST => paused = true,
                 c.SDL_EVENT_KEY_DOWN => {
                     std.log.debug("key: {}", .{event.key.key});
-                    if (event.key.key == c.SDLK_SPACE) {
-                        freq = 400;
+                    switch (event.key.key) {
+                        c.SDLK_SPACE => freq = 400,
+                        c.SDLK_ESCAPE => paused = !paused,
+                        else => {},
                     }
                 },
                 c.SDL_EVENT_WINDOW_RESIZED => {
@@ -85,7 +96,22 @@ pub fn main() !void {
             }
         }
 
+        if (paused) {
+            try errify(c.SDL_SetAudioStreamGain(audio_stream, 0.0));
+            std.time.sleep(10 * 1000 * 1000);
+            continue;
+        }
+        try errify(c.SDL_SetAudioStreamGain(audio_stream, 1.0));
+
         try errify(c.SDL_RenderPoint(renderer, std.Random.float(rnd, f32) * @as(f32, @floatFromInt(window_w)), std.Random.float(rnd, f32) * @as(f32, @floatFromInt(window_h))));
+
+        try errify(c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255));
+        try errify(c.SDL_RenderClear(renderer));
+        try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255));
+        const wave_height = 20;
+        for (0..audio_data.len) |i| {
+            try errify(c.SDL_RenderPoint(renderer, @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(audio_data.len)) * @as(f32, @floatFromInt(window_w)), @as(f32, @floatFromInt(window_h - 1)) - (wave_height / 2 + audio_data[i] * wave_height)));
+        }
 
         // make the window appear
         try errify(c.SDL_RenderPresent(renderer));
@@ -94,26 +120,20 @@ pub fn main() !void {
     }
 }
 
-fn doAudio(allocator: std.mem.Allocator, freq: *f32, volume: *f32) !void {
+fn doAudio(quit: *bool, sounds_spec: c.SDL_AudioSpec, audio_stream: *c.SDL_AudioStream, audio_data: []f32, freq: *f32, volume: *f32) !void {
     errdefer |err| if (err == error.SdlError) {
         std.log.err("SDL error: {s}", .{c.SDL_GetError()});
         std.process.exit(1);
     };
 
-    const sample_rate = 44100;
-    const sounds_spec = c.SDL_AudioSpec{ .format = c.SDL_AUDIO_F32, .channels = 1, .freq = sample_rate };
-    const audio_stream = try errify(c.SDL_OpenAudioDeviceStream(c.SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &sounds_spec, null, null));
-    defer c.SDL_DestroyAudioStream(audio_stream);
+    const sample_rate: f32 = @floatFromInt(sounds_spec.freq);
 
-    try errify(c.SDL_ResumeAudioStreamDevice(audio_stream));
-
-    var audio_data = try allocator.alloc(f32, 1024);
     // const minimum_audio = sample_rate * @sizeOf(f32) / 2;
     const minimum_audio = audio_data.len * @sizeOf(f32) * 2;
 
     var current_sine_sample: i32 = 0;
     var last_freq = freq.*;
-    while (true) {
+    while (!quit.*) {
         const queued = c.SDL_GetAudioStreamQueued(audio_stream);
         if (queued < minimum_audio) {
             const current_freq = freq.*;
@@ -147,17 +167,10 @@ fn doAudio(allocator: std.mem.Allocator, freq: *f32, volume: *f32) !void {
                 audio_data[i] = c.SDL_sinf(phase * 2 * c.SDL_PI_F) * volume.*;
                 current_sine_sample += 1;
             }
-            current_sine_sample = @mod(current_sine_sample, sample_rate);
+            current_sine_sample = @mod(current_sine_sample, sounds_spec.freq);
 
             try errify(c.SDL_PutAudioStreamData(audio_stream, audio_data.ptr, @intCast(audio_data.len * @sizeOf(f32))));
             // try errify(c.SDL_FlushAudioStream(audio_stream));
-
-            // try errify(c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255));
-            // try errify(c.SDL_RenderClear(renderer));
-            // try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255));
-            // for (0..audio_data.len) |i| {
-            //     try errify(c.SDL_RenderPoint(renderer, @floatFromInt(i), audio_data[i] * 100));
-            // }
         }
         std.time.sleep(1 * 1000 * 1000);
     }
