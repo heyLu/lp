@@ -89,39 +89,41 @@ pub fn main() !void {
     }
 }
 
-fn doAudio(allocator: std.mem.Allocator, _: *f32) !void {
+fn doAudio(allocator: std.mem.Allocator, freq: *f32) !void {
     errdefer |err| if (err == error.SdlError) {
         std.log.err("SDL error: {s}", .{c.SDL_GetError()});
         std.process.exit(1);
     };
 
-    const sample_rate = 2000;
+    const sample_rate = 44100;
     const sounds_spec = c.SDL_AudioSpec{ .format = c.SDL_AUDIO_F32, .channels = 1, .freq = sample_rate };
     const audio_stream = try errify(c.SDL_OpenAudioDeviceStream(c.SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &sounds_spec, null, null));
     defer c.SDL_DestroyAudioStream(audio_stream);
 
     try errify(c.SDL_ResumeAudioStreamDevice(audio_stream));
 
-    const minimum_audio = sample_rate / @sizeOf(f32) / 2;
     var audio_data = try allocator.alloc(f32, 512);
+    // const minimum_audio = sample_rate * @sizeOf(f32) / 2;
+    const minimum_audio = audio_data.len * @sizeOf(f32) * 2;
 
-    const current_freq: f32 = 123;
     var current_sine_sample: i32 = 0;
     while (true) {
         const queued = c.SDL_GetAudioStreamQueued(audio_stream);
         if (queued < minimum_audio) {
             // current_sine_sample = 0;
             // current_freq = freq.*;
+            const current_freq = freq.*;
+            // current_freq = 200;
 
-            // std.log.debug("audio {} {} {} ", .{ queued, minimum_audio, current_sine_sample });
+            // std.log.debug("audio {} {} {} {}", .{ queued, minimum_audio, current_sine_sample, (audio_data.len * @sizeOf(f32)) });
             for (0..audio_data.len) |i| {
-                const phase: f32 = @as(f32, @floatFromInt(current_sine_sample)) * current_freq / sample_rate;
+                const phase = @as(f32, @floatFromInt(current_sine_sample)) * current_freq / sample_rate;
                 audio_data[i] = c.SDL_sinf(phase * 2 * c.SDL_PI_F);
                 current_sine_sample += 1;
             }
             current_sine_sample = @mod(current_sine_sample, sample_rate);
 
-            try errify(c.SDL_PutAudioStreamData(audio_stream, audio_data.ptr, @intCast(audio_data.len)));
+            try errify(c.SDL_PutAudioStreamData(audio_stream, audio_data.ptr, @intCast(audio_data.len * @sizeOf(f32))));
             // try errify(c.SDL_FlushAudioStream(audio_stream));
 
             // try errify(c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255));
@@ -131,7 +133,7 @@ fn doAudio(allocator: std.mem.Allocator, _: *f32) !void {
             //     try errify(c.SDL_RenderPoint(renderer, @floatFromInt(i), audio_data[i] * 100));
             // }
         }
-        std.time.sleep(1000 * 1000);
+        std.time.sleep(100 * 1000);
     }
 }
 
