@@ -102,21 +102,41 @@ fn doAudio(allocator: std.mem.Allocator, freq: *f32) !void {
 
     try errify(c.SDL_ResumeAudioStreamDevice(audio_stream));
 
-    var audio_data = try allocator.alloc(f32, 512);
+    var audio_data = try allocator.alloc(f32, 1024);
     // const minimum_audio = sample_rate * @sizeOf(f32) / 2;
     const minimum_audio = audio_data.len * @sizeOf(f32) * 2;
 
     var current_sine_sample: i32 = 0;
+    var last_freq = freq.*;
     while (true) {
         const queued = c.SDL_GetAudioStreamQueued(audio_stream);
         if (queued < minimum_audio) {
-            // current_sine_sample = 0;
-            // current_freq = freq.*;
             const current_freq = freq.*;
-            // current_freq = 200;
+
+            var start: usize = 0;
+            if (@abs(last_freq - current_freq) > 0.01) {
+                audio_data[0] = audio_data[audio_data.len - 1];
+                const numSteps = 50;
+                const step = audio_data[0] / numSteps;
+                for (1..numSteps) |i| {
+                    start = i;
+
+                    if (@abs(audio_data[i - 1]) < step * 2) {
+                        audio_data[i] = 0;
+                        break;
+                    }
+
+                    audio_data[i] = audio_data[i - 1] - step;
+                }
+                std.log.debug("different! {d:.5} -> {d:.5}; {}*{d:.5}, -1={d:.5}, 0={d:.5}, {}={d:.5}", .{ last_freq, current_freq, numSteps, step, audio_data[0], audio_data[1], start, audio_data[start] });
+                // start += 1;
+
+                last_freq = current_freq;
+                current_sine_sample = 0;
+            }
 
             // std.log.debug("audio {} {} {} {}", .{ queued, minimum_audio, current_sine_sample, (audio_data.len * @sizeOf(f32)) });
-            for (0..audio_data.len) |i| {
+            for (start..audio_data.len) |i| {
                 const phase = @as(f32, @floatFromInt(current_sine_sample)) * current_freq / sample_rate;
                 audio_data[i] = c.SDL_sinf(phase * 2 * c.SDL_PI_F);
                 current_sine_sample += 1;
