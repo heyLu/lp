@@ -14,12 +14,15 @@ const Swrd = struct {
     x: f32,
     y: f32,
     size: f32,
-    dir: f32,
+    dir_x: f32,
+    dir_y: f32,
 
     fn draw(self: Swrd, renderer: *c.SDL_Renderer) !void {
         try errify(c.SDL_RenderPoint(renderer, self.x, self.y));
         try errify(c.SDL_RenderRect(renderer, &c.SDL_FRect{ .x = self.x - self.size / 2, .y = self.y - self.size / 2, .w = self.size, .h = self.size }));
-        // c.SDL_RenderLine(renderer) // TODO :)
+
+        try errify(c.SDL_RenderPoint(renderer, self.x + self.dir_x * 20, self.y + self.dir_y * 20));
+        // try errify(c.SDL_RenderLine(renderer, self.x, self.y, self.x + self.dir_x * 20, self.y + self.dir_y * 20));
     }
 
     fn move(self: *Swrd, x: f32, y: f32) void {
@@ -73,7 +76,7 @@ pub fn main() !void {
     var rrnd = std.Random.DefaultPrng.init(0);
     const rnd = std.Random.DefaultPrng.random(&rrnd);
 
-    var swrd = Swrd{ .x = @as(f32, @floatFromInt(window_w)) / 2, .y = @as(f32, @floatFromInt(window_h)) / 2, .size = 10, .dir = 0 };
+    var swrd = Swrd{ .x = @as(f32, @floatFromInt(window_w)) / 2, .y = @as(f32, @floatFromInt(window_h)) / 2, .size = 10, .dir_x = 0, .dir_y = -1 };
 
     try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255));
 
@@ -85,6 +88,7 @@ pub fn main() !void {
     while (!quit) {
         try errify(c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255));
         try errify(c.SDL_RenderClear(renderer));
+        try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255));
 
         var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event)) {
@@ -101,9 +105,6 @@ pub fn main() !void {
                     volume = event.motion.y / @as(f32, @floatFromInt(window_h)) * max_volume;
                     volume = max_volume - @min(volume, max_volume);
 
-                    try errify(c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255));
-                    try errify(c.SDL_RenderClear(renderer));
-                    try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255));
                     try errify(c.SDL_RenderLine(renderer, event.motion.x, 0, event.motion.x, @floatFromInt(window_h)));
                 },
                 c.SDL_EVENT_WINDOW_FOCUS_GAINED => paused = false,
@@ -133,8 +134,16 @@ pub fn main() !void {
                 },
                 c.SDL_EVENT_GAMEPAD_AXIS_MOTION => {
                     switch (event.gaxis.axis) {
-                        c.SDL_GAMEPAD_AXIS_LEFTX => move_x = @as(f32, @floatFromInt(event.gaxis.value)) / std.math.maxInt(i16),
-                        c.SDL_GAMEPAD_AXIS_LEFTY => move_y = @as(f32, @floatFromInt(event.gaxis.value)) / std.math.maxInt(i16),
+                        c.SDL_GAMEPAD_AXIS_LEFTX => {
+                            move_x = @as(f32, @floatFromInt(event.gaxis.value)) / std.math.maxInt(i16);
+                            swrd.dir_x = move_x;
+                        },
+                        c.SDL_GAMEPAD_AXIS_LEFTY => {
+                            move_y = @as(f32, @floatFromInt(event.gaxis.value)) / std.math.maxInt(i16);
+                            swrd.dir_y = move_y;
+                        },
+                        c.SDL_GAMEPAD_AXIS_RIGHTX => swrd.dir_x = @as(f32, @floatFromInt(event.gaxis.value)) / std.math.maxInt(i16),
+                        c.SDL_GAMEPAD_AXIS_RIGHTY => swrd.dir_y = @as(f32, @floatFromInt(event.gaxis.value)) / std.math.maxInt(i16),
                         else => {},
                     }
                     if (@abs(move_x) < 0.05) move_x = 0;
@@ -156,6 +165,7 @@ pub fn main() !void {
                 else => std.log.debug("unhandled event {} ({})", .{ event.type, event }),
             }
         }
+        // try errify(c.SDL_RenderDebugTextFormat(renderer, @as(f32, @floatFromInt(window_w)) - 130, 5, "%.5f %.5f", swrd.dir_x, swrd.dir_y));
 
         if (paused) {
             try errify(c.SDL_SetAudioStreamGain(audio_stream, 0.0));
@@ -166,7 +176,6 @@ pub fn main() !void {
 
         try errify(c.SDL_RenderPoint(renderer, std.Random.float(rnd, f32) * @as(f32, @floatFromInt(window_w)), std.Random.float(rnd, f32) * @as(f32, @floatFromInt(window_h))));
 
-        try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255));
         const wave_height = 20;
         for (0..audio_data.len) |i| {
             try errify(c.SDL_RenderPoint(renderer, @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(audio_data.len)) * @as(f32, @floatFromInt(window_w)), @as(f32, @floatFromInt(window_h - 1)) - (wave_height / 2 + audio_data[i] * wave_height)));
