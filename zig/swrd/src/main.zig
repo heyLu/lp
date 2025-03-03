@@ -127,11 +127,33 @@ pub fn main() !void {
                         else => {},
                     }
                 },
+                c.SDL_EVENT_GAMEPAD_ADDED => {
+                    const pad = try errify(c.SDL_OpenGamepad(event.gdevice.which));
+                    std.log.debug("{}", .{pad});
+                },
+                c.SDL_EVENT_GAMEPAD_AXIS_MOTION => {
+                    switch (event.gaxis.axis) {
+                        c.SDL_GAMEPAD_AXIS_LEFTX => move_x = @as(f32, @floatFromInt(event.gaxis.value)) / std.math.maxInt(i16),
+                        c.SDL_GAMEPAD_AXIS_LEFTY => move_y = @as(f32, @floatFromInt(event.gaxis.value)) / std.math.maxInt(i16),
+                        else => {},
+                    }
+                    if (@abs(move_x) < 0.05) move_x = 0;
+                    if (@abs(move_y) < 0.05) move_y = 0;
+                },
+                c.SDL_EVENT_GAMEPAD_BUTTON_DOWN => {
+                    switch (event.gbutton.button) {
+                        c.SDL_GAMEPAD_BUTTON_START => paused = !paused,
+                        else => {},
+                    }
+                },
+                c.SDL_EVENT_GAMEPAD_UPDATE_COMPLETE => {},
+                c.SDL_EVENT_JOYSTICK_AXIS_MOTION, c.SDL_EVENT_JOYSTICK_UPDATE_COMPLETE, c.SDL_EVENT_JOYSTICK_BUTTON_DOWN, c.SDL_EVENT_JOYSTICK_BUTTON_UP => {},
+                c.SDL_EVENT_GAMEPAD_BUTTON_UP => {},
                 c.SDL_EVENT_WINDOW_RESIZED => {
                     window_w = event.window.data1;
                     window_h = event.window.data2;
                 },
-                else => std.log.debug("unhandled event {}", .{event.type}),
+                else => std.log.debug("unhandled event {} ({})", .{ event.type, event }),
             }
         }
 
