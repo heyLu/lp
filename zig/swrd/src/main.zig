@@ -17,12 +17,21 @@ const Swrd = struct {
     dir_x: f32,
     dir_y: f32,
 
-    fn draw(self: Swrd, renderer: *c.SDL_Renderer) !void {
+    animation: ?*const fn (*c.SDL_Renderer, *Swrd, u64) error{SdlError}!bool,
+
+    fn draw(self: *Swrd, renderer: *c.SDL_Renderer, ticks: u64) !void {
         try errify(c.SDL_RenderPoint(renderer, self.x, self.y));
         try errify(c.SDL_RenderRect(renderer, &c.SDL_FRect{ .x = self.x - self.size / 2, .y = self.y - self.size / 2, .w = self.size, .h = self.size }));
 
         try errify(c.SDL_RenderPoint(renderer, self.x + self.dir_x * 20, self.y + self.dir_y * 20));
         // try errify(c.SDL_RenderLine(renderer, self.x, self.y, self.x + self.dir_x * 20, self.y + self.dir_y * 20));
+
+        if (self.animation != null) {
+            const done = try self.animation.?(renderer, self, ticks);
+            if (done) {
+                self.animation = null;
+            }
+        }
     }
 
     fn move(self: *Swrd, x: f32, y: f32) void {
@@ -30,6 +39,25 @@ const Swrd = struct {
         self.y += y;
     }
 };
+
+fn sparkles(renderer: *c.SDL_Renderer, swrd: *Swrd, ticks: u64) !bool {
+    const sparkle_time = 500; // same thing for X ms
+
+    const millis = @mod(ticks, sparkle_time);
+
+    const opacity: u8 = @intFromFloat(@trunc(255 - (@as(f32, @floatFromInt(millis)) / sparkle_time) * 255));
+    try errify(c.SDL_SetRenderDrawBlendMode(renderer, c.SDL_BLENDMODE_BLEND));
+    try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, opacity));
+
+    var prng = std.Random.DefaultPrng.init(@divTrunc(ticks, sparkle_time));
+    const rnd = std.Random.DefaultPrng.random(&prng);
+
+    for (0..5) |_| {
+        try errify(c.SDL_RenderPoint(renderer, swrd.x - 15 + rnd.float(f32) * 30, swrd.y - 15 + rnd.float(f32) * 30));
+    }
+    try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0));
+    return false;
+}
 
 pub fn main() !void {
     errdefer |err| if (err == error.SdlError) std.log.err("SDL error: {s}", .{c.SDL_GetError()});
@@ -76,7 +104,14 @@ pub fn main() !void {
     var rrnd = std.Random.DefaultPrng.init(0);
     const rnd = std.Random.DefaultPrng.random(&rrnd);
 
-    var swrd = Swrd{ .x = @as(f32, @floatFromInt(window_w)) / 2, .y = @as(f32, @floatFromInt(window_h)) / 2, .size = 10, .dir_x = 0, .dir_y = -1 };
+    var swrd = Swrd{
+        .x = @as(f32, @floatFromInt(window_w)) / 2,
+        .y = @as(f32, @floatFromInt(window_h)) / 2,
+        .size = 10,
+        .dir_x = 0,
+        .dir_y = -1,
+        .animation = sparkles,
+    };
 
     try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255));
 
@@ -180,7 +215,9 @@ pub fn main() !void {
         }
 
         swrd.move(move_x, move_y);
-        try swrd.draw(renderer);
+
+        const ticks = c.SDL_GetTicks();
+        try swrd.draw(renderer, ticks);
 
         // make the window appear
         try errify(c.SDL_RenderPresent(renderer));
@@ -227,7 +264,7 @@ fn doAudio(quit: *bool, sounds_spec: c.SDL_AudioSpec, audio_stream: *c.SDL_Audio
                     // audio_data[i] = audio_data[i - 1] - step;
                     audio_data[i] = audio_data[0] * (1 - @as(f32, @floatFromInt(i)) / @as(f32, @floatFromInt(numSteps)));
                 }
-                std.log.debug("different! {d:.5} -> {d:.5}; {}*{d:.5}, -1={d:.5}, 0={d:.5}, {}={d:.5}", .{ last_freq, current_freq, numSteps, step, audio_data[0], audio_data[1], start, audio_data[start] });
+                // std.log.debug("different! {d:.5} -> {d:.5}; {}*{d:.5}, -1={d:.5}, 0={d:.5}, {}={d:.5}", .{ last_freq, current_freq, numSteps, step, audio_data[0], audio_data[1], start, audio_data[start] });
                 // start += 1;
 
                 last_freq = current_freq;
