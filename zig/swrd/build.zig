@@ -10,6 +10,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
+        .use_llvm = false,
     });
     const sdl_dep = b.dependency("sdl", .{
         .target = target,
@@ -36,6 +37,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
+        .use_llvm = false,
     });
 
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
