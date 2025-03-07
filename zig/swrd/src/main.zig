@@ -97,9 +97,7 @@ pub fn main() !void {
                 c.SDL_EVENT_MOUSE_MOTION => {
                     const max_freq = 500;
                     freq = round_frequency(event.motion.x / @as(f32, @floatFromInt(window_w)) * max_freq);
-                    freq = @min(freq, max_freq);
-                    // rrnd = std.Random.DefaultPrng.init(@intFromFloat(event.motion.x));
-                    std.log.debug("freq: {}", .{freq});
+                    freq = @min(@trunc(freq), max_freq);
 
                     const max_volume = 1.0;
                     volume = event.motion.y / @as(f32, @floatFromInt(window_h)) * max_volume;
