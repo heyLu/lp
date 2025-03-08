@@ -58,15 +58,14 @@ const Sparkles = struct {
         y: f32,
     };
 
+    sparkle_time: u64,
     sparkles: [8]Sparkle,
     current_sparkle: i8,
 
     fn draw(self: Sparkles, renderer: *c.SDL_Renderer, ticks: u64, x: f32, y: f32) !bool {
-        const sparkle_time = 500;
-
         for (self.sparkles) |sparkle| {
-            const millis = @mod(ticks - sparkle.start, sparkle_time);
-            const opacity: u8 = @intFromFloat(@trunc(255 - (@as(f32, @floatFromInt(millis)) / sparkle_time) * 255));
+            const cycle_pos = @mod(ticks, sparkle.start);
+            const opacity: u8 = @intFromFloat(@trunc(255 - (@as(f32, @floatFromInt(cycle_pos)) / @as(f32, @floatFromInt(self.sparkle_time))) * 255));
             try errify(c.SDL_SetRenderDrawBlendMode(renderer, c.SDL_BLENDMODE_BLEND));
             try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, opacity));
 
@@ -76,17 +75,18 @@ const Sparkles = struct {
         return false;
     }
 
-    fn init(amount: i8) Sparkles {
+    fn init(amount: i8, sparkle_time: u64) Sparkles {
         var rrng = std.Random.DefaultPrng.init(amount);
         var rnd = std.Random.DefaultPrng.random(&rrng);
 
         var sparkles: [amount]Sparkle = undefined;
         for (&sparkles) |*sparkle| {
-            sparkle.start = rnd.uintLessThan(u64, 500);
+            sparkle.start = rnd.uintLessThan(u64, sparkle_time);
             sparkle.x = -10 + rnd.float(f32) * 20;
             sparkle.y = -10 + rnd.float(f32) * 20;
         }
         return Sparkles{
+            .sparkle_time = sparkle_time,
             .sparkles = sparkles,
             .current_sparkle = 0,
         };
@@ -162,7 +162,7 @@ pub fn main() !void {
 
     var swrd: Swrd = undefined;
     const animations = [_]Animateable{
-        .{ .sparkles = comptime Sparkles.init(8) },
+        .{ .sparkles = comptime Sparkles.init(8, 600) },
         // .{ .blink = Blink.init() },
     };
     var known_at_runtime_zero: usize = 0;
