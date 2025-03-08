@@ -184,7 +184,7 @@ pub fn main() !void {
     var move_x: f32 = 0;
     var move_y: f32 = 0;
     while (!quit) {
-        try errify(c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255));
+        try errify(c.SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255));
         try errify(c.SDL_RenderClear(renderer));
         try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255));
 
