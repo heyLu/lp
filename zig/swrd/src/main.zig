@@ -41,11 +41,54 @@ const Swrd = struct {
 };
 
 const Animateable = union(enum) {
+    sparkles: Sparkles,
     blink: Blink,
 
     fn draw(self: Animateable, renderer: *c.SDL_Renderer, ticks: u64, x: f32, y: f32) !bool {
         return switch (self) {
             inline else => |anim| try anim.draw(renderer, ticks, x, y),
+        };
+    }
+};
+
+const Sparkles = struct {
+    const Sparkle = struct {
+        start: u64,
+        x: f32,
+        y: f32,
+    };
+
+    sparkles: [8]Sparkle,
+    current_sparkle: i8,
+
+    fn draw(self: Sparkles, renderer: *c.SDL_Renderer, ticks: u64, x: f32, y: f32) !bool {
+        const sparkle_time = 500;
+
+        for (self.sparkles) |sparkle| {
+            const millis = @mod(ticks - sparkle.start, sparkle_time);
+            const opacity: u8 = @intFromFloat(@trunc(255 - (@as(f32, @floatFromInt(millis)) / sparkle_time) * 255));
+            try errify(c.SDL_SetRenderDrawBlendMode(renderer, c.SDL_BLENDMODE_BLEND));
+            try errify(c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, opacity));
+
+            try errify(c.SDL_RenderPoint(renderer, x + sparkle.x, y + sparkle.y));
+        }
+
+        return false;
+    }
+
+    fn init(amount: i8) Sparkles {
+        var rrng = std.Random.DefaultPrng.init(amount);
+        var rnd = std.Random.DefaultPrng.random(&rrng);
+
+        var sparkles: [amount]Sparkle = undefined;
+        for (&sparkles) |*sparkle| {
+            sparkle.start = rnd.uintLessThan(u64, 500);
+            sparkle.x = -10 + rnd.float(f32) * 20;
+            sparkle.y = -10 + rnd.float(f32) * 20;
+        }
+        return Sparkles{
+            .sparkles = sparkles,
+            .current_sparkle = 0,
         };
     }
 };
@@ -119,7 +162,8 @@ pub fn main() !void {
 
     var swrd: Swrd = undefined;
     const animations = [_]Animateable{
-        .{ .blink = Blink.init() },
+        .{ .sparkles = comptime Sparkles.init(8) },
+        // .{ .blink = Blink.init() },
     };
     var known_at_runtime_zero: usize = 0;
     _ = &known_at_runtime_zero;
